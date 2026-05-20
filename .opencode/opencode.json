@@ -1,0 +1,249 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "aletheia": {
+      "description": "Agente de investigación — búsqueda web, papers, noticias, investigación profunda",
+      "mode": "subagent",
+      "color": "#4A90D9",
+      "steps": 15,
+      "temperature": 0.3,
+      "permission": {
+        "websearch": "allow",
+        "webfetch": "allow",
+        "read": "allow",
+        "edit": "deny",
+        "bash": {
+          "curl *": "allow",
+          "wget *": "allow",
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "glob": "allow",
+        "grep": "allow",
+        "task": "allow",
+        "skill": "allow"
+      },
+      "tools": {
+        "scholar-search_*": true,
+        "rss-reader_*": true,
+        "context7_*": true,
+        "obsidian_*": false
+      }
+    },
+    "kosmos": {
+      "description": "Agente de arquitectura — análisis de código, diagramas C4, documentación técnica",
+      "mode": "subagent",
+      "color": "#7B68EE",
+      "steps": 10,
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "ask",
+        "list": "allow",
+        "task": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "skill": "allow",
+        "bash": {
+          "git *": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "find *": "allow",
+          "tree *": "allow",
+          "rg *": "allow",
+          "fd *": "allow",
+          "npx *": "allow",
+          "uvx *": "allow",
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "ask"
+        }
+      },
+      "tools": {
+        "depwire_*": true,
+        "structurizr_*": true,
+        "excalidraw_*": true,
+        "postgres_*": true,
+        "git_*": true,
+        "github_*": true,
+        "lucidity_*": true
+      }
+    },
+    "metis": {
+      "description": "Agente de estrategia — planeación, OKRs, roadmaps, análisis competitivo, reportes",
+      "mode": "subagent",
+      "color": "#E8A87C",
+      "steps": 8,
+      "temperature": 0.4,
+      "permission": {
+        "websearch": "allow",
+        "webfetch": "allow",
+        "read": "allow",
+        "edit": "ask",
+        "bash": {
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "task": "allow",
+        "skill": "allow",
+        "question": "allow",
+        "todowrite": "allow"
+      },
+      "tools": {
+        "excalidraw_*": true,
+        "paperjsx_*": true,
+        "obsidian_*": false
+      }
+    },
+    "mnemosyne": {
+      "description": "Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault",
+      "mode": "subagent",
+      "color": "#C0C0C0",
+      "steps": 8,
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "allow",
+        "bash": "allow",
+        "skill": "allow"
+      },
+      "tools": {
+        "sequential-thinking_*": true
+      }
+    }
+  },
+  "tools": {
+    "depwire_*": false,
+    "structurizr_*": false,
+    "excalidraw_*": false,
+    "paperjsx_*": false,
+    "scholar-search_*": false,
+    "rss-reader_*": false,
+    "context7_*": false,
+    "database_*": false,
+    "git_*": false,
+    "github_*": false,
+    "lucidity_*": false,
+    "postgres_*": false,
+  },
+  "mcp": {
+    "firecrawl": {
+      "type": "local",
+      "command": ["npx", "-y", "firecrawl-mcp"],
+      "enabled": true
+    },
+    "brave-search": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/brave-search"],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "depwire": {
+      "type": "local",
+      "command": ["npx", "-y", "depwire-mcp"],
+      "enabled": true
+    },
+    "structurizr": {
+      "type": "local",
+      "command": ["npx", "-y", "@structurizr/mcp-server", "-dsl", "-plantuml", "-mermaid"],
+      "enabled": true
+    },
+    "excalidraw": {
+      "type": "local",
+      "command": ["npx", "-y", "excalidraw-mcp"],
+      "enabled": true
+    },
+    "paperjsx": {
+      "type": "local",
+      "command": ["npx", "-y", "@paperjsx/mcp-server"],
+      "enabled": true
+    },
+    "scholar-search": {
+      "type": "local",
+      "command": ["uvx", "scholar-search-mcp"],
+      "enabled": true
+    },
+    "git": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-git", "--repository", "."],
+      "enabled": true
+    },
+    "rss-reader": {
+      "type": "local",
+      "command": ["npx", "-y", "rss-reader-mcp"],
+      "enabled": true
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "vault": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", ".memory"],
+      "enabled": true
+    },
+    "obsidian": {
+      "type": "local",
+      "command": ["npx", "-y", "obsidian-mcp"],
+      "enabled": true
+    },
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": true
+    },
+    "lucidity": {
+      "type": "local",
+      "command": ["npx", "-y", "lucidity-mcp"],
+      "enabled": true
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres"],
+      "enabled": true
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "tail_turns": 5,
+    "preserve_recent_tokens": 8000,
+    "reserved": 4000
+  },
+  "command": {
+    "quality": {
+      "description": "Ejecuta smoke check de calidad del sistema KAOS",
+      "template": "Ejecuta py -3 .tools/session_runner.py smoke desarrollo y muestra los resultados"
+    },
+    "investigate": {
+      "description": "Invoca a Aletheia para investigar un tema",
+      "template": "@aletheia investiga el siguiente tema: {{input}}",
+      "agent": "aletheia",
+      "subtask": true
+    },
+    "architect": {
+      "description": "Invoca a Kosmos para análisis arquitectónico",
+      "template": "@kosmos analiza la arquitectura de: {{input}}",
+      "agent": "kosmos",
+      "subtask": true
+    },
+    "strategy": {
+      "description": "Invoca a Metis para análisis estratégico",
+      "template": "@metis crea una estrategia para: {{input}}",
+      "agent": "metis",
+      "subtask": true
+    }
+  }
+}
