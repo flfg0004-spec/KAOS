@@ -1,0 +1,30 @@
+{
+  "session_type": "smoke",
+  "timestamp": "2026-05-20T02:18:43.695866",
+  "profile": "desarrollo",
+  "checks": [
+    {
+      "name": "vault_exists",
+      "passed": true
+    },
+    {
+      "name": "scores_engine",
+      "passed": true
+    },
+    {
+      "name": "profiles_config",
+      "passed": true
+    },
+    {
+      "name": "adr_002",
+      "passed": true
+    },
+    {
+      "name": "adr_003",
+      "passed": true
+    }
+  ],
+  "passed": 5,
+  "failed": 0,
+  "health": "ok"
+}

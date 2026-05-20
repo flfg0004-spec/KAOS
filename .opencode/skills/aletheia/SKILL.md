@@ -7,31 +7,57 @@ description: Metodología de investigación para Aletheia — protocolo de búsq
 
 Este skill define el protocolo completo de investigación que Aletheia debe seguir para garantizar hallazgos precisos, verificables y útiles.
 
-## Protocolo de Investigación en 6 Fases
+## Selección de Pipeline Dinámico
+
+Antes de iniciar, lee el frontmatter de `_pipeline/input.md` para detectar el campo `profile`.
+
+**Si no hay profile definido**, clasifícalo automáticamente según el topic:
+- **flash**: Si el topic contiene "verificar", "check", "quick", "rápido", "fact-check", "validar", o es una pregunta cerrada (sí/no).
+- **deep**: Si contiene "investigación profunda", "exhaustivo", "análisis completo", "systemático", "comprehensive", "exhaustive", "profundizar".
+- **massive**: Si contiene "lista de", "todos los", "catálogo", "inventario", "crawl", "wikipedia", "scrapear".
+- **standard**: Cualquier otro caso (default).
+
+Luego escribe el profile detectado en `_pipeline/input.md` actualizando el frontmatter.
+
+Perfiles disponibles:
+- **flash**: Protocolo rápido (sin profundización ni triangulación compleja).
+- **standard**: Protocolo completo de 6 fases (el default).
+- **deep**: Protocolo extendido con Deep Research y triangulación externa.
+- **massive**: Protocolo de ingesta masiva con crawling completo.
+
+Ajusta herramientas, número de queries y profundidad según el perfil leyendo `_pipeline/profiles/{profile}.json`.
+
+## Protocolo de Investigación Base (6 Fases)
 
 ### Fase 1: Formulación
 - Define la pregunta central de investigación.
 - Identifica 3-5 sub-preguntas que la descomponen.
 - Determina el tipo de fuentes relevantes (académicas, técnicas, de mercado, noticias).
 - Establece criterios de éxito: ¿qué constituye una respuesta satisfactoria?
+- **Perfil deep/massive**: Descompón en un árbol de sub-queries recursivas.
 
 ### Fase 2: Exploración Inicial
-- Lanza **5 búsquedas paralelas** con Firecrawl usando variaciones de la pregunta central.
-- Usa Brave Search para una búsqueda web amplia con operadores avanzados.
-- Usa Firecrawl para extraer contenido completo de las páginas más relevantes.
+- Perfil **flash**: 3 búsquedas paralelas con Brave, 1 nivel.
+- Perfil **standard**: 5 búsquedas paralelas con Firecrawl + Brave.
+- Perfil **deep**: 10+ búsquedas via SearXNG (Google + Brave + DuckDuckGo) + GPT-Researcher multi-query.
+- Perfil **massive**: Crawl4AI site crawl + SearXNG + Firecrawl batch.
 - Identifica términos clave, sinónimos y variaciones para refinar la búsqueda.
 - Genera un mapa inicial de fuentes y temas.
 
 ### Fase 3: Investigación Profunda
-- Para temas académicos: usa Scholar Search (arXiv + Semantic Scholar).
-- Para temas técnicos: busca documentación oficial, repositorios y referencias.
+- Perfil **flash**: Saltar a síntesis directa.
+- Perfil **standard**: Scholar Search (académico) + Context7 (técnico) + Sequential Thinking.
+- Perfil **deep**: GPT-Researcher `deep_research` con depth=3-4, + Scholar Search + auto-scrape de referencias.
+- Perfil **massive**: Crawl4AI crawl completo + txtai index + STORM synthesis.
 - Para datos de mercado: prioriza fuentes primarias (informes oficiales, datos públicos).
 - Usa Sequential Thinking para descomponer hallazgos complejos.
 - Extrae citas textuales con contexto.
 
 ### Fase 4: Triangulación
-- Para cada afirmación clave, busca al menos 3 fuentes independientes.
-- Ejecuta auto-triangulación: corre `vault.py lint --check-coverage` para verificar que cada afirmación tiene ≥3 fuentes.
+- Perfil **flash**: Sin triangulación (máximo 2 fuentes por afirmación).
+- Perfil **standard**: Mínimo 3 fuentes independientes por afirmación clave.
+- Perfil **deep**: Mínimo 5 fuentes + verificación externa vía SearXNG.
+- Perfil **massive**: Triangulación automática en el crawleo completo.
 - Identifica sesgos: ¿quién publica? ¿qué interés tiene? ¿la metodología es sólida?
 - Clasifica cada fuente por:
   - **Autoridad**: oficial / experto / reputación / desconocido
@@ -44,6 +70,7 @@ Este skill define el protocolo completo de investigación que Aletheia debe segu
 - Identifica patrones, tendencias y correlaciones.
 - Construye una narrativa coherente que responda la pregunta original.
 - Señala explícitamente lo que se sabe, lo que se infiere y lo que se desconoce.
+- Perfil **deep/massive**: Genera un resumen ejecutivo de alto nivel + hallazgos detallados + apéndice técnico.
 
 ### Fase 6: Verificación
 - Revisa cada afirmación contra las fuentes originales.
@@ -51,7 +78,8 @@ Este skill define el protocolo completo de investigación que Aletheia debe segu
   - **Alta**: múltiples fuentes primarias, consistentes, autoritativas
   - **Media**: fuentes secundarias consistentes, o fuente primaria única pero confiable
   - **Baja**: fuente única, especulativa, desactualizada o no verificable
-- **La matriz de confianza es OBLIGATORIA**: si no hay matriz con ≥3 filas, el extract falla con error de lint.
+- **La matriz de confianza es OBLIGATORIA** en perfiles standard/deep/massive (mínimo 3 filas).
+- Perfil flash: matriz opcional de 1-2 filas.
 - Documenta dudas remanentes y sugiere investigación adicional si aplica.
 
 ## Plantilla de Investigación
@@ -139,10 +167,14 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
   - `vault_read`: leer páginas individuales con frontmatter, tags y metadata.
   - `vault_get_document_map`: obtener estructura de headings y bloques.
   - `tag_list`: listar tags para navegación temática.
+  - `search_query` (nuevo): búsqueda estructurada con combinación de tags y paths. Útil para filtrar por tipo de contenido o agente.
 - **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
-  - Escritura directa de archivos en raw/, wiki/, schema/.
+  - Escritura directa de archivos en raw/, wiki/, schema/, ingest/queue/.
   - Index regeneration, log append, git commits.
-- **Regla**: Lectura vía Obsidian (más rico en contexto, graph view, backlinks). Escritura vía vault (más fiable para operaciones estructuradas y bulk).
+- **txtai MCP** (Knowledge Base): Usar para BÚSQUEDA SEMÁNTICA.
+  - Búsqueda por embeddings sobre todo el vault indexado.
+  - Útil para encontrar conceptos relacionados que no comparten palabras clave exactas.
+- **Regla**: Lectura vía Obsidian (más rico en contexto, graph view, backlinks). Escritura vía vault (más fiable para operaciones estructuradas y bulk). Búsqueda semántica vía txtai.
 
 ### Reglas de Escritura
 - **raw/**: Solo el humano escribe aquí. Los agentes proponen contenido para que el humano revise.

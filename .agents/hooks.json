@@ -1,0 +1,28 @@
+{
+  "kaos-lifecycle-hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/pre_tool_audit.ps1",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/post_tool_audit.ps1",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

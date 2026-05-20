@@ -1,0 +1,35 @@
+{
+  "$schema": "https://antigravity.google/schemas/workspace-config.json",
+  "project": {
+    "id": "kaos-antigravity",
+    "name": "KAOS Core",
+    "version": "2.0.0",
+    "description": "Configuración nativa de agentes KAOS optimizada para Antigravity 2.0"
+  },
+  "isolation": {
+    "mode": "strict",
+    "sharedDirectories": [],
+    "targetSandbox": "isolate-from-opencode"
+  },
+  "settings": {
+    "defaultAgent": "DÉDALO",
+    "theme": "glassmorphism-cyberpunk",
+    "permissions": {
+      "mode": "developer-optimized",
+      "autoApprove": {
+        "commands": [
+          "git *",
+          "tailscale *",
+          "Get-Process *",
+          "Get-ChildItem *",
+          "Test-Path *",
+          "powershell *"
+        ],
+        "directories": [
+          "c:/Users/LeonX/Documents/KAOS/.agents/*",
+          "c:/Users/LeonX/Documents/KAOS/scratch/*"
+        ]
+      }
+    }
+  }
+}

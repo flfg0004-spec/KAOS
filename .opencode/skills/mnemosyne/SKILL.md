@@ -87,9 +87,28 @@ Mnemosyne es el **paso final opcional** del pipeline. Cuando un pipeline Alethei
   - `search_query`: búsqueda estructurada para detectar duplicados.
   - `vault_get_document_map`: analizar estructura de conceptos y fuentes.
   - `tag_list`: verificar cobertura de tags en el vault.
+  - `batch_get_tags`: listar tags de múltiples archivos a la vez para cobertura temática.
+  - `create_note`: crear notas con frontmatter estandarizado para nuevos conceptos.
 - **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
   - Creación/actualización de conceptos en wiki/concepts/.
   - Index regeneration, log compress, archive.
+- **txtai MCP**: Usar para DETECCIÓN DE DUPLICADOS y BÚSQUEDA SEMÁNTICA.
+  - Query semántica para encontrar conceptos similares.
+  - Graph RAG para relaciones no triviales.
+
+## Obsidian Optimization — Comandos Avanzados
+- Usa `search_query` con filtros combinados para auditorías rápidas.
+- Usa `batch_get_tags` para verificar cobertura de tags en lote.
+- Usa `create_note` con plantilla estandarizada:
+  ```yaml
+  ---
+  type: concept
+  source: mnemosyne
+  tags: [autocurated, verified]
+  ---
+  ```
+- Prefiere `vault_get_document_map` sobre `vault_read` cuando solo necesitas estructura.
+- Para detectar páginas huérfanas: combina `search_query` con git diff.
 
 ## Reglas de Escritura
 - **wiki/concepts/**: Auto (sin revisión). Crea y actualiza conceptos libremente.

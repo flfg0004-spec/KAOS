@@ -1,0 +1,50 @@
+{
+  "session_type": "functional",
+  "timestamp": "2026-05-20T02:23:59.914489",
+  "profile": "desarrollo",
+  "tests": [
+    {
+      "claim_id": "test-001",
+      "agent": "aletheia",
+      "scores": {
+        "veracidad": 85,
+        "coherencia": 78,
+        "completitud": 72,
+        "reproducibilidad": 68,
+        "utilidad": 80
+      },
+      "evaluations": {
+        "veracidad": "pass",
+        "coherencia": "pass",
+        "completitud": "pass",
+        "reproducibilidad": "pass",
+        "utilidad": "pass"
+      },
+      "composite": 76.6,
+      "passed": true
+    },
+    {
+      "claim_id": "test-002",
+      "agent": "kosmos",
+      "scores": {
+        "veracidad": 80,
+        "coherencia": 85,
+        "completitud": 75,
+        "reproducibilidad": 70,
+        "utilidad": 75
+      },
+      "evaluations": {
+        "veracidad": "pass",
+        "coherencia": "pass",
+        "completitud": "pass",
+        "reproducibilidad": "pass",
+        "utilidad": "pass"
+      },
+      "composite": 77.0,
+      "passed": true
+    }
+  ],
+  "passed": 2,
+  "failed": 0,
+  "health": "ok"
+}

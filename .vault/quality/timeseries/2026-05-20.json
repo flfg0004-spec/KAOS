@@ -1,0 +1,79 @@
+[
+  {
+    "timestamp": "2026-05-20T01:16:15.483606",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
+    }
+  },
+  {
+    "timestamp": "2026-05-20T01:17:45.264659",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
+    }
+  },
+  {
+    "timestamp": "2026-05-20T01:17:45.294236",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 80,
+      "coherencia": 85,
+      "completitud": 75,
+      "reproducibilidad": 70,
+      "utilidad": 75
+    }
+  },
+  {
+    "timestamp": "2026-05-20T01:39:25.106184",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
+    }
+  },
+  {
+    "timestamp": "2026-05-20T01:39:25.137125",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 80,
+      "coherencia": 85,
+      "completitud": 75,
+      "reproducibilidad": 70,
+      "utilidad": 75
+    }
+  },
+  {
+    "timestamp": "2026-05-20T02:23:59.939818",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
+    }
+  },
+  {
+    "timestamp": "2026-05-20T02:23:59.970369",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 80,
+      "coherencia": 85,
+      "completitud": 75,
+      "reproducibilidad": 70,
+      "utilidad": 75
+    }
+  }
+]

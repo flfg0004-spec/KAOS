@@ -1,0 +1,50 @@
+{
+  "session_type": "audit",
+  "timestamp": "2026-05-20T01:39:25.369488",
+  "profile": "auditoria",
+  "phases": [
+    {
+      "phase": "smoke_extended",
+      "checks": [
+        {
+          "name": "vault_exists",
+          "passed": true
+        },
+        {
+          "name": "scores_engine",
+          "passed": true
+        },
+        {
+          "name": "profiles_config",
+          "passed": true
+        },
+        {
+          "name": "adr_002",
+          "passed": true
+        },
+        {
+          "name": "adr_003",
+          "passed": true
+        }
+      ],
+      "health": "ok"
+    },
+    {
+      "phase": "profile_validation",
+      "profiles_loaded": 4,
+      "health": "ok"
+    },
+    {
+      "phase": "vault_integrity",
+      "directories": [
+        "sessions",
+        "timeseries",
+        "verifications"
+      ],
+      "health": "ok"
+    }
+  ],
+  "passed": 3,
+  "failed": 0,
+  "health": "ok"
+}

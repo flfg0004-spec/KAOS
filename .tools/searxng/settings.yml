@@ -1,0 +1,80 @@
+# SearXNG Configuration for KAOS
+# Self-hosted metasearch backend for Aletheia deep research
+
+general:
+  instance_name: "KAOS - SearXNG"
+  debug: false
+  privacypolicy_url: false
+  contact_url: false
+  enable_metrics: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "all"
+  languages:
+    - "en"
+    - "es"
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "kaos-searxng-local-only"
+  bind_address: "127.0.0.1"
+  port: 8888
+  limiter: true
+  image_proxy: false
+  method: "GET"
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-XSS-Protection: 1; mode=block
+
+ui:
+  static_use_hash: true
+  default_theme: simple
+  default_locale: "en"
+  results_on_new_tab: true
+
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    disabled: false
+
+  - name: brave
+    engine: brave
+    shortcut: bv
+    disabled: false
+    api_key: ""
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    disabled: false
+
+  - name: wikidata
+    engine: wikidata
+    shortcut: wd
+    disabled: false
+
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+    disabled: false
+
+  - name: semantic_scholar
+    engine: semantic_scholar
+    shortcut: ss
+    disabled: false
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 30.0
+  useragent_suffix: ""
+  enabling_http2: true

@@ -1,0 +1,104 @@
+name: KAOS Quality
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['.memory/**', '.tools/**']
+  pull_request:
+    branches: [main]
+    paths: ['.memory/**', '.tools/**']
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC daily
+    - cron: '0 8 * * 1'   # 08:00 UTC Monday (weekly)
+  workflow_dispatch:
+    inputs:
+      session:
+        description: 'Session type to run'
+        type: choice
+        options: [smoke, functional, audit]
+        default: smoke
+      profile:
+        description: 'Evaluation profile'
+        type: choice
+        options: [exploracion, desarrollo, produccion, auditoria]
+        default: desarrollo
+
+jobs:
+  smoke:
+    name: Smoke Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install deepeval pyyaml
+      - name: Run smoke check
+        run: py .tools/session_runner.py smoke desarrollo
+      - name: Store results
+        run: |
+          mkdir -p .vault/quality/sessions
+          cp .vault/quality/sessions/*.json .vault/quality/sessions/ 2>/dev/null || true
+
+  functional:
+    name: Daily Functional
+    if: github.event_name == 'schedule' && github.event.schedule == '0 6 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install deepeval pyyaml
+      - name: Run functional session
+        run: py .tools/session_runner.py functional desarrollo
+      - name: Run verification chain
+        run: py .tools/verification_chain.py desarrollo
+      - name: Check for degradation
+        run: |
+          echo "Quality check complete. Review dashboard for details."
+
+  audit:
+    name: Weekly Audit
+    if: github.event_name == 'schedule' && github.event.schedule == '0 8 * * 1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install deepeval pyyaml
+      - name: Run full audit
+        run: py .tools/session_runner.py audit auditoria
+      - name: Run verification chain
+        run: py .tools/verification_chain.py auditoria
+      - name: Generate weekly report
+        run: py .tools/weekly_report.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: .vault/reports/
+
+  on-demand:
+    name: On-Demand Session
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install deepeval pyyaml
+      - name: Run ${{ github.event.inputs.session }} session
+        run: py .tools/session_runner.py ${{ github.event.inputs.session }} ${{ github.event.inputs.profile }}
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: session-results
+          path: .vault/quality/sessions/

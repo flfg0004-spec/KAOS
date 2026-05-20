@@ -1,0 +1,38 @@
+# KAOS Docker Infrastructure
+# Servicios: SearXNG (metasearch) + Crawl4AI (web crawler) + txtai (knowledge base)
+# Usage: docker compose -f .tools/docker-compose.yml up -d
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: kaos-searxng
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://127.0.0.1:8888
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: kaos-crawl4ai
+    ports:
+      - "127.0.0.1:11235:11235"
+    volumes:
+      - crawl4ai-data:/app/data
+    environment:
+      - CRAWL4AI_API_TOKEN=kaos-crawl4ai-token
+      - MAX_CONCURRENT_TASKS=10
+    restart: unless-stopped
+
+volumes:
+  searxng-data:
+  crawl4ai-data:

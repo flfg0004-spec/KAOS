@@ -1,0 +1,19 @@
+{
+  "verification_id": "v-20260520-013925",
+  "claim_id": "metis-2026-05-20-output",
+  "agent_origin": "metis",
+  "agent_verifier": "aletheia",
+  "timestamp": "2026-05-20T01:39:25.259774",
+  "profile": "desarrollo",
+  "scores": {
+    "veracidad": 85,
+    "reproducibilidad": 72
+  },
+  "evaluations": {
+    "veracidad": "pass",
+    "reproducibilidad": "pass"
+  },
+  "discrepancies": [],
+  "evidence_hash": "b752754ddc6458b3",
+  "verifier_notes": ""
+}

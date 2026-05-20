@@ -28,7 +28,11 @@
         "scholar-search_*": true,
         "rss-reader_*": true,
         "context7_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "gptr-deep-research_*": true,
+        "searxng_*": true,
+        "crawl4ai_*": true,
+        "txtai_*": true
       }
     },
     "kosmos": {
@@ -113,7 +117,11 @@
         "glob": "allow",
         "grep": "allow",
         "edit": "allow",
-        "bash": "allow",
+        "bash": {
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
         "skill": "allow"
       },
       "tools": {
@@ -203,7 +211,15 @@
     },
     "vault": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", ".memory"],
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem",
+        ".memory",
+        ".memory/ingest",
+        ".memory/cache",
+        ".memory/wiki",
+        ".memory/raw",
+        ".memory/schema",
+        ".vault/quality"
+      ],
       "enabled": true
     },
     "obsidian": {
@@ -211,20 +227,32 @@
       "command": ["npx", "-y", "obsidian-mcp"],
       "enabled": true
     },
-    "github": {
+    "gptr-deep-research": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-      "enabled": true
+      "command": ["npx", "-y", "gpt-researcher-mcp"],
+      "enabled": true,
+      "env": {
+        "GPTR_MODEL_PROVIDER": "deepseek",
+        "GPTR_MODEL": "deepseek-v4-flash",
+        "GPTR_REPORT_MODEL": "deepseek-v4-pro",
+        "GPTR_SEARCH_PROVIDER": "searxng",
+        "GPTR_SEARXNG_URL": "http://127.0.0.1:8888"
+      }
     },
-    "lucidity": {
+    "searxng": {
       "type": "local",
-      "command": ["npx", "-y", "lucidity-mcp"],
-      "enabled": true
+      "command": ["npx", "-y", "@anthropic/searxng-mcp", "--url", "http://127.0.0.1:8888"],
+      "enabled": false
     },
-    "postgres": {
+    "crawl4ai": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres"],
-      "enabled": true
+      "command": ["npx", "-y", "@anthropic/crawl4ai-mcp", "--url", "http://127.0.0.1:11235"],
+      "enabled": false
+    },
+    "txtai": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/txtai-mcp", "--url", "http://127.0.0.1:8000"],
+      "enabled": false
     }
   },
   "compaction": {
