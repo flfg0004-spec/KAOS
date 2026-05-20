@@ -82,33 +82,29 @@ Mnemosyne es el **paso final opcional** del pipeline. Cuando un pipeline Alethei
    - Summary: resultado del ciclo de curaduría
    - PagesAffected: lista de archivos creados/modificados
 
-### Estrategia Híbrida Obsidian + Vault
-- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para CURAR y VERIFICAR.
-  - `search_query`: búsqueda estructurada para detectar duplicados.
-  - `vault_get_document_map`: analizar estructura de conceptos y fuentes.
-  - `tag_list`: verificar cobertura de tags en el vault.
-  - `batch_get_tags`: listar tags de múltiples archivos a la vez para cobertura temática.
-  - `create_note`: crear notas con frontmatter estandarizado para nuevos conceptos.
+### Estrategia Híbrida Obsidian CLI + Vault
+- **mcp-obsidian-cli** (CLI oficial): Usar para CURAR y VERIFICAR.
+  - `search`: búsqueda estructurada para detectar duplicados.
+  - `backlinks`: analizar estructura de conceptos y fuentes.
+  - `tags`: verificar cobertura de tags en el vault.
+  - `graph`: inspeccionar el grafo de conexiones.
+  - `create`: crear notas con frontmatter estandarizado para nuevos conceptos.
 - **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
   - Creación/actualización de conceptos en wiki/concepts/.
   - Index regeneration, log compress, archive.
-- **txtai MCP**: Usar para DETECCIÓN DE DUPLICADOS y BÚSQUEDA SEMÁNTICA.
-  - Query semántica para encontrar conceptos similares.
-  - Graph RAG para relaciones no triviales.
+- **Embeddings** (local): Usar para DETECCIÓN DE DUPLICADOS y BÚSQUEDA SEMÁNTICA.
+  - `vault.py embeddings query --text "consulta"` para encontrar conceptos similares.
+  - Útil cuando los wikilinks no son suficientes.
 
-## Obsidian Optimization — Comandos Avanzados
-- Usa `search_query` con filtros combinados para auditorías rápidas.
-- Usa `batch_get_tags` para verificar cobertura de tags en lote.
-- Usa `create_note` con plantilla estandarizada:
-  ```yaml
-  ---
-  type: concept
-  source: mnemosyne
-  tags: [autocurated, verified]
-  ---
+## Obsidian CLI — Comandos Avanzados
+- Usa `search` con términos específicos para auditorías rápidas.
+- Usa `tags` para verificar cobertura de tags en lote.
+- Usa `create` con plantilla estandarizada:
+  ```bash
+  obsidian-cli create "nuevo-concepto" --template concept-template
   ```
-- Prefiere `vault_get_document_map` sobre `vault_read` cuando solo necesitas estructura.
-- Para detectar páginas huérfanas: combina `search_query` con git diff.
+- Prefiere `backlinks` sobre `graph` cuando solo necesitas estructura.
+- Para detectar páginas huérfanas: combina `search` con `vault.py lint`.
 
 ## Reglas de Escritura
 - **wiki/concepts/**: Auto (sin revisión). Crea y actualiza conceptos libremente.

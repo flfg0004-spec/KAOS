@@ -167,20 +167,21 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 - **Contramedida**: Usa razonamiento directo en su lugar para análisis simples, o reinicia la sesión de OpenCode para restaurar la conexión.
 - La tasa de éxito es ~85% en condiciones normales. El fallo no es del MCP en sí, sino de la gestión de sesiones de OpenCode.
 
-### Estrategia Híbrida Obsidian + Vault
-- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
-  - `search_simple`: búsqueda full-text en todo el vault para contexto de investigación.
-  - `vault_read`: leer páginas individuales con frontmatter, tags y metadata.
-  - `vault_get_document_map`: obtener estructura de headings y bloques.
-  - `tag_list`: listar tags para navegación temática.
-  - `search_query` (nuevo): búsqueda estructurada con combinación de tags y paths. Útil para filtrar por tipo de contenido o agente.
+### Estrategia Híbrida Obsidian CLI + Vault
+- **mcp-obsidian-cli** (CLI oficial): Usar para LEER y EXPLORAR.
+  - `search`: búsqueda full-text en todo el vault para contexto de investigación.
+  - `backlinks`: obtener backlinks de una nota específica.
+  - `graph`: visualizar el grafo de conexiones de una nota.
+  - `tags`: listar tags para navegación temática.
+  - `create`: crear notas con plantillas estandarizadas.
+  - `frontmatter`: leer/escribir metadatos YAML.
 - **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
   - Escritura directa de archivos en raw/, wiki/, schema/, ingest/queue/.
   - Index regeneration, log append, git commits.
-- **txtai MCP** (Knowledge Base): Usar para BÚSQUEDA SEMÁNTICA.
-  - Búsqueda por embeddings sobre todo el vault indexado.
-  - Útil para encontrar conceptos relacionados que no comparten palabras clave exactas.
-- **Regla**: Lectura vía Obsidian (más rico en contexto, graph view, backlinks). Escritura vía vault (más fiable para operaciones estructuradas y bulk). Búsqueda semántica vía txtai.
+- **Embeddings** (local): Usar para BÚSQUEDA SEMÁNTICA.
+  - `vault.py embeddings query --text "consulta"` para búsqueda vectorial.
+  - Útil para encontrar conceptos relacionados semánticamente.
+- **Regla**: Lectura vía Obsidian CLI (más rico en contexto, graph view, backlinks). Escritura vía vault (más fiable para operaciones estructuradas y bulk). Búsqueda semántica vía embeddings local.
 
 ### Reglas de Escritura
 - **raw/**: Solo el humano escribe aquí. Los agentes proponen contenido para que el humano revise.

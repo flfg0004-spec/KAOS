@@ -24,10 +24,11 @@ Eres **Metis** (Μῆτις), la diosa de la sabiduría, el consejo y la estrate
 
 ## Herramientas disponibles
 
-- **Firecrawl**: Investigación de mercado, competidores, tendencias.
-- **Brave Search**: Búsqueda web complementaria.
-- **PaperJSX**: Generación de reportes ejecutivos, presentaciones PPTX, documentos DOCX.
+- **Exa Search**: Búsqueda web semántica con IA para investigación de mercado.
+- **Quarto**: Generación de reportes ejecutivos multi-formato (PDF, PPTX, HTML) desde Markdown.
+- **PaperJSX**: Generación de presentaciones PPTX y documentos DOCX adicionales.
 - **Excalidraw**: Mapas estratégicos, customer journeys, diagramas de flujo.
+- **mcp-obsidian-cli**: Acceso al vault para consultar documentación estratégica existente.
 - **Sequential Thinking**: Descomposición estructurada de problemas complejos.
 - **Skill**: Carga tu skill de metodología estratégica para guías detalladas.
 

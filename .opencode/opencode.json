@@ -33,7 +33,8 @@
         "searxng_*": true,
         "crawl4ai_*": true,
         "exa-search_*": true,
-        "depwire_*": true
+        "depwire_*": true,
+        "mcp-obsidian-cli_*": true
       }
     },
     "kosmos": {
@@ -105,7 +106,8 @@
         "excalidraw_*": true,
         "paperjsx_*": true,
         "obsidian_*": true,
-        "exa-search_*": true
+        "exa-search_*": true,
+        "mcp-obsidian-cli_*": true
       }
     },
     "mnemosyne": {
@@ -148,23 +150,10 @@
     "obsidian_*": false
   },
   "mcp": {
-    "obsidian": {
-      "type": "remote",
-      "url": "http://127.0.0.1:27123/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${OBSIDIAN_API_KEY}"
-      },
+    "mcp-obsidian-cli": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-obsidian-cli"],
       "enabled": true
-    },
-    "firecrawl": {
-      "type": "local",
-      "command": ["npx", "-y", "firecrawl-mcp"],
-      "enabled": false
-    },
-    "brave-search": {
-      "type": "local",
-      "command": ["npx", "-y", "@anthropic/brave-search"],
-      "enabled": false
     },
     "sequential-thinking": {
       "type": "local",
@@ -174,7 +163,7 @@
     "depwire": {
       "type": "local",
       "command": ["npx", "-y", "@iflow-mcp/depwire-depwire"],
-      "enabled": true
+      "enabled": false
     },
     "excalidraw": {
       "type": "local",
@@ -184,17 +173,17 @@
     "paperjsx": {
       "type": "local",
       "command": ["npx", "-y", "@paperjsx/mcp-server"],
-      "enabled": true
+      "enabled": false
     },
     "scholar-search": {
       "type": "local",
-      "command": ["uvx", "scholar-search-mcp"],
-      "enabled": true
+      "command": ["npx", "-y", "scholar-search-mcp"],
+      "enabled": false
     },
     "git": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-git", "--repository", "."],
-      "enabled": true
+      "enabled": false
     },
     "rss-reader": {
       "type": "local",
@@ -242,12 +231,12 @@
     "searxng": {
       "type": "local",
       "command": ["npx", "-y", "searxng-mcp", "--url", "http://127.0.0.1:8888"],
-      "enabled": true
+      "enabled": false
     },
     "crawl4ai": {
       "type": "local",
       "command": ["npx", "-y", "crawl4ai-mcp-sse-stdio", "--url", "http://127.0.0.1:11235"],
-      "enabled": true
+      "enabled": false
     }
   },
   "compaction": {
