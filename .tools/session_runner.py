@@ -110,7 +110,7 @@ def store_session(session_type, results):
     session_dir = VAULT / "sessions"
     session_dir.mkdir(parents=True, exist_ok=True)
     path = session_dir / f"{today}-{session_type}.json"
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     return path
 

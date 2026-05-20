@@ -35,7 +35,7 @@ def verify_output(claim_id, agent_origin, agent_verifier, scores, profile="desar
     }
     VERIFICATION_DIR.mkdir(parents=True, exist_ok=True)
     path = VERIFICATION_DIR / f"{verification['verification_id']}.json"
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(verification, f, indent=2, ensure_ascii=False)
     return verification, path
 

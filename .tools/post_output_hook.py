@@ -1,6 +1,7 @@
 """
 KAOS Post-Output Hook v2 — Orquestación completa del pipeline
 Detecta cambios y ejecuta: ingest → distill → synapse → embed → lint
+Invocar: py .tools/post_output_hook.py (desde post-commit hook o manual)
 """
 
 import json
