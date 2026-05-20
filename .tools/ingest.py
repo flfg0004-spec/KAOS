@@ -114,27 +114,32 @@ def ingest_url(url: str, profile: str = "standard") -> dict:
         domain = "gh"
     title = f"{domain}-{path}"[:60] or "web-page"
 
+    text = ""
     try:
         import requests
         resp = requests.post(f"http://127.0.0.1:11235/crawl", json={"urls": [url]}, timeout=30)
         resp.raise_for_status()
         data = resp.json()
         results = data.get("results", [])
-        text = ""
         if results:
             md = results[0].get("markdown", {})
             if isinstance(md, dict):
                 text = md.get("raw_markdown", "") or results[0].get("html", "")
             elif isinstance(md, str):
                 text = md
-        if not text.strip():
-            return {"status": "error", "message": f"Crawl4AI returned empty content for {url}"}
     except ImportError:
         return {"status": "error", "message": "requests module not available"}
     except requests.exceptions.ConnectionError:
         return {"status": "error", "message": "Crawl4AI not available at localhost:11235. Start: docker compose up -d"}
     except Exception as e:
         return {"status": "error", "message": f"Crawl4AI error: {e}"}
+
+    if not text.strip():
+        return {"status": "error", "message": f"Crawl4AI returned empty content for {url}"}
+
+    # Clean citation-style wikilinks (e.g. Wikipedia [[1]], [[2]], [[a]], [[b]])
+    text = re.sub(r'\[\[(\d+)\]\]', '', text)
+    text = re.sub(r'\[\[([a-zA-Z])\]\]', '', text)
 
     return ingest_text(text, title, "url", url, profile)
 
