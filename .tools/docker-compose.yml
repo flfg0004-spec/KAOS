@@ -8,18 +8,10 @@ services:
     container_name: kaos-searxng
     ports:
       - "127.0.0.1:8888:8888"
-    volumes:
-      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
-      - searxng-data:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://127.0.0.1:8888
+      - SEARXNG_SECRET_KEY=kaos-searxng-secret-2026
     restart: unless-stopped
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
 
   crawl4ai:
     image: unclecode/crawl4ai:latest
