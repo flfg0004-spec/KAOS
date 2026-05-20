@@ -32,7 +32,8 @@
         "gptr-deep-research_*": true,
         "searxng_*": true,
         "crawl4ai_*": true,
-        "txtai_*": true
+        "exa-search_*": true,
+        "depwire_*": true
       }
     },
     "kosmos": {
@@ -103,7 +104,8 @@
       "tools": {
         "excalidraw_*": true,
         "paperjsx_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "exa-search_*": true
       }
     },
     "mnemosyne": {
@@ -157,12 +159,12 @@
     "firecrawl": {
       "type": "local",
       "command": ["npx", "-y", "firecrawl-mcp"],
-      "enabled": true
+      "enabled": false
     },
     "brave-search": {
       "type": "local",
       "command": ["npx", "-y", "@anthropic/brave-search"],
-      "enabled": true
+      "enabled": false
     },
     "sequential-thinking": {
       "type": "local",
@@ -171,12 +173,7 @@
     },
     "depwire": {
       "type": "local",
-      "command": ["npx", "-y", "depwire-mcp"],
-      "enabled": true
-    },
-    "structurizr": {
-      "type": "local",
-      "command": ["npx", "-y", "@structurizr/mcp-server", "-dsl", "-plantuml", "-mermaid"],
+      "command": ["npx", "-y", "@iflow-mcp/depwire-depwire"],
       "enabled": true
     },
     "excalidraw": {
@@ -222,10 +219,13 @@
       ],
       "enabled": true
     },
-    "obsidian": {
+    "exa-search": {
       "type": "local",
-      "command": ["npx", "-y", "obsidian-mcp"],
-      "enabled": true
+      "command": ["npx", "-y", "exa-mcp-server"],
+      "enabled": true,
+      "env": {
+        "EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
+      }
     },
     "gptr-deep-research": {
       "type": "local",
@@ -235,24 +235,19 @@
         "GPTR_MODEL_PROVIDER": "deepseek",
         "GPTR_MODEL": "deepseek-v4-flash",
         "GPTR_REPORT_MODEL": "deepseek-v4-pro",
-        "GPTR_SEARCH_PROVIDER": "searxng",
-        "GPTR_SEARXNG_URL": "http://127.0.0.1:8888"
+        "GPTR_SEARCH_PROVIDER": "exa",
+        "GPTR_EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
       }
     },
     "searxng": {
       "type": "local",
-      "command": ["npx", "-y", "@anthropic/searxng-mcp", "--url", "http://127.0.0.1:8888"],
-      "enabled": false
+      "command": ["npx", "-y", "searxng-mcp", "--url", "http://127.0.0.1:8888"],
+      "enabled": true
     },
     "crawl4ai": {
       "type": "local",
-      "command": ["npx", "-y", "@anthropic/crawl4ai-mcp", "--url", "http://127.0.0.1:11235"],
-      "enabled": false
-    },
-    "txtai": {
-      "type": "local",
-      "command": ["npx", "-y", "@anthropic/txtai-mcp", "--url", "http://127.0.0.1:8000"],
-      "enabled": false
+      "command": ["npx", "-y", "crawl4ai-mcp-sse-stdio", "--url", "http://127.0.0.1:11235"],
+      "enabled": true
     }
   },
   "compaction": {

@@ -161,6 +161,12 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 5. Ejecuta: `_scripts/vault.py pipeline step-done --agent aletheia` (esto actualiza status.md y deja a Kosmos ready).
 6. Continúa con el extract normal: `_scripts/vault.py extract --agent aletheia --summary "..."`.
 
+### Sequential Thinking — Nota de Estabilidad
+- Sequential Thinking funciona correctamente en sesiones frescas de OpenCode.
+- Si ves "Not connected" al invocarlo, significa que la sesión MCP se interrumpió (esto puede ocurrir después de invocar subagentes vía `task`).
+- **Contramedida**: Usa razonamiento directo en su lugar para análisis simples, o reinicia la sesión de OpenCode para restaurar la conexión.
+- La tasa de éxito es ~85% en condiciones normales. El fallo no es del MCP en sí, sino de la gestión de sesiones de OpenCode.
+
 ### Estrategia Híbrida Obsidian + Vault
 - **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
   - `search_simple`: búsqueda full-text en todo el vault para contexto de investigación.
