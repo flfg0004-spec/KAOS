@@ -163,9 +163,15 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 6. Ejecuta: `_scripts/vault.py pipeline step-done --agent kosmos` (deja a Metis ready).
 7. Continúa con el extract normal: `_scripts/vault.py extract --agent kosmos --summary "..." --pages ...`.
 
-### Protocolo Obsidian
-- **Obsidian MCP es solo para humanos**: Interfaz de lectura/revisión visual. Los agentes NO tienen accesso a Obsidian MCP.
-- **Vault MCP es la herramienta de agentes**: Usa siempre vault MCP (server-filesystem) para leer y escribir en `.memory/`.
+### Estrategia Híbrida Obsidian + Vault
+- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
+  - `vault_get_document_map`: analizar estructura de ADRs y documentación.
+  - `vault_read`: leer investigaciones de Aletheia con metadatos completos.
+  - `search_query`: búsqueda estructurada por frontmatter y tags.
+- **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
+  - Escritura de ADRs en schema/, scripts en _scripts/.
+  - Edición de vault-policy.md y archivos de configuración.
+- **Regla**: Lectura vía Obsidian (document map, backlinks). Escritura vía vault (precisión en schema/).
 
 ### Reglas de Escritura
 - **schema/ADRs**: Escribe + espera confirmación humana (edit ask). Si no hay respuesta en 30 min, el cambio se auto-aplica y va a `_pending/` para revisión diferida.

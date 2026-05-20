@@ -82,6 +82,15 @@ Mnemosyne es el **paso final opcional** del pipeline. Cuando un pipeline Alethei
    - Summary: resultado del ciclo de curaduría
    - PagesAffected: lista de archivos creados/modificados
 
+### Estrategia Híbrida Obsidian + Vault
+- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para CURAR y VERIFICAR.
+  - `search_query`: búsqueda estructurada para detectar duplicados.
+  - `vault_get_document_map`: analizar estructura de conceptos y fuentes.
+  - `tag_list`: verificar cobertura de tags en el vault.
+- **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
+  - Creación/actualización de conceptos en wiki/concepts/.
+  - Index regeneration, log compress, archive.
+
 ## Reglas de Escritura
 - **wiki/concepts/**: Auto (sin revisión). Crea y actualiza conceptos libremente.
 - **wiki/sources/**: Auto (sin revisión). Mantén fuentes actualizadas.

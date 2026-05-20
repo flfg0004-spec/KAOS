@@ -133,10 +133,16 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 5. Ejecuta: `_scripts/vault.py pipeline step-done --agent aletheia` (esto actualiza status.md y deja a Kosmos ready).
 6. Continúa con el extract normal: `_scripts/vault.py extract --agent aletheia --summary "..."`.
 
-### Protocolo Obsidian
-- **Obsidian MCP es solo para humanos**: Interfaz de lectura/revisión visual. Los agentes NO tienen accesso a Obsidian MCP.
-- **Vault MCP es la herramienta de agentes**: Usa siempre vault MCP (server-filesystem) para leer y escribir en `.memory/`.
-- **Separación**: Humanos exploran con Obsidian, agentes escriben/leen con vault MCP.
+### Estrategia Híbrida Obsidian + Vault
+- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
+  - `search_simple`: búsqueda full-text en todo el vault para contexto de investigación.
+  - `vault_read`: leer páginas individuales con frontmatter, tags y metadata.
+  - `vault_get_document_map`: obtener estructura de headings y bloques.
+  - `tag_list`: listar tags para navegación temática.
+- **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
+  - Escritura directa de archivos en raw/, wiki/, schema/.
+  - Index regeneration, log append, git commits.
+- **Regla**: Lectura vía Obsidian (más rico en contexto, graph view, backlinks). Escritura vía vault (más fiable para operaciones estructuradas y bulk).
 
 ### Reglas de Escritura
 - **raw/**: Solo el humano escribe aquí. Los agentes proponen contenido para que el humano revise.

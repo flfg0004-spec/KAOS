@@ -28,7 +28,7 @@
         "scholar-search_*": true,
         "rss-reader_*": true,
         "context7_*": true,
-        "obsidian_*": false
+        "obsidian_*": true
       }
     },
     "kosmos": {
@@ -71,7 +71,8 @@
         "postgres_*": true,
         "git_*": true,
         "github_*": true,
-        "lucidity_*": true
+        "lucidity_*": true,
+        "obsidian_*": true
       }
     },
     "metis": {
@@ -98,7 +99,7 @@
       "tools": {
         "excalidraw_*": true,
         "paperjsx_*": true,
-        "obsidian_*": false
+        "obsidian_*": true
       }
     },
     "mnemosyne": {
@@ -116,7 +117,8 @@
         "skill": "allow"
       },
       "tools": {
-        "sequential-thinking_*": true
+        "sequential-thinking_*": true,
+        "obsidian_*": true
       }
     }
   },
@@ -133,8 +135,17 @@
     "github_*": false,
     "lucidity_*": false,
     "postgres_*": false,
+    "obsidian_*": false
   },
   "mcp": {
+    "obsidian": {
+      "type": "remote",
+      "url": "http://127.0.0.1:27123/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${OBSIDIAN_API_KEY}"
+      },
+      "enabled": true
+    },
     "firecrawl": {
       "type": "local",
       "command": ["npx", "-y", "firecrawl-mcp"],

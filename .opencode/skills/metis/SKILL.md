@@ -201,9 +201,15 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 6. Ejecuta: `_scripts/vault.py pipeline step-done --agent metis` (cierra el pipeline).
 7. Continúa con el extract normal: `_scripts/vault.py extract --agent metis --summary "..." --pages ...`.
 
-### Protocolo Obsidian
-- **Obsidian MCP es solo para humanos**: Interfaz de lectura/revisión visual. Los agentes NO tienen accesso a Obsidian MCP.
-- **Vault MCP es la herramienta de agentes**: Usa siempre vault MCP (server-filesystem) para leer y escribir en `.memory/`.
+### Estrategia Híbrida Obsidian + Vault
+- **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
+  - `search_simple`: búsqueda de tendencias y datos de mercado.
+  - `tag_list`: explorar el vault por temas estratégicos.
+  - `vault_read`: leer investigaciones y ADRs con contexto completo.
+- **Vault MCP** (server-filesystem .memory/): Usar para ESCRIBIR.
+  - Escritura de reportes estratégicos en wiki/.
+  - Actualización de entities y concepts.
+- **Regla**: Lectura vía Obsidian (búsqueda semántica, tags). Escritura vía vault (reportes estructurados).
 
 ### Reglas de Escritura
 - **wiki/entities/**: Auto + flag para entidades nuevas. Escribe y marca para revisión diferida.
