@@ -142,7 +142,7 @@
     "scholar-search_*": false,
     "rss-reader_*": false,
     "context7_*": false,
-    "database_*": false,
+    "postgres_*": false,
     "git_*": false,
     "github_*": false,
     "lucidity_*": false,
@@ -157,37 +157,37 @@
     },
     "sequential-thinking": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
       "enabled": true
     },
     "depwire": {
       "type": "local",
       "command": ["npx", "-y", "@iflow-mcp/depwire-depwire"],
-      "enabled": false
+      "enabled": true
     },
     "excalidraw": {
       "type": "local",
-      "command": ["npx", "-y", "excalidraw-mcp"],
+      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "excalidraw-mcp"],
       "enabled": true
     },
     "paperjsx": {
       "type": "local",
       "command": ["npx", "-y", "@paperjsx/mcp-server"],
-      "enabled": false
+      "enabled": true
     },
     "scholar-search": {
       "type": "local",
       "command": ["npx", "-y", "scholar-search-mcp"],
-      "enabled": false
+      "enabled": true
     },
     "git": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-git", "--repository", "."],
-      "enabled": false
+      "enabled": true
     },
     "rss-reader": {
       "type": "local",
-      "command": ["npx", "-y", "rss-reader-mcp"],
+      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "rss-reader-mcp"],
       "enabled": true
     },
     "context7": {
@@ -197,7 +197,7 @@
     },
     "vault": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem",
+      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem",
         ".memory",
         ".memory/ingest",
         ".memory/cache",
@@ -231,11 +231,31 @@
     "searxng": {
       "type": "local",
       "command": ["npx", "-y", "searxng-mcp", "--url", "http://127.0.0.1:8888"],
-      "enabled": false
+      "enabled": true
     },
     "crawl4ai": {
       "type": "local",
       "command": ["npx", "-y", "crawl4ai-mcp-sse-stdio", "--url", "http://127.0.0.1:11235"],
+      "enabled": true
+    },
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": false
+    },
+    "lucidity": {
+      "type": "local",
+      "command": ["npx", "-y", "lucidity-mcp"],
+      "enabled": false
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "--connection-string", "postgresql://localhost/kaos"],
+      "enabled": false
+    },
+    "structurizr": {
+      "type": "local",
+      "command": ["npx", "-y", "@iljabauer/structurizr-mcp"],
       "enabled": false
     }
   },

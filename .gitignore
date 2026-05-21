@@ -1,1 +1,5 @@
 .database-mcp/
+__pycache__/
+*.pyc
+.vault/
+.memory/cache/
