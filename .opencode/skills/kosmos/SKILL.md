@@ -163,6 +163,31 @@ Si al hacer hydrate ves `## Pipeline Task` en el contexto:
 6. Ejecuta: `_scripts/vault.py pipeline step-done --agent kosmos` (deja a Metis ready).
 7. Continúa con el extract normal: `_scripts/vault.py extract --agent kosmos --summary "..." --pages ...`.
 
+### Mantenimiento de opencode.db (Base Interna de OpenCode)
+
+`opencode.db` almacena el historial de sesiones, mensajes y partes de todas las conversaciones de OpenCode. Puede crecer hasta cientos de MB.
+
+Usa `_scripts/clean_opencode_db.py` para diagnosticar y limpiar:
+
+| Comando | Efecto |
+|---------|--------|
+| `--analyze` | Reporta tamaño, sesiones por proyecto, mensajes, espacio recuperable |
+| `--vacuum` | Reclama espacio libre después de limpiezas (SQLite VACUUM) |
+| `--clean-days N` | Elimina sesiones inactivas > N días |
+| `--clean-last N` | Mantiene solo las últimas N sesiones por proyecto |
+| `--clean-orphans` | Elimina mensajes huérfanos (sin sesión padre) |
+| `--dry-run` | Modo simulación — muestra impacto sin modificar nada |
+
+**Siempre usar `--dry-run` primero** para ver el impacto antes de ejecutar.
+
+**Flujo recomendado:**
+1. `py _scripts/clean_opencode_db.py --analyze` — diagnosticar
+2. `py _scripts/clean_opencode_db.py --clean-days 60 --dry-run` — simular
+3. `py _scripts/clean_opencode_db.py --clean-days 60` — ejecutar
+4. `py _scripts/clean_opencode_db.py --vacuum` — recuperar espacio
+
+⚠️ Esto no afecta `.memory/`, skills, configuraciones, ni el cache de tokens de DeepSeek. Solo limpia el historial de sesiones de OpenCode.
+
 ### Estrategia Híbrida Obsidian + Vault
 - **Obsidian MCP** (http://127.0.0.1:27123/mcp/): Usar para LEER y EXPLORAR.
   - `vault_get_document_map`: analizar estructura de ADRs y documentación.
