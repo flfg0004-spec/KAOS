@@ -239,7 +239,10 @@
     "github": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-      "enabled": false
+      "enabled": true,
+      "env": {
+        "GITHUB_TOKEN": "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"
+      }
     },
     "lucidity": {
       "type": "local",
@@ -249,7 +252,7 @@
     "postgres": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "--connection-string", "postgresql://localhost/kaos"],
-      "enabled": false
+      "enabled": true
     },
     "structurizr": {
       "type": "local",
@@ -266,7 +269,7 @@
   "command": {
     "quality": {
       "description": "Ejecuta smoke check de calidad del sistema KAOS",
-      "template": "Ejecuta py -3 .tools/session_runner.py smoke desarrollo y muestra los resultados"
+      "template": "Ejecuta py -3 .memory/_scripts/vault.py health --auto y py -3 .memory/_scripts/vault.py lint run, luego muestra los resultados"
     },
     "investigate": {
       "description": "Invoca a Aletheia para investigar un tema",
