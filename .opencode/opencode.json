@@ -28,7 +28,6 @@
         "scholar-search_*": true,
         "rss-reader_*": true,
         "context7_*": true,
-        "obsidian_*": true,
         "gptr-deep-research_*": true,
         "searxng_*": true,
         "crawl4ai_*": true,
@@ -78,7 +77,7 @@
         "git_*": true,
         "github_*": true,
         "lucidity_*": true,
-        "obsidian_*": true
+        "mcp-obsidian-cli_*": true
       }
     },
     "metis": {
@@ -105,7 +104,6 @@
       "tools": {
         "excalidraw_*": true,
         "paperjsx_*": true,
-        "obsidian_*": true,
         "exa-search_*": true,
         "mcp-obsidian-cli_*": true
       }
@@ -130,7 +128,7 @@
       },
       "tools": {
         "sequential-thinking_*": true,
-        "obsidian_*": true
+        "mcp-obsidian-cli_*": true
       }
     }
   },
@@ -147,7 +145,7 @@
     "github_*": false,
     "lucidity_*": false,
     "postgres_*": false,
-    "obsidian_*": false
+    "mcp-obsidian-cli_*": false
   },
   "mcp": {
     "mcp-obsidian-cli": {
