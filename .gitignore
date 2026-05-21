@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .vault/
 .memory/cache/
+
+research-*.md
+virtual-audio-*.md
