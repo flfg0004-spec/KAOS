@@ -26,9 +26,14 @@ DSOL_CACHE_FILE = BASE / ".memory" / "cache" / "dsol-cache.json"
 # Try to import DSOL
 try:
     from dsol import build_prompt, configure_thinking, get_output_config, allocate
+    try:
+        from dsol import call_structured as dsol_call_structured
+    except ImportError:
+        dsol_call_structured = None
     HAS_DSOL = True
 except ImportError:
     HAS_DSOL = False
+    dsol_call_structured = None
 
 # Try to import synapse (optional)
 try:
@@ -66,7 +71,7 @@ def _dsol_cache_set(key: str, result: dict):
 
 def _call_dsol(task: str, content: str, use_json: bool = True) -> dict | str:
     """Call DeepSeek via DSOL for structured extraction. Uses cache."""
-    if not HAS_DSOL:
+    if not HAS_DSOL or dsol_call_structured is None:
         return {"error": "DSOL not available", "fallback": True}
 
     # Check cache
@@ -75,11 +80,7 @@ def _call_dsol(task: str, content: str, use_json: bool = True) -> dict | str:
     if cached and cached.get("task") == task:
         return cached["result"]
 
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / ".memory" / "_scripts" / "lib"))
-    from dsol import call_structured as dsol_call
-
-    result = dsol_call(task, content, model="flash", use_json=use_json)
+    result = dsol_call_structured(task, content, model="flash", use_json=use_json)
 
     if isinstance(result, dict) and "error" in result:
         return result
@@ -285,7 +286,7 @@ def distill_file(raw_path: Path) -> list[Path]:
             created.append(path)
             append_to_index("source", source_slug, source["url"][:60])
 
-    # Run synapse if available
+    # Run synapse if available (cross-link each created page)
     if HAS_SYNAPSE and created:
         for c in concepts[:3]:
             name = c.get("name", str(c)) if isinstance(c, dict) else str(c)
@@ -340,11 +341,41 @@ def distill_all():
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else "all"
+    import argparse
+    parser = argparse.ArgumentParser(description="KAOS Distill Engine v2")
+    parser.add_argument("mode", nargs="?", default="all", choices=["all", "file"])
+    parser.add_argument("--new-only", action="store_true", help="Solo destilar archivos sin wiki asociada")
+    parser.add_argument("--slug", default="", help="Nombre del archivo raw/ (modo file)")
+    args = parser.parse_args()
+    mode = args.mode
     if mode == "all":
-        distill_all()
-    elif mode == "file" and len(sys.argv) > 2:
-        path = RAW_DIR / sys.argv[2]
+        if args.new_only:
+            files = list_raw_files()
+            if not files:
+                print("No hay investigaciones pendientes de destilar.")
+                sys.exit(0)
+            print(f"Destilando {len(files)} investigaciones nuevas...")
+            all_created = []
+            for f in files:
+                all_created.extend(distill_file(f))
+        else:
+            all_created = distill_all()
+        # Auto-build embeddings after distill (synapse already ran per-file in distill_file)
+        try:
+            vault_py = Path(__file__).resolve().parent.parent / ".memory/_scripts/vault.py"
+            import subprocess
+            print("  Construyendo embeddings semánticos...")
+            r = subprocess.run([sys.executable, str(vault_py), "embeddings", "build"], timeout=120, capture_output=True, text=True)
+            if r.returncode == 0:
+                print(f"  Embeddings construidos ✅ ({r.stdout.strip()[:100]})")
+            else:
+                print(f"  Embeddings: {r.stderr.strip()[:200]}")
+        except subprocess.TimeoutExpired:
+            print("  Embeddings: timeout (120s) — continuando")
+        except Exception as e:
+            print(f"  Embeddings: error {e}")
+    elif mode == "file" and args.slug:
+        path = RAW_DIR / args.slug
         if path.exists():
             distill_file(path)
         else:

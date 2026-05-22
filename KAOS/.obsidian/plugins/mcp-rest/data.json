@@ -1,0 +1,6 @@
+{
+  "obsidianApiUrl": "https://127.0.0.1:27124",
+  "obsidianApiKey": "1311",
+  "requestTimeoutMs": 30000,
+  "autoDetectApiKey": true
+}

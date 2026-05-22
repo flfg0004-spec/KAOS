@@ -75,5 +75,16 @@
       "reproducibilidad": 70,
       "utilidad": 75
     }
+  },
+  {
+    "timestamp": "2026-05-20T22:49:46.558426",
+    "profile": "desarrollo",
+    "scores": {
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
+    }
   }
 ]

@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-20T02:23:59.963751",
+  "timestamp": "2026-05-20T22:49:46.556274",
   "session_type": "score",
   "profile": "desarrollo",
   "results": {
-    "composite": 77.0,
+    "composite": 76.6,
     "dimensions": {
-      "veracidad": 80,
-      "coherencia": 85,
-      "completitud": 75,
-      "reproducibilidad": 70,
-      "utilidad": 75
+      "veracidad": 85,
+      "coherencia": 78,
+      "completitud": 72,
+      "reproducibilidad": 68,
+      "utilidad": 80
     },
     "evaluations": {
       "veracidad": "pass",

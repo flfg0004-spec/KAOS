@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .vault/
 .memory/cache/
+.env
+_pipeline/
 
 research-*.md
 virtual-audio-*.md

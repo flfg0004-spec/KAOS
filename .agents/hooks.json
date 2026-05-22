@@ -14,7 +14,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": ".*",
+        "matcher": "write|edit|delete|run_command|bash|read|glob|grep",
         "hooks": [
           {
             "type": "command",
@@ -22,6 +22,54 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "write|edit|write_file|edit_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/trigger-distill.ps1",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "BidirectionalHooks": [
+      {
+        "description": "Antigravity -> OpenCode bridge (disabled until Zero Trust audit)",
+        "enabled": false,
+        "direction": "antigravity-to-opencode",
+        "trigger": "on_agent_complete",
+        "actions": [
+          {
+            "type": "signal",
+            "target": ".opencode/opencode.json",
+            "payload": "agent_completed"
+          }
+        ],
+        "security": {
+          "max_depth": 3,
+          "require_signature": true,
+          "rate_limit_per_min": 10
+        }
+      },
+      {
+        "description": "OpenCode -> Antigravity bridge (disabled until Zero Trust audit)",
+        "enabled": false,
+        "direction": "opencode-to-antigravity",
+        "trigger": "on_agent_complete",
+        "actions": [
+          {
+            "type": "signal",
+            "target": ".agents/hooks.json",
+            "payload": "agent_completed"
+          }
+        ],
+        "security": {
+          "max_depth": 3,
+          "require_signature": true,
+          "rate_limit_per_min": 10
+        }
       }
     ]
   }

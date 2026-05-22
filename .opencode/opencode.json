@@ -33,7 +33,38 @@
         "crawl4ai_*": true,
         "exa-search_*": true,
         "depwire_*": true,
-        "mcp-obsidian-cli_*": true
+        "mcp-obsidian-cli_*": true,
+        "sequential-thinking_*": true,
+        "vault_*": true,
+        "txtai_*": true,
+        "obsidian_*": true
+      }
+    },
+    "mnemosyne": {
+      "description": "Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault",
+      "mode": "subagent",
+      "color": "#C0C0C0",
+      "steps": 8,
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "allow",
+        "bash": {
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "skill": "allow"
+      },
+      "tools": {
+        "sequential-thinking_*": true,
+        "mcp-obsidian-cli_*": true,
+        "vault_*": true,
+        "txtai_*": true,
+        "knowledge-graph_*": true,
+        "obsidian_*": true
       }
     },
     "kosmos": {
@@ -73,11 +104,10 @@
         "depwire_*": true,
         "structurizr_*": true,
         "excalidraw_*": true,
-        "postgres_*": true,
         "git_*": true,
-        "github_*": true,
         "lucidity_*": true,
-        "mcp-obsidian-cli_*": true
+        "mcp-obsidian-cli_*": true,
+        "obsidian_*": true
       }
     },
     "metis": {
@@ -105,30 +135,42 @@
         "excalidraw_*": true,
         "paperjsx_*": true,
         "exa-search_*": true,
-        "mcp-obsidian-cli_*": true
+        "mcp-obsidian-cli_*": true,
+        "obsidian_*": true
       }
     },
-    "mnemosyne": {
-      "description": "Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault",
+    "kratos": {
+      "description": "Agente de código — memoria experiencial, generación, depuración, revisión de código",
       "mode": "subagent",
-      "color": "#C0C0C0",
-      "steps": 8,
-      "temperature": 0.1,
+      "color": "#DC143C",
+      "steps": 12,
+      "temperature": 0.2,
       "permission": {
         "read": "allow",
         "glob": "allow",
         "grep": "allow",
-        "edit": "allow",
+        "edit": "ask",
         "bash": {
+          "git *": "allow",
           "py *": "allow",
+          "npx *": "allow",
+          "cargo *": "allow",
+          "npm *": "allow",
           ".memory/_scripts/*": "allow",
           "*": "deny"
         },
-        "skill": "allow"
+        "task": "allow",
+        "skill": "allow",
+        "webfetch": "allow",
+        "websearch": "allow"
       },
       "tools": {
+        "vault_*": true,
         "sequential-thinking_*": true,
-        "mcp-obsidian-cli_*": true
+        "git_*": true,
+        "exa-search_*": true,
+        "mcp-obsidian-cli_*": true,
+        "obsidian_*": true
       }
     }
   },
@@ -142,10 +184,12 @@
     "context7_*": false,
     "postgres_*": false,
     "git_*": false,
-    "github_*": false,
-    "lucidity_*": false,
-    "postgres_*": false,
-    "mcp-obsidian-cli_*": false
+    "mcp-obsidian-cli_*": false,
+    "obsidian_*": false,
+    "knowledge-graph_*": false,
+    "vault_*": false,
+    "sequential-thinking_*": false,
+    "exa-search_*": false
   },
   "mcp": {
     "mcp-obsidian-cli": {
@@ -217,7 +261,7 @@
     "gptr-deep-research": {
       "type": "local",
       "command": ["npx", "-y", "gpt-researcher-mcp"],
-      "enabled": true,
+      "enabled": false,
       "env": {
         "GPTR_MODEL_PROVIDER": "deepseek",
         "GPTR_MODEL": "deepseek-v4-flash",
@@ -236,34 +280,50 @@
       "command": ["npx", "-y", "crawl4ai-mcp-sse-stdio", "--url", "http://127.0.0.1:11235"],
       "enabled": true
     },
-    "github": {
+    "txtai": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-      "enabled": true,
-      "env": {
-        "GITHUB_TOKEN": "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"
-      }
-    },
-    "lucidity": {
-      "type": "local",
-      "command": ["npx", "-y", "lucidity-mcp"],
-      "enabled": false
+      "command": ["py", "-3", ".memory/_scripts/mcp_txtai.py"],
+      "enabled": true
     },
     "postgres": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "--connection-string", "postgresql://localhost/kaos"],
-      "enabled": true
+      "enabled": false
     },
     "structurizr": {
       "type": "local",
-      "command": ["npx", "-y", "@iljabauer/structurizr-mcp"],
+      "command": ["py", "-3", ".memory/_scripts/mcp_structurizr.py"],
+      "enabled": true
+    },
+    "lucidity": {
+      "type": "local",
+      "command": ["py", "-3", ".tools/run_lucidity.py"],
+      "enabled": true
+    },
+    "obsidian": {
+      "type": "local",
+      "command": ["npx", "-y", "@swarogan/obsidian-mcp-rest"],
+      "enabled": true,
+      "env": {
+        "OBSIDIAN_API_KEY": "f4155bb6cad0b4cdfd88c3a5ac8e5f6de958f943d158569e87bc62f614e3edec",
+        "OBSIDIAN_REST_URL": "https://127.0.0.1:27124"
+      }
+    },
+    "supermemory": {
+      "type": "remote",
+      "url": "https://mcp.supermemory.ai/mcp",
       "enabled": false
+    },
+    "knowledge-graph": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\cache\\knowledge-graph"],
+      "enabled": true
     }
   },
   "compaction": {
     "auto": true,
-    "tail_turns": 5,
-    "preserve_recent_tokens": 8000,
+    "tail_turns": 10,
+    "preserve_recent_tokens": 16000,
     "reserved": 4000
   },
   "command": {
@@ -291,3 +351,4 @@
     }
   }
 }
+
