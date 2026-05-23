@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-23 13:34*
+*Auto-generated: 2026-05-23 13:51*
 
 ## Agentes
 
@@ -160,6 +160,9 @@
 - [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-23
 - [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-23
 - [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-20
+- [test-dedup-2](../raw/test-dedup-2.md) - 2026-05-23
+- [test-dedup](../raw/test-dedup.md) - 2026-05-23
+- [test-ingest](../raw/test-ingest.md) - 2026-05-23
 - [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-20
 - [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-20
 - [wiki-wiki-timeline-of-quantum-computing-and-communication](../raw/wiki-wiki-timeline-of-quantum-computing-and-communication.md) - 2026-05-20
@@ -192,4 +195,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-23 13:34*
+*Ultima actualizacion: 2026-05-23 13:51*
