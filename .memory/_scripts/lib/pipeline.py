@@ -139,6 +139,7 @@ def get_cross_context(target_agent: str) -> dict:
 
 
 def init(topic: str, profile: str = "standard") -> str:
+    STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     pipeline_id = datetime.now().strftime("P-%Y%m%d-%H%M%S")
     slug = re.sub(r'[^a-z0-9\s-]', '', topic.lower())
     slug = re.sub(r'\s+', '-', slug)[:60]
