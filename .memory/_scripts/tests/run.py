@@ -9,6 +9,7 @@ os.environ["LLM_DIRECT_ENABLED"] = "false"
 os.environ["RAG_ENABLED"] = "false"
 os.environ["HERMES_ENABLED"] = "false"
 os.environ["EXECUTOR_ENABLED"] = "false"
+os.environ["OPENAI_API_KEY"] = "sk-test-dummy"
 import importlib
 import time
 
