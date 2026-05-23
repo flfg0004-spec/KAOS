@@ -16,7 +16,7 @@ import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-TEST_TIMEOUT = 60  # seconds per test (embedding model loading needs ~15s)
+TEST_TIMEOUT = 90  # seconds per test (embedding model loading takes ~15-20s)
 
 MODULES = [
     "test_config",
