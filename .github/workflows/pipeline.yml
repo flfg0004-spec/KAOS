@@ -1,0 +1,148 @@
+name: KAOS Pipeline CI
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # 04:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Pipeline topic'
+        required: false
+        default: 'auditar calidad del vault KAOS'
+      profile:
+        description: 'Evaluation profile'
+        type: choice
+        options: [exploracion, desarrollo, produccion, auditoria]
+        default: desarrollo
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  pipeline:
+    name: Full Pipeline
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .memory
+    env:
+      OPENCODE_GO_KEY: ${{ secrets.OPENCODE_GO_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r _scripts/requirements.txt
+      - name: Run KAOS Pipeline
+        run: |
+          python ../ci/pipeline_runner.py \
+            "${{ github.event.inputs.topic || 'auditar calidad del vault KAOS' }}" \
+            "${{ github.event.inputs.profile || 'desarrollo' }}"
+        working-directory: .memory
+      - name: Archive evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-results-${{ github.run_id }}
+          path: |
+            .memory/_pipeline/evaluation.json
+            .memory/_pipeline/plan.json
+            .memory/_pipeline/context.json
+            pipeline-result.json
+          if-no-files-found: warn
+      - name: Quality Gate
+        run: |
+          python -c "
+          import json
+          r = json.load(open('pipeline-result.json'))
+          score = r.get('composite', 0)
+          sys_health = r.get('system_health', 0)
+          print(f'Composite:     {score}/100')
+          print(f'System Health: {sys_health}/100')
+          print(f'Critic Score:  {r.get(\"critic_score\", 0)}/100')
+          print(f'Duration:      {r.get(\"duration_seconds\", 0)}s')
+          if score < 50:
+              print('::warning file=pipeline-result.json,title=Quality Gate Failed::Composite below 50')
+              exit(1)
+          print('::notice title=Quality Gate Passed::All checks OK')
+          "
+      - name: Update quality timeseries
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          r = json.load(open('pipeline-result.json'))
+          ts_file = Path('../.vault/quality/timeseries/pipeline-scores.json')
+          ts = json.loads(ts_file.read_text()) if ts_file.exists() else {'scores': []}
+          ts['scores'].append({
+            'date': r['timestamp'][:10],
+            'time': r['timestamp'],
+            'composite': r['composite'],
+            'system_health': r['system_health'],
+            'pipeline_score': r['pipeline_score'],
+            'critic_score': r['critic_score'],
+            'duration_s': r['duration_seconds'],
+            'topic': r['topic'],
+          })
+          ts_file.parent.mkdir(parents=True, exist_ok=True)
+          ts_file.write_text(json.dumps(ts, indent=2))
+          print(f'Trend updated: {len(ts[\"scores\"])} entries')
+          "
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .memory
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r _scripts/requirements.txt
+      - name: Run DAG tests
+        run: python _scripts/tests/run.py
+      - name: Health check
+        run: python _scripts/vault.py health
+      - name: Lint report
+        run: python _scripts/vault.py lint report
+
+  notify:
+    name: Notification
+    needs: [pipeline, test]
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: pipeline-results-${{ github.run_id }}
+          path: ./artifacts
+      - name: Send notification
+        env:
+          HERMES_CHANNEL: "kaos-ci"
+        run: |
+          python -c "
+          import json
+          try:
+              r = json.load(open('./artifacts/pipeline-result.json'))
+          except:
+              r = {'composite': 0, 'system_health': 0, 'topic': 'unknown', 'duration_seconds': 0}
+          status = '\u2705' if r.get('composite', 0) >= 50 else '\u274c'
+          print(f'{status} KAOS Pipeline CI')
+          print(f'  Topic:    {r.get(\"topic\", \"?\")}')
+          print(f'  Score:    {r.get(\"composite\", 0)}/100')
+          print(f'  Health:   {r.get(\"system_health\", 0)}/100')
+          print(f'  Duration: {r.get(\"duration_seconds\", 0)}s')
+          "
