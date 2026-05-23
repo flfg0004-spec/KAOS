@@ -123,3 +123,10 @@ Si se quiere eliminar la dependencia de Obsidian:
 | Afirmación | Confianza | Fuentes | Notas |
 |------------|-----------|---------|-------|
 | Esta investigación | Alta | Fuentes primarias | Revisión general |
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

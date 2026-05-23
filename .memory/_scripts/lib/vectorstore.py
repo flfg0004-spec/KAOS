@@ -25,11 +25,16 @@ def _import_model():
     if _MODEL_CACHE is not None:
         return _MODEL_CACHE
     try:
-        from sentence_transformers import SentenceTransformer
-        _MODEL_CACHE = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        from fastembed import TextEmbedding
+        _MODEL_CACHE = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
         return _MODEL_CACHE
     except ImportError:
-        return None
+        try:
+            from sentence_transformers import SentenceTransformer
+            _MODEL_CACHE = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+            return _MODEL_CACHE
+        except ImportError:
+            return None
 
 def warmup_model():
     """Pre-load model singleton into cache (call at pipeline init)."""
@@ -136,7 +141,7 @@ def build_index(full: bool = False) -> str:
     """Rebuild vector index. If full=False, only adds new pages."""
     model = _import_model()
     if not model:
-        return "ERROR: sentence-transformers not installed. Run: pip install sentence-transformers numpy"
+        return "ERROR: embedding model not installed. Run: pip install fastembed sentence-transformers"
     init_db()
 
     with _db() as conn:
@@ -160,7 +165,9 @@ def build_index(full: bool = False) -> str:
             chunks = chunk_text(text)
             if not chunks:
                 continue
-            vecs = model.encode(chunks)
+            import numpy as np
+            vecs = list(model.embed(chunks))
+            vecs = [np.array(v) if not isinstance(v, np.ndarray) else v for v in vecs]
             for i, (chunk, vec) in enumerate(zip(chunks, vecs)):
                 cur = conn.execute("INSERT INTO vault_chunks(path, chunk_text, chunk_index) VALUES (?, ?, ?)",
                                    (rel, chunk, i))
@@ -180,7 +187,10 @@ def query(text: str, top_k: int = 5) -> list[dict]:
         return _bm25_search(text, top_k)
 
     init_db()
-    q_vec = model.encode([text])[0]
+    import numpy as np
+    q_vec = list(model.embed([text]))[0]
+    if not isinstance(q_vec, np.ndarray):
+        q_vec = np.array(q_vec)
 
     with _db() as conn:
         try:
@@ -206,7 +216,7 @@ def update(path: str) -> str:
     """Re-embed a single page."""
     model = _import_model()
     if not model:
-        return "ERROR: sentence-transformers not installed"
+        return "ERROR: embedding model not installed"
     init_db()
 
     full_path = KAOS_ROOT / ".memory" / path
@@ -227,7 +237,9 @@ def update(path: str) -> str:
         if not chunks:
             return f"Skipped {path} (no chunks)."
 
-        vecs = model.encode(chunks)
+        import numpy as np
+        vecs = list(model.embed(chunks))
+        vecs = [np.array(v) if not isinstance(v, np.ndarray) else v for v in vecs]
         for i, (chunk, vec) in enumerate(zip(chunks, vecs)):
             cur = conn.execute("INSERT INTO vault_chunks(path, chunk_text, chunk_index) VALUES (?, ?, ?)",
                                (path, chunk, i))

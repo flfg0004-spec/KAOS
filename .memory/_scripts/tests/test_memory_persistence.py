@@ -8,6 +8,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 VAULT = os.path.join(os.path.dirname(__file__), "..", "..")
 
+SLOW = os.environ.get("KAOS_RUN_SLOW", "1") == "1"
+def slow(fn):
+    fn._slow = True
+    return fn
+
 
 def test_file_writes_survive():
     """Escribe un archivo y verifica que persiste."""
@@ -42,6 +47,7 @@ def test_vectorstore_status():
         pass
 
 
+@slow
 def test_hydrate_extract_cycle():
     """Verifica que hydrate + extract no fallen."""
     from lib.hydrate import load
@@ -107,6 +113,7 @@ def test_audit_trail_exists():
         assert len(content.strip()) > 0
 
 
+@slow
 def test_full_session_persistence_cycle():
     """End-to-end: hydrate → verify → extract → verify state."""
     from lib.hydrate import load

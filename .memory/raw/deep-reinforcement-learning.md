@@ -14,3 +14,10 @@ El aprendizaje por refuerzo profundo (Deep Reinforcement Learning) combina redes
 | Afirmación | Confianza | Fuentes | Notas |
 |------------|-----------|---------|-------|
 | Esta investigación | Alta | Fuentes primarias | Revisión general |
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

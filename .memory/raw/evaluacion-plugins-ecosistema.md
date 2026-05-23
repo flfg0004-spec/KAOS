@@ -91,3 +91,10 @@ Se evaluaron 4 plugins del ecosistema OpenCode para determinar su adopción en K
 | Afirmación | Confianza | Fuentes | Notas |
 |------------|-----------|---------|-------|
 | Esta investigación | Alta | Fuentes primarias | Revisión general |
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

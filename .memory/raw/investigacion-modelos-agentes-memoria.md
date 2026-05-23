@@ -245,3 +245,10 @@ OpenAI está migrando de la Assistants API (stateful, server-side) a la **Respon
 - [LangGraph vs AutoGen vs CrewAI 2026 (Thinking Company)](https://thinking.inc/en/blue-ocean/comparisons/langgraph-vs-autogen-vs-crewai/) — confianza: media
 - [LangGraph vs CrewAI vs AutoGen 2026 (TURION.AI)](https://turion.ai/blog/langgraph-vs-crewai-vs-autogen-comparison-2026/) — confianza: media
 - [CrewAI vs LangGraph vs AutoGen 2026 (FutureAGI)](https://futureagi.com/blog/crewai-vs-langgraph-vs-autogen-2026/) — confianza: media
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

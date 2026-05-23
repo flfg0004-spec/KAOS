@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-23 14:03*
+*Auto-generated: 2026-05-23 17:12*
 
 ## Agentes
 
@@ -141,30 +141,27 @@
 ## Investigaciones (raw/)
 
 - [data-farming-codeexperience](../raw/data-farming-codeexperience.md) - 2026-05-23
-- [deep-reinforcement-learning](../raw/deep-reinforcement-learning.md) - 2026-05-20
-- [deepseek-v4-flash-test](../raw/deepseek-v4-flash-test.md) - 2026-05-20
-- [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-20
+- [deep-reinforcement-learning](../raw/deep-reinforcement-learning.md) - 2026-05-23
+- [deepseek-v4-flash-test](../raw/deepseek-v4-flash-test.md) - 2026-05-23
+- [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-23
 - [investigacion-c4-model-arquitectura](../raw/investigacion-c4-model-arquitectura.md) - 2026-05-23
 - [investigacion-configuracion-opencode](../raw/investigacion-configuracion-opencode.md) - 2026-05-23
 - [investigacion-gestion-conocimiento](../raw/investigacion-gestion-conocimiento.md) - 2026-05-23
-- [investigacion-herramientas-test-estrategia](../raw/investigacion-herramientas-test-estrategia.md) - 2026-05-20
+- [investigacion-herramientas-test-estrategia](../raw/investigacion-herramientas-test-estrategia.md) - 2026-05-23
 - [investigacion-mejoras-mcp-ecosistema](../raw/investigacion-mejoras-mcp-ecosistema.md) - 2026-05-23
-- [investigacion-modelos-agentes-memoria](../raw/investigacion-modelos-agentes-memoria.md) - 2026-05-19
-- [investigacion-obsidian-vault-alternativas](../raw/investigacion-obsidian-vault-alternativas.md) - 2026-05-20
+- [investigacion-modelos-agentes-memoria](../raw/investigacion-modelos-agentes-memoria.md) - 2026-05-23
+- [investigacion-obsidian-vault-alternativas](../raw/investigacion-obsidian-vault-alternativas.md) - 2026-05-23
 - [investigacion-okr-estrategia](../raw/investigacion-okr-estrategia.md) - 2026-05-23
-- [investigacion-orquesta-agentes-hermes](../raw/investigacion-orquesta-agentes-hermes.md) - 2026-05-21
+- [investigacion-orquesta-agentes-hermes](../raw/investigacion-orquesta-agentes-hermes.md) - 2026-05-23
 - [investigacion-pipeline-conocimiento](../raw/investigacion-pipeline-conocimiento.md) - 2026-05-23
 - [investigacion-prompt-engineering](../raw/investigacion-prompt-engineering.md) - 2026-05-23
 - [investigacion-rag-arquitectura](../raw/investigacion-rag-arquitectura.md) - 2026-05-23
 - [investigacion-sistemas-memoria](../raw/investigacion-sistemas-memoria.md) - 2026-05-23
 - [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-23
 - [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-23
-- [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-20
-- [test-dedup-2](../raw/test-dedup-2.md) - 2026-05-23
-- [test-dedup](../raw/test-dedup.md) - 2026-05-23
-- [test-ingest](../raw/test-ingest.md) - 2026-05-23
-- [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-20
-- [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-20
+- [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-23
+- [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-23
+- [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-23
 - [wiki-wiki-timeline-of-quantum-computing-and-communication](../raw/wiki-wiki-timeline-of-quantum-computing-and-communication.md) - 2026-05-20
 
 ## ADRs (schema/)
@@ -195,4 +192,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-23 14:03*
+*Ultima actualizacion: 2026-05-23 17:12*

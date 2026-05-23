@@ -2,6 +2,9 @@
 raw/test-*
 raw/archive/
 
+# Generated visualization files (regenerate with: vault.py viz)
+VIZ_*.md
+
 __pycache__/
 *.pyc
 .vault/

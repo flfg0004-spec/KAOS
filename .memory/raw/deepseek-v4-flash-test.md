@@ -14,3 +14,10 @@ DeepSeek v4 Flash usa 284B parametros totales con 13B activos por token usando M
 | Afirmación | Confianza | Fuentes | Notas |
 |------------|-----------|---------|-------|
 | Esta investigación | Alta | Fuentes primarias | Revisión general |
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

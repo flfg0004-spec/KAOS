@@ -5,6 +5,11 @@ import json
 import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+SLOW = os.environ.get("KAOS_RUN_SLOW", "1") == "1"
+def slow(fn):
+    fn._slow = True
+    return fn
+
 
 def _cleanup():
     cache = os.path.join(os.path.dirname(__file__), "..", "..", "cache", "test-cycle-hydrate.json")
@@ -12,6 +17,7 @@ def _cleanup():
         os.remove(cache)
 
 
+@slow
 def test_hydrate_extract_cycle():
     """Verifica que hydrate + extract no fallen en un ciclo básico."""
     from lib.hydrate import load
@@ -27,6 +33,7 @@ def test_hydrate_extract_cycle():
     assert "Session extracted" in result or "committed" in result or "log" in result
 
 
+@slow
 def test_hydrate_pressure_levels():
     """Verifica que hydrate responde a presión de tokens."""
     from lib.hydrate import load
@@ -34,6 +41,7 @@ def test_hydrate_pressure_levels():
     assert isinstance(ctx_normal, str)
 
 
+@slow
 def test_embeddings_search_cycle():
     """Verifica que embeddings search funciona con cosine similarity."""
     from lib.embeddings import query, status
@@ -50,6 +58,7 @@ def test_synapse_cosine():
     assert isinstance(results, list)
 
 
+@slow
 def test_vectorstore_query():
     """Verifica sqlite-vec query directa."""
     from lib import vectorstore as vs
@@ -80,6 +89,7 @@ def test_vectorstore_migrate_idempotent():
     assert "already" in result.lower() or "Migrated" in result or before == after
 
 
+@slow
 def test_full_pipeline_multi_agent():
     """Verifica pipeline cross-agent: init -> check Aletheia -> check Kosmos."""
     from lib.pipeline import init, check

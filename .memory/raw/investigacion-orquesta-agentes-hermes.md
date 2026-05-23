@@ -529,3 +529,10 @@ Las fuentes completas están detalladas en el archivo original. Las más relevan
 ---
 
 *Investigación completada por Aletheia el 2026-05-21. 14 queries ejecutadas en 4 batches. 78+ fuentes consultadas. Perfil Deep Research.*
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

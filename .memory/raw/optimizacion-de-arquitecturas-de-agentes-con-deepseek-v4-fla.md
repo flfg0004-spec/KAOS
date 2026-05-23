@@ -115,3 +115,10 @@ DeepSeek v4 Flash ofrece una relación calidad/precio excepcional para sistemas 
 - Benchmarks reales de cache hit rate en producción
 - Comparativa de calidad Flash vs Pro en tareas de agente complejas vs simples
 - Medición de latencia real con diferentes thinking modes
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

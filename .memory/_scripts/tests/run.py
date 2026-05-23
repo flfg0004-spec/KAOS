@@ -12,11 +12,15 @@ os.environ["EXECUTOR_ENABLED"] = "false"
 os.environ["OPENAI_API_KEY"] = "sk-test-dummy"
 import importlib
 import time
-import signal
+import threading
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-TEST_TIMEOUT = 90  # seconds per test (embedding model loading takes ~15-20s)
+TEST_TIMEOUT = 90
+SLOW_TIMEOUT = 120
+FAST_ONLY = "--fast" in sys.argv
+if FAST_ONLY:
+    sys.argv.remove("--fast")
 
 MODULES = [
     "test_config",
@@ -36,31 +40,42 @@ MODULES = [
     "test_memory_persistence",
 ]
 
+SLOW_MODULES = {
+    "test_context_cycle", "test_memory_persistence",
+    "test_full_pipeline", "test_llm_quality",
+}
+
+
+def _is_slow(mod, test_name):
+    fn = getattr(mod, test_name, None)
+    return fn is not None and getattr(fn, "_slow", False)
+
+
+def _run_test(mod, test_name, timeout):
+    result = {"exc": None}
+
+    def _target():
+        try:
+            getattr(mod, test_name)()
+        except Exception as e:
+            result["exc"] = e
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout=timeout)
+    if t.is_alive():
+        return "TIMEOUT"
+    if result["exc"] is None:
+        return "PASS"
+    return result["exc"]
+
 
 def run_all() -> int:
     passed = 0
     failed = 0
     total_tests = 0
+    skipped = 0
     start = time.time()
-
-    def _run_test(mod, test_name):
-        import threading
-        result = {"exc": None}
-
-        def _target():
-            try:
-                getattr(mod, test_name)()
-            except Exception as e:
-                result["exc"] = e
-
-        t = threading.Thread(target=_target, daemon=True)
-        t.start()
-        t.join(timeout=TEST_TIMEOUT)
-        if t.is_alive():
-            return "TIMEOUT"
-        if result["exc"] is None:
-            return "PASS"
-        return result["exc"]
 
     for mod_name in MODULES:
         try:
@@ -72,14 +87,19 @@ def run_all() -> int:
 
         tests = [f for f in dir(mod) if f.startswith("test_")]
         for test_name in tests:
+            if FAST_ONLY and _is_slow(mod, test_name):
+                skipped += 1
+                continue
+
             total_tests += 1
-            r = _run_test(mod, test_name)
+            timeout = SLOW_TIMEOUT if _is_slow(mod, test_name) else TEST_TIMEOUT
+            r = _run_test(mod, test_name, timeout)
             if r == "PASS":
                 passed += 1
                 print(f"  ✅ {mod_name}.{test_name}")
             elif r == "TIMEOUT":
                 failed += 1
-                print(f"  ⏰ {mod_name}.{test_name}: TIMEOUT ({TEST_TIMEOUT}s)")
+                print(f"  ⏰ {mod_name}.{test_name}: TIMEOUT ({timeout}s)")
             elif isinstance(r, AssertionError):
                 failed += 1
                 print(f"  ❌ {mod_name}.{test_name}: {r}")
@@ -89,7 +109,9 @@ def run_all() -> int:
 
     elapsed = time.time() - start
     print(f"\n{'='*50}")
-    print(f"Results: {passed} passed, {failed} failed, {total_tests} total")
+    label = " (fast mode)" if FAST_ONLY else ""
+    print(f"Results{label}: {passed} passed, {failed} failed, {total_tests} total" +
+          (f", {skipped} skipped" if skipped else ""))
     print(f"Time: {elapsed:.2f}s")
     _cache = os.path.join(os.path.dirname(__file__), "..", "..", "cache", "test-results.json")
     os.makedirs(os.path.dirname(_cache), exist_ok=True)

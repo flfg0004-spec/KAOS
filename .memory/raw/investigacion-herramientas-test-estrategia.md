@@ -43,3 +43,10 @@ METIS:  Leantime + Quarto + Metabase + Mermaid + Excalidraw + OpenProject
 | LangFuse es #1 en estrellas LLM obs (27.6K) | Alta | Verificado ranking GitHub |
 | Leantime es mejor fit OKR open-source | Alta | Único con Goal→Milestone→Todo |
 | Quarto produce PDF+PPTX+HTML desde una fuente | Alta | CLI `quarto render` |
+
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]
+- [[vault]]

@@ -1,5 +1,5 @@
 # Vault Lint Report
-*Generated: 2026-05-23 14:03*
+*Generated: 2026-05-23 17:12*
 
 ## Broken [[wikilinks]]
 
@@ -7,7 +7,7 @@ Found 0 broken links.
 
 ## Orphan Pages
 
-Found 0 orphan pages.
+- Orphan: wiki\concepts\_test-persistence.md
 
 ## Stale Pages (>90 days without modification)
 
@@ -18,4 +18,4 @@ Found 0 stale pages.
 - None found.
 
 ---
-**Total issues: 0** | 2026-05-23 14:03
+**Total issues: 1** | 2026-05-23 17:12
