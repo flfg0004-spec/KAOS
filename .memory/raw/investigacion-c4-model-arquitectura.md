@@ -43,3 +43,17 @@ fuentes: [wikipedia, c4model]
 - c4model.com (sitio oficial de Simon Brown)
 - InfoQ: The C4 Model for Software Architecture (2018)
 - Fundamentals of Software Architecture (Richards & Ford, 2019)
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

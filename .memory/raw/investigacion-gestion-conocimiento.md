@@ -50,3 +50,17 @@ Procesos enfocados en la conciencia organizacional, aprendizaje, colaboraciÃ³n e
 - Nonaka & Takeuchi (1995): The Knowledge-Creating Company
 - Davenport & Prusak (1998): Working Knowledge
 - ISO 9001:2015: Organizational Knowledge specification
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

@@ -41,3 +41,17 @@ fuentes: [wikipedia, whatmatters, google-rework]
 - Doerr (2018): Measure What Matters
 - Google re:Work - Guide: Set goals with OKRs
 - Grove (1983): High Output Management
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

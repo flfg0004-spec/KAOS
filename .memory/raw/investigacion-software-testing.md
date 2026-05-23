@@ -64,3 +64,17 @@ Acto de verificar que el software cumple sus objetivos y satisface las expectati
 - Myers (1979): The Art of Software Testing
 - ISTQB: International Software Testing Qualifications Board
 - NIST (2002): The Economic Impacts of Inadequate Infrastructure for Software Testing
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

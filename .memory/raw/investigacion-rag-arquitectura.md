@@ -40,3 +40,17 @@ RAG es una tÃ©cnica que permite a LLMs recuperar e incorporar informaciÃ³n nueva
 - Lewis et al. (2020): Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
 - IBM Research: What is retrieval-augmented generation?
 - Ars Technica: Can RAG keep AI models from making stuff up?
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

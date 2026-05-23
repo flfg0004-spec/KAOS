@@ -104,3 +104,17 @@ def distill_to_wiki(raw_path):
 - ADR-001: Sistema de Memoria de KAOS
 - ADR-003: Protocolo de VerificaciÃ³n Cruzada
 - Karpathy LLM Wiki pattern
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

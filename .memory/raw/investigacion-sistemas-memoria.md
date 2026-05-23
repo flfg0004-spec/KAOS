@@ -20,3 +20,17 @@ Análisis de tres sistemas de memoria con arquitecturas distintas: Letta (agente
 
 ## Recomendación para KAOS
 Arquitectura híbrida: jerarquía de Letta + compilación de LLM Wiki + extracción de Mem0.
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | M�ltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualizaci�n | Reciente | Informaci�n vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

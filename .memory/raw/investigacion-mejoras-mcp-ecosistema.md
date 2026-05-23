@@ -103,3 +103,17 @@ Propuesta de restricciÃ³n por agente para reducir tokens en contexto:
 - GitHub MCP Server: https://github.com/github/github-mcp-server (30Kâ˜…)
 - Lucidity MCP: https://github.com/hyperb1iss/lucidity-mcp
 - Serena MCP: https://github.com/oraios/serena (24.4Kâ˜…)
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

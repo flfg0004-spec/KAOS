@@ -42,3 +42,17 @@ Proceso de estructurar entradas de lenguaje natural para producir salidas especÃ
 - Wei et al. (2022): Chain-of-Thought Prompting Elicits Reasoning in LLMs
 - Schulhoff et al. (2024): The Prompt Report - Systematic Survey
 - IEEE Spectrum: AI Prompt Engineering is Dead? (2024)
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

@@ -356,6 +356,15 @@ def cmd_distill(args):
     sys.exit(result.returncode)
 
 
+def cmd_viz(args):
+    from lib import viz
+    output = Path(args.output) if args.output else None
+    generated = viz.generate_all(output_dir=output)
+    for f in generated:
+        print(f"  Generated: {f.relative_to(KAOS_ROOT)}")
+    print(f"\nOpen any .md file to see the rendered Mermaid diagram.")
+
+
 def cmd_test(args):
     import subprocess, sys
     from pathlib import Path
@@ -488,6 +497,10 @@ def main():
     p.add_argument("--new-only", action="store_true", help="Solo destilar archivos nuevos")
     p.add_argument("--slug", default="", help="Nombre del archivo raw/ (modo file)")
     p.set_defaults(func=cmd_distill)
+
+    p = sub.add_parser("viz", help="Generate Mermaid visualization files")
+    p.add_argument("--output", default="", help="Output directory (default: vault root)")
+    p.set_defaults(func=cmd_viz)
 
     p = sub.add_parser("test", help="Run test suite")
     p.set_defaults(func=cmd_test)

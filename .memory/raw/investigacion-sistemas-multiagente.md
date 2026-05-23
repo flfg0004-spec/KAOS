@@ -45,3 +45,17 @@ Un sistema multi-agente (MAS) es un sistema computacional compuesto por mÃºltipl
 - Wooldridge (2002): An Introduction to MultiAgent Systems
 - Li et al. (2023): CAMEL - Communicative Agents for Mind Exploration
 - Shoham & Leyton-Brown (2008): Multiagent Systems
+
+## Matriz de Confianza
+
+| Aspecto | Confianza | Evidencia |
+|---------|-----------|-----------|
+| Fuentes primarias | Alta | Múltiples referencias cruzadas verificadas |
+| Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
+| Reproducibilidad | Media | Fuentes documentadas y accesibles |
+| Actualización | Reciente | Información vigente al momento de ingesta |
+
+## Referencias
+- [[index]]
+- [[log]]
+- [[checkpoint]]

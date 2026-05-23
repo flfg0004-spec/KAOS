@@ -1,33 +1,35 @@
 {
   "$schema": "https://antigravity.google/schemas/workspace-config.json",
   "project": {
-    "id": "kaos-antigravity",
-    "name": "KAOS Core",
-    "version": "2.0.0",
-    "description": "Configuración nativa de agentes KAOS optimizada para Antigravity 2.0"
+    "id": "kaos-companion",
+    "name": "KAOS Companion",
+    "version": "3.0.0",
+    "description": "Companion agent for KAOS vault operations"
   },
   "isolation": {
-    "mode": "strict",
-    "sharedDirectories": [],
-    "targetSandbox": "isolate-from-opencode"
+    "mode": "open",
+    "sharedDirectories": [
+      ".memory/",
+      ".tools/",
+      ".vault/"
+    ]
   },
   "settings": {
-    "defaultAgent": "DÉDALO",
-    "theme": "glassmorphism-cyberpunk",
+    "defaultAgent": "KAOS-Companion",
     "permissions": {
       "mode": "developer-optimized",
       "autoApprove": {
         "commands": [
           "git *",
-          "tailscale *",
-          "Get-Process *",
+          "py *",
+          "python *",
           "Get-ChildItem *",
-          "Test-Path *",
-          "powershell *"
+          "Test-Path *"
         ],
         "directories": [
-          "c:/Users/LeonX/Documents/KAOS/.agents/*",
-          "c:/Users/LeonX/Documents/KAOS/scratch/*"
+          ".memory/*",
+          ".tools/*",
+          ".vault/*"
         ]
       }
     }

@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "vault": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        ".memory",
+        ".memory/ingest",
+        ".memory/cache",
+        ".memory/wiki",
+        ".memory/raw",
+        ".memory/schema",
+        ".vault/quality"
+      ],
+      "enabled": true
+    },
+    "txtai": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_txtai.py"],
+      "enabled": true
+    },
+    "knowledge-graph": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", ".memory/cache/knowledge-graph"],
+      "enabled": true
+    }
+  }
+}

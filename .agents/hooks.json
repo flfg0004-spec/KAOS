@@ -1,75 +1,31 @@
 {
-  "kaos-lifecycle-hooks": {
+  "kaos-companion-hooks": {
     "PreToolUse": [
       {
         "matcher": "run_command|command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/pre_tool_audit.ps1",
-            "timeout": 5
-          }
-        ]
+        "hooks": []
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "write|edit|delete|run_command|bash|read|glob|grep",
+        "matcher": "write|edit|delete",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/post_tool_audit.ps1",
-            "timeout": 5
+            "command": "py -3 .memory/_scripts/vault.py lint run",
+            "timeout": 15
           }
         ]
       },
       {
-        "matcher": "write|edit|write_file|edit_file",
+        "matcher": "write|edit",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe -ExecutionPolicy Bypass -File c:/Users/LeonX/Documents/KAOS/.agents/scripts/trigger-distill.ps1",
-            "timeout": 30
+            "command": "py -3 .memory/_scripts/vault.py health --auto",
+            "timeout": 10
           }
         ]
-      }
-    ],
-    "BidirectionalHooks": [
-      {
-        "description": "Antigravity -> OpenCode bridge (disabled until Zero Trust audit)",
-        "enabled": false,
-        "direction": "antigravity-to-opencode",
-        "trigger": "on_agent_complete",
-        "actions": [
-          {
-            "type": "signal",
-            "target": ".opencode/opencode.json",
-            "payload": "agent_completed"
-          }
-        ],
-        "security": {
-          "max_depth": 3,
-          "require_signature": true,
-          "rate_limit_per_min": 10
-        }
-      },
-      {
-        "description": "OpenCode -> Antigravity bridge (disabled until Zero Trust audit)",
-        "enabled": false,
-        "direction": "opencode-to-antigravity",
-        "trigger": "on_agent_complete",
-        "actions": [
-          {
-            "type": "signal",
-            "target": ".agents/hooks.json",
-            "payload": "agent_completed"
-          }
-        ],
-        "security": {
-          "max_depth": 3,
-          "require_signature": true,
-          "rate_limit_per_min": 10
-        }
       }
     ]
   }
