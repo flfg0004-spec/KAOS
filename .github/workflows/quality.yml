@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: pip install deepeval pyyaml
       - name: Run smoke check
-        run: py .tools/session_runner.py smoke desarrollo
+        run: python .tools/session_runner.py smoke desarrollo
       - name: Store results
         run: |
           mkdir -p .vault/quality/sessions
@@ -54,9 +54,9 @@ jobs:
       - name: Install dependencies
         run: pip install deepeval pyyaml
       - name: Run functional session
-        run: py .tools/session_runner.py functional desarrollo
+        run: python .tools/session_runner.py functional desarrollo
       - name: Run verification chain
-        run: py .tools/verification_chain.py desarrollo
+        run: python .tools/verification_chain.py desarrollo
       - name: Check for degradation
         run: |
           echo "Quality check complete. Review dashboard for details."
@@ -73,11 +73,11 @@ jobs:
       - name: Install dependencies
         run: pip install deepeval pyyaml
       - name: Run full audit
-        run: py .tools/session_runner.py audit auditoria
+        run: python .tools/session_runner.py audit auditoria
       - name: Run verification chain
-        run: py .tools/verification_chain.py auditoria
+        run: python .tools/verification_chain.py auditoria
       - name: Generate weekly report
-        run: py .tools/weekly_report.py
+        run: python .tools/weekly_report.py
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
@@ -96,7 +96,7 @@ jobs:
       - name: Install dependencies
         run: pip install deepeval pyyaml
       - name: Run ${{ github.event.inputs.session }} session
-        run: py .tools/session_runner.py ${{ github.event.inputs.session }} ${{ github.event.inputs.profile }}
+        run: python .tools/session_runner.py ${{ github.event.inputs.session }} ${{ github.event.inputs.profile }}
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
