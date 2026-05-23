@@ -1,0 +1,77 @@
+# Agent Cards — KAOS Multi-Agent System
+# A2A Protocol v1.0 compliant (Linux Foundation, Feb 2026)
+
+agents:
+  aletheia:
+    name: "Aletheia — Research Agent"
+    description: "Web search, academic papers, deep research, fact-checking"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["web_search", "research", "triangulation", "source_verification"]
+    input_schema:
+      topic: string
+      depth: ["flash", "standard", "deep", "massive"]
+    output_schema:
+      report: string
+      sources: list
+      confidence: ["alta", "media", "baja"]
+
+  kosmos:
+    name: "Kosmos — Architecture Agent"
+    description: "Code analysis, C4 diagrams, ADRs, technical documentation"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["architecture_analysis", "c4_modeling", "adr_writing", "code_review"]
+    input_schema:
+      codebase: string
+      analysis_type: ["static", "dynamic", "dependency"]
+    output_schema:
+      adr: string
+      diagrams: list
+      recommendations: list
+
+  metis:
+    name: "Metis — Strategy Agent"
+    description: "Strategic planning, OKRs, roadmaps, competitive analysis"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["strategic_planning", "okr_definition", "risk_assessment", "reporting"]
+    input_schema:
+      context: string
+      objective: string
+    output_schema:
+      strategy: string
+      okrs: list
+      roadmap: list
+
+  kratos:
+    name: "Kratos — Code Agent"
+    description: "Code generation, debugging, review with APEX-EM experiential memory"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["code_generation", "debugging", "code_review", "test_generation",
+             "error_memory", "ast_matching"]
+    input_schema:
+      task: string
+      language: ["python", "rust", "javascript", "typescript", "go"]
+      code_context: string
+    output_schema:
+      code: string
+      diffs: list
+      error_experiences: list
+      confidence: float
+
+  mnemosyne:
+    name: "Mnemosyne — Curation Agent"
+    description: "Knowledge curation, wikilinks, vault quality, sleep consolidation"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["curation", "deduplication", "cross_linking", "quality_scoring",
+             "sleep_consolidation"]
+    input_schema:
+      source_path: string
+      curation_type: ["lint", "dedup", "cross-link", "sleep"]
+    output_schema:
+      report: string
+      issues: list
+      quality_score: float

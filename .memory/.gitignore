@@ -1,0 +1,15 @@
+# Ignore test artifacts in raw/
+raw/test-*
+raw/archive/
+
+__pycache__/
+*.pyc
+.vault/
+cache/
+_scripts/__pycache__/
+_scripts/lib/__pycache__/
+_scripts/tests/__pycache__/
+.tools/__pycache__/
+_pipeline/
+_pipeline/profiles/
+_pipeline/raw/

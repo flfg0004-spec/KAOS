@@ -1,0 +1,22 @@
+{
+  "name": "standard",
+  "description": "Investigación estándar — 30-60 min, multi-fuente, con triangulación básica",
+  "depth": 2,
+  "max_queries": 10,
+  "parallel_queries": true,
+  "sub_iterations": 1,
+  "tools": ["exa-search", "scholar-search", "searxng", "sequential-thinking"],
+  "thinking_mode": "high",
+  "token_budget": {"min": 4096, "optimal": 8192, "max": 16384},
+  "model": "deepseek-v4-flash",
+  "json_output": false,
+  "output": {
+    "format": "full",
+    "sections": ["resumen-ejecutivo", "hallazgos", "matriz-confianza", "fuentes", "pendientes"],
+    "max_length": 3000
+  },
+  "triangulation": true,
+  "min_sources": 3,
+  "confidence_matrix": true,
+  "time_estimate_min": 30
+}

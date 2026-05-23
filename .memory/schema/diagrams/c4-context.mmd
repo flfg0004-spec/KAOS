@@ -1,0 +1,40 @@
+C4Context
+title System Context diagram for KAOS MAID Pipeline
+
+Person(user, "User", "Researcher using KAOS to ingest and organize knowledge")
+Person(agent_aletheia, "Aletheia", "Research agent - web search, analysis, ingestion")
+Person(agent_kosmos, "Kosmos", "Architecture agent - diagrams, ADRs, documentation")
+Person(agent_metis, "Metis", "Strategy agent - OKRs, reports, planning")
+Person(agent_mnemosyne, "Mnemosyne", "Curation agent - quality, wikilinks, vault health")
+
+System_Ext(exa, "Exa AI", "Semantic web search API")
+System_Ext(deepseek, "DeepSeek v4", "LLM API for extraction and reasoning")
+System_Ext(wikipedia, "Wikipedia API", "Massive knowledge source for ingestion")
+System_Ext(github, "GitHub", "Version control and CI/CD")
+
+System_Boundary(kain, "KAOS Pipeline") {
+    System(ingest, "Ingest Engine", "URL, file, and Wikipedia ingestion with SHA-256 dedup")
+    System(distill, "Distill Engine", "Concept extraction via DSOL (DeepSeek) with regex fallback")
+    System(synapse, "Synapse Engine", "Semantic cross-linking and cosine similarity")
+    System(vault, "Memory Vault", "Markdown-based knowledge store (.memory/)")
+    System(dashboard, "Dashboard", "Quality metrics and system health")
+    System(dsol, "DSOL Layer", "DeepSeek API client with token tracking")
+}
+
+System_Ext(docker_searxng, "SearXNG (Docker)", "Private metasearch engine")
+System_Ext(docker_crawl4ai, "Crawl4AI (Docker)", "Web crawling and scraping")
+
+Rel(user, ingest, "Ingests content via CLI")
+Rel(ingest, vault, "Writes raw/ files")
+Rel(vault, distill, "Triggers distillation")
+Rel(distill, dsol, "Calls DeepSeek API")
+Rel(dsol, deepseek, "Extracts concepts")
+Rel(synapse, vault, "Cross-links concepts")
+Rel(dashboard, vault, "Reads metrics")
+Rel(ingest, docker_crawl4ai, "Crawls URLs")
+Rel(ingest, wikipedia, "Falls back for Wikipedia")
+Rel(ingest, exa, "Searches via Exa MCP")
+Rel(agent_aletheia, ingest, "Orchestrates research")
+Rel(agent_kosmos, vault, "Writes ADRs and schemas")
+Rel(agent_metis, vault, "Writes strategies")
+Rel(agent_mnemosyne, vault, "Curates and verifies")

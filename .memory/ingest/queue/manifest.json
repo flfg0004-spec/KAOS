@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "sha256": "bc156c8fe9fa91e625ed81e3e4bb4ecebc41e3cee8371c0f60198c5d86078906",
+      "path": ".memory\\raw\\test-ingest-152.md",
+      "source_type": "text",
+      "original_ref": "test-ingest",
+      "ingested_at": "2026-05-20T20:34:17.110060",
+      "profile": "standard"
+    },
+    {
+      "sha256": "6c21f2f41283bd8bc30010fad2ab68a647e4c6b2687507c9f1a07f0109e981f5",
+      "path": ".memory\\raw\\test-dedup-139.md",
+      "source_type": "text",
+      "original_ref": "test-dedup",
+      "ingested_at": "2026-05-20T20:34:17.152393",
+      "profile": "standard"
+    }
+  ],
+  "total_ingested": 2,
+  "total_deduped": 2338,
+  "last_updated": "2026-05-23T00:41:10.188538"
+}
