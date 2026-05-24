@@ -53,7 +53,7 @@
         "read": "allow",
         "glob": "allow",
         "grep": "allow",
-        "edit": "allow",
+        "edit": "ask",
         "bash": {
           "py *": "allow",
           ".memory/_scripts/*": "allow",
@@ -266,7 +266,7 @@
       "command": ["npx", "-y", "exa-mcp-server"],
       "enabled": true,
       "env": {
-        "EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
+        "EXA_API_KEY": ""
       }
     },
     "gptr-deep-research": {
@@ -278,7 +278,7 @@
         "GPTR_MODEL": "deepseek-v4-flash",
         "GPTR_REPORT_MODEL": "deepseek-v4-pro",
         "GPTR_SEARCH_PROVIDER": "exa",
-        "GPTR_EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
+        "GPTR_EXA_API_KEY": ""
       }
     },
     "searxng": {
@@ -316,7 +316,7 @@
       "command": ["npx", "-y", "@swarogan/obsidian-mcp-rest"],
       "enabled": true,
       "env": {
-        "OBSIDIAN_API_KEY": "f4155bb6cad0b4cdfd88c3a5ac8e5f6de958f943d158569e87bc62f614e3edec",
+        "OBSIDIAN_API_KEY": "",
         "OBSIDIAN_REST_URL": "https://127.0.0.1:27124"
       }
     },
@@ -332,7 +332,7 @@
     },
     "knowledge-graph": {
       "type": "local",
-      "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\cache\\knowledge-graph"],
+      "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", ".memory/cache/knowledge-graph"],
       "enabled": true
     },
     "agy-bridge": {

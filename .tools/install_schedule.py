@@ -66,6 +66,13 @@ tasks = [
         "trigger": "DAILY",
         "time": "23:00",
     },
+    {
+        "name": "KAOS-Strategy-Review",
+        "action": ["py", "-3", str(BASE / ".memory/_scripts/vault.py"), "consolidate"],
+        "trigger": "WEEKLY",
+        "day": "SUN",
+        "time": "20:00",
+    },
 ]
 
 for t in tasks:

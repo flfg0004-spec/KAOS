@@ -384,6 +384,24 @@ def step_done(agent: str) -> str:
         except Exception as e:
             _log_entry(f"Viz generation failed: {e}")
 
+        try:
+            subprocess.Popen(
+                [PYTHON, str(SCRIPTS / "vault.py"), "consolidate"],
+                cwd=SCRIPTS.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            _log_entry("Consolidation auto-triggered after pipeline completion")
+        except Exception as e:
+            _log_entry(f"Consolidation trigger failed: {e}")
+
+        try:
+            subprocess.Popen(
+                [PYTHON, str(SCRIPTS / "vault.py"), "dashboard"],
+                cwd=SCRIPTS.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            _log_entry("Dashboard auto-updated after pipeline completion")
+        except Exception as e:
+            _log_entry(f"Dashboard update failed: {e}")
+
     return f"Pipeline: {agent} done" + (f", {next_agent} ready" if next_agent else ", pipeline complete!")
 
 

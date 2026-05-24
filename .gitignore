@@ -5,6 +5,9 @@ __pycache__/
 .memory/cache/
 .env
 _pipeline/
+bridge/
 
 research-*.md
 virtual-audio-*.md
+node_modules/
+*.log

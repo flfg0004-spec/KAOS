@@ -27,8 +27,9 @@ except ImportError:
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
-SOURCE_BASE = Path(r"C:\Users\LeonX\Documents\KAOS\.memory")
-VAULT_BASE = Path(r"C:\Users\LeonX\Documents\KAOS\KAOS")
+BASE = Path(__file__).resolve().parent.parent
+SOURCE_BASE = BASE / ".memory"
+VAULT_BASE = BASE / "KAOS"
 
 WIKI = SOURCE_BASE / "wiki"
 WIKI_ENTITIES = WIKI / "entities"

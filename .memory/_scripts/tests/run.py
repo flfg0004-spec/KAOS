@@ -9,7 +9,7 @@ os.environ["LLM_DIRECT_ENABLED"] = "false"
 os.environ["RAG_ENABLED"] = "false"
 os.environ["HERMES_ENABLED"] = "false"
 os.environ["EXECUTOR_ENABLED"] = "false"
-os.environ["OPENAI_API_KEY"] = "sk-test-dummy"
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-not-real")
 import importlib
 import time
 import threading

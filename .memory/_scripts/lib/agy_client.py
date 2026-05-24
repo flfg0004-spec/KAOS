@@ -2,6 +2,7 @@
 
 Uses direct agy --print subprocess (bypasses agy-mcp auth checks)
 and reads response from agy's local brain/transcript storage.
+Includes file locking for safe concurrent access to settings.json.
 """
 
 import json
@@ -17,10 +18,12 @@ ModelTier = Literal["flash", "sonnet", "opus"]
 BRIDGE_DIR = Path(__file__).resolve().parent.parent.parent / "bridge"
 SIGNALS_DIR = BRIDGE_DIR / "signals"
 REPORTS_DIR = BRIDGE_DIR / "reports"
+LOCKS_DIR = BRIDGE_DIR / "locks"
 
 SETTINGS_DIR = Path.home() / ".gemini" / "antigravity-cli"
 BRAIN_DIR = SETTINGS_DIR / "brain"
 POOL = {tier: SETTINGS_DIR / f"settings.{tier}.json" for tier in ("flash", "sonnet", "opus")}
+LOCK_FILE = LOCKS_DIR / "settings.lock"
 
 MODEL_NAMES = {
     "flash": "Gemini 3.5 Flash",
@@ -30,8 +33,29 @@ MODEL_NAMES = {
 
 
 def _ensure_dirs():
-    for d in (SIGNALS_DIR, REPORTS_DIR):
+    for d in (SIGNALS_DIR, REPORTS_DIR, LOCKS_DIR):
         d.mkdir(parents=True, exist_ok=True)
+
+
+def _acquire_lock(timeout: float = 10.0) -> bool:
+    """Try to acquire the settings lock. Returns True if acquired."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            fd = LOCK_FILE.open("x")
+            fd.write(str(time.time()))
+            fd.close()
+            return True
+        except FileExistsError:
+            time.sleep(0.1)
+    return False
+
+
+def _release_lock():
+    try:
+        LOCK_FILE.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def _brain_snapshot() -> set[str]:
@@ -81,86 +105,86 @@ def _read_transcript(conv_id: str) -> str:
 def call_agy(prompt: str, tier: ModelTier = "flash", timeout: int = 180) -> dict:
     """Call agy --print with model tier. Returns structured result.
 
-    1. Snapshot brain/ before call
-    2. Switch agy model to desired tier
-    3. Run agy --print with timeout
-    4. Detect new conversation in brain/
-    5. Read transcript for model response
-    6. Restore original model
-    7. Save report to .memory/bridge/reports/
+    Thread-safe: uses file locking to prevent concurrent settings.json corruption.
     """
     _ensure_dirs()
     call_id = str(uuid.uuid4())[:8]
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    # Signal for audit trail
-    (SIGNALS_DIR / f"call-{timestamp}-{call_id}.json").write_text(
-        json.dumps({"id": call_id, "tier": tier, "prompt": prompt[:200]}, indent=2),
-        encoding="utf-8",
-    )
-
-    brain_before = _brain_snapshot()
-    prev_model = _switch_model(tier)
+    if not _acquire_lock(timeout=15):
+        return {"success": False, "text": "", "error": "Could not acquire lock (agy busy)",
+                "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
 
     try:
-        r = subprocess.run(
-            ["agy", "--dangerously-skip-permissions", "-p", prompt],
-            timeout=timeout, capture_output=True, text=True,
+        (SIGNALS_DIR / f"call-{timestamp}-{call_id}.json").write_text(
+            json.dumps({"id": call_id, "tier": tier, "prompt": prompt[:200]}, indent=2),
+            encoding="utf-8",
         )
 
-        brain_after = _brain_snapshot()
-        new_convs = brain_after - brain_before
-        response_text = ""
-        conv_id = ""
+        brain_before = _brain_snapshot()
+        prev_model = _switch_model(tier)
 
-        if new_convs:
-            conv_id = new_convs.pop()
-            response_text = _read_transcript(conv_id)
+        try:
+            r = subprocess.run(
+                ["agy", "--dangerously-skip-permissions", "-p", prompt],
+                timeout=timeout, capture_output=True, text=True,
+            )
 
-        if not response_text and r.stdout:
-            response_text = r.stdout
+            brain_after = _brain_snapshot()
+            new_convs = brain_after - brain_before
+            response_text = ""
+            conv_id = ""
 
-        success = r.returncode == 0 and bool(response_text)
+            if new_convs:
+                conv_id = new_convs.pop()
+                response_text = _read_transcript(conv_id)
 
-        result = {
-            "success": success,
-            "text": response_text,
-            "error": r.stderr if not success else None,
-            "model_used": MODEL_NAMES.get(tier, tier),
-            "call_id": call_id,
-            "conv_id": conv_id,
-        }
+            if not response_text and r.stdout:
+                response_text = r.stdout
 
-    except subprocess.TimeoutExpired:
-        result = {"success": False, "text": "", "error": f"Timeout after {timeout}s",
-                  "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
-    except FileNotFoundError:
-        result = {"success": False, "text": "", "error": "agy binary not found. Install: irm https://antigravity.google/cli/install.ps1 | iex",
-                  "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
-    except Exception as e:
-        result = {"success": False, "text": "", "error": str(e),
-                  "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
+            success = r.returncode == 0 and bool(response_text)
+
+            result = {
+                "success": success,
+                "text": response_text,
+                "error": r.stderr if not success else None,
+                "model_used": MODEL_NAMES.get(tier, tier),
+                "call_id": call_id,
+                "conv_id": conv_id,
+            }
+
+        except subprocess.TimeoutExpired:
+            result = {"success": False, "text": "", "error": f"Timeout after {timeout}s",
+                      "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
+        except FileNotFoundError:
+            result = {"success": False, "text": "", "error": "agy binary not found",
+                      "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
+        except Exception as e:
+            result = {"success": False, "text": "", "error": str(e),
+                      "model_used": MODEL_NAMES.get(tier, tier), "call_id": call_id, "conv_id": ""}
+        finally:
+            _restore_model(prev_model)
+
+        report_path = REPORTS_DIR / f"response-{timestamp}-{call_id}.md"
+        text_content = result.get("text", "") or "(empty response)"
+        error_content = result.get("error") or ""
+        report_path.write_text(
+            f"# agy Response ({tier})\n\n"
+            f"**Call**: {call_id}\n"
+            f"**Model**: {MODEL_NAMES.get(tier, tier)}\n"
+            f"**Time**: {timestamp}\n\n"
+            f"{text_content}\n\n"
+            + (f"---\n⚠️ Error: {error_content}\n" if error_content else ""),
+            encoding="utf-8",
+        )
+        result["report_path"] = str(report_path.relative_to(
+            Path(__file__).resolve().parent.parent.parent.parent
+        ))
+
+        return result
+
     finally:
-        _restore_model(prev_model)
-
-    # Save report
-    report_path = REPORTS_DIR / f"response-{timestamp}-{call_id}.md"
-    text_content = result.get("text", "") or "(empty response)"
-    error_content = result.get("error") or ""
-    report_path.write_text(
-        f"# agy Response ({tier})\n\n"
-        f"**Call**: {call_id}\n"
-        f"**Model**: {MODEL_NAMES.get(tier, tier)}\n"
-        f"**Time**: {timestamp}\n\n"
-        f"{text_content}\n\n"
-        + (f"---\n⚠️ Error: {error_content}\n" if error_content else ""),
-        encoding="utf-8",
-    )
-    result["report_path"] = str(report_path.relative_to(
-        Path(__file__).resolve().parent.parent.parent.parent
-    ))
-
-    return result
+        _release_lock()
 
 
 def bridge_reports(limit: int = 10) -> list[dict]:

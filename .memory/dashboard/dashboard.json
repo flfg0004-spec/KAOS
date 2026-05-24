@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-24 11:34:42",
+  "timestamp": "2026-05-24 13:04:27",
   "vault": {
-    "total_md": 228,
+    "total_md": 232,
     "by_directory": {
       "wiki": 131,
       "schema": 21,
       "raw": 23,
-      "_scripts": 67,
+      "_scripts": 71,
       "_pipeline": 3
     },
-    "total_scripts": 67
+    "total_scripts": 71
   },
   "health": {
     "git_clean": false,
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 314
+    "total_deduped": 320
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "e2d1baf feat: agy-bridge MCP server with model-tiered access (Flash/Sonnet/Opus) + filesystem signaling",
       "31c10bf chore: mcp-embed scheduled task, dashboard auto-update, GitHub push daily",
       "644cb90 docs: README with badges, fix mcp-embed service script",
       "3b1713e chore: untrack VIZ files, add mcp-embed service, ingest embedding hook",
-      "907ddb5 KAOS 3.0: fastembed, Mermaid viz, agy Companion, persistence tests, 100% coverage, CI update",
-      "254cfe6 session: test_full_cycle - Persistence cycle test"
+      "907ddb5 KAOS 3.0: fastembed, Mermaid viz, agy Companion, persistence tests, 100% coverage, CI update"
     ],
     "recent_logs": [
       [
@@ -74,15 +74,15 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 85,
-    "total_cost_usd": 2.38,
+    "total_calls": 87,
+    "total_cost_usd": 2.436,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 97.0,
+    "score": 96.6,
     "has_confidence_matrix": 23,
     "total_investigations": 23,
-    "completeness": 97.0
+    "completeness": 96.6
   },
   "agents": {
     "total": 4,

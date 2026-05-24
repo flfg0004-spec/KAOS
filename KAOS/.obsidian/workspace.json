@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "05-calidad/dashboard.md",
+                "file": "glosario-kaos.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "dashboard"
+              "title": "glosario-kaos"
             }
           }
         ]
@@ -216,6 +216,8 @@
   "active": "2f5da011aab018f6",
   "lastOpenFiles": [
     "00-MOC.md",
+    "05-calidad/dashboard.md",
+    "02-conceptos/budget-adaptativo.md",
     "glosario-kaos.md",
     "01-agentes/kosmos.md",
     "04-esquema/adr-011-memory-matrix.md",
@@ -239,8 +241,6 @@
     "02-conceptos/obsidian.md",
     "02-conceptos/objective.md",
     "02-conceptos/multi-shot-few-shot.md",
-    "02-conceptos/maquinas-de-estado.md",
-    "02-conceptos/lucidity-mcp.md",
     "05-calidad/daily",
     "Excalidraw",
     "_meta/templates",
