@@ -1,39 +1,47 @@
 # KAOS mcp_embed Service — keeps embedding model loaded persistently
-# Run as a background job or Windows Scheduled Task
-# Usage: powershell -File .agents/scripts/mcp-embed-service.ps1
+# Usage:
+#   .\mcp-embed-service.ps1 start
+#   .\mcp-embed-service.ps1 stop
+#   .\mcp-embed-service.ps1 status
 
 $KAOS = "$env:USERPROFILE\Documents\KAOS"
 $SCRIPT = "$KAOS\.memory\_scripts\mcp_embed.py"
-$LOG = "$KAOS\.memory\cache\mcp-embed-service.log"
 $PID_FILE = "$KAOS\.memory\cache\mcp-embed-service.pid"
 
 function Start-Service {
     Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Starting mcp_embed server..."
-    $proc = Start-Process -FilePath "py" -ArgumentList "-3", $SCRIPT -NoNewWindow -PassThru -RedirectStandardInput "NUL"
-    $proc.Id | Out-File -FilePath $PID_FILE -Encoding ascii
-    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] PID: $($proc.Id)"
+    $kaosDir = (Get-Item $KAOS).FullName
+    $jobName = "KAOS-mcp-embed"
+    $existing = Get-Job -Name $jobName -ErrorAction SilentlyContinue
+    if ($existing) { $existing | Remove-Job -Force }
+    Start-Job -Name $jobName -ScriptBlock {
+        param($scriptPath, $kaosDir)
+        Set-Location $kaosDir
+        py -3 $scriptPath
+    } -ArgumentList $SCRIPT, $kaosDir | Out-Null
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] mcp_embed started as background job '$jobName'"
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Test: echo '{""jsonrpc"":""2.0"",""id"":1,""method"":""tools/list"",""params"":{}}' | py -3 $SCRIPT"
 }
 
 function Stop-Service {
-    if (Test-Path $PID_FILE) {
-        $pid = Get-Content $PID_FILE
-        if ($pid -match '^\d+$') {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Output "[$(Get-Date -Format 'HH:mm:ss')] Stopped PID $pid"
-        }
-        Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
+    $jobName = "KAOS-mcp-embed"
+    $job = Get-Job -Name $jobName -ErrorAction SilentlyContinue
+    if ($job) {
+        Stop-Job $job
+        Remove-Job $job
+        Write-Output "[$(Get-Date -Format 'HH:mm:ss')] mcp_embed stopped"
+    } else {
+        Write-Output "mcp_embed not running"
     }
 }
 
 function Status-Service {
-    if (Test-Path $PID_FILE) {
-        $pid = Get-Content $PID_FILE
-        $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
-        if ($proc) {
-            Write-Output "mcp_embed RUNNING (PID: $pid)"
-        } else {
-            Write-Output "mcp_embed STOPPED (stale PID file)"
-        }
+    $jobName = "KAOS-mcp-embed"
+    $job = Get-Job -Name $jobName -ErrorAction SilentlyContinue
+    if ($job -and $job.State -eq 'Running') {
+        Write-Output "mcp_embed RUNNING (Job: $jobName)"
+    } elseif ($job) {
+        Write-Output "mcp_embed STOPPED (state: $($job.State))"
     } else {
         Write-Output "mcp_embed STOPPED"
     }
