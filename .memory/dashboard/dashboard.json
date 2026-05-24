@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-05-24 13:04:27",
+  "timestamp": "2026-05-24 13:21:29",
   "vault": {
-    "total_md": 232,
+    "total_md": 233,
     "by_directory": {
-      "wiki": 131,
+      "wiki": 132,
       "schema": 21,
       "raw": 23,
-      "_scripts": 71,
+      "_scripts": 72,
       "_pipeline": 3
     },
-    "total_scripts": 71
+    "total_scripts": 72
   },
   "health": {
     "git_clean": false,
-    "lint_issues": 0,
+    "lint_issues": 1,
     "overall": "warning"
   },
   "cache": {
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 320
+    "total_deduped": 326
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "8d9a1b8 fix: 37 issues - security, pipeline, bridge locking, pre-commit hooks, dead code, absolute paths",
       "e2d1baf feat: agy-bridge MCP server with model-tiered access (Flash/Sonnet/Opus) + filesystem signaling",
       "31c10bf chore: mcp-embed scheduled task, dashboard auto-update, GitHub push daily",
       "644cb90 docs: README with badges, fix mcp-embed service script",
-      "3b1713e chore: untrack VIZ files, add mcp-embed service, ingest embedding hook",
-      "907ddb5 KAOS 3.0: fastembed, Mermaid viz, agy Companion, persistence tests, 100% coverage, CI update"
+      "3b1713e chore: untrack VIZ files, add mcp-embed service, ingest embedding hook"
     ],
     "recent_logs": [
       [
@@ -70,19 +70,19 @@
     ]
   },
   "wikilinks": {
-    "valid": 465,
+    "valid": 468,
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 87,
-    "total_cost_usd": 2.436,
+    "total_calls": 89,
+    "total_cost_usd": 2.492,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 96.6,
+    "score": 94.6,
     "has_confidence_matrix": 23,
     "total_investigations": 23,
-    "completeness": 96.6
+    "completeness": 94.6
   },
   "agents": {
     "total": 4,

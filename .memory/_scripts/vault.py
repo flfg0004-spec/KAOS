@@ -401,6 +401,13 @@ def cmd_improve(args):
         print("Actions: wikilinks, index, lint. Use --apply to apply suggestions.")
 
 
+def cmd_speed(args):
+    """Show speed metrics for dual system."""
+    from lib import speed
+    result = speed.report()
+    print(result)
+
+
 def cmd_viz(args):
     from lib import viz
     output = Path(args.output) if args.output else None
@@ -550,6 +557,9 @@ def main():
     p.add_argument("action", nargs="?", default="lint", choices=["wikilinks", "index", "lint"])
     p.add_argument("--apply", action="store_true", help="Apply suggestions")
     p.set_defaults(func=cmd_improve)
+
+    p = sub.add_parser("speed", help="Show dual-system speed metrics")
+    p.set_defaults(func=cmd_speed)
 
     p = sub.add_parser("viz", help="Generate Mermaid visualization files")
     p.add_argument("--output", default="", help="Output directory (default: vault root)")

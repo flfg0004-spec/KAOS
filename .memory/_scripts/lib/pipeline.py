@@ -93,6 +93,12 @@ def save_context(agent: str, data: dict) -> None:
         kratos_decision = data.get("kratos_decision", "needs_curation")
         ctx["cross_agent"]["kratos_decision"] = kratos_decision
     
+    # Flash exploration context (sistema DUAL)
+    if agent == "flash_exploration" and "exploration" in data:
+        if "cross_agent" not in ctx:
+            ctx["cross_agent"] = {}
+        ctx["cross_agent"]["flash_exploration"] = data["exploration"]
+    
     # Leer pipeline_id del status
     status_lines = _read_status()
     for line in status_lines:
@@ -138,11 +144,32 @@ def get_cross_context(target_agent: str) -> dict:
     return {}
 
 
-def init(topic: str, profile: str = "standard") -> str:
+def _check_flash_exploration(topic: str) -> dict | None:
+    """Check if there's recent Flash exploration for this topic."""
+    bridge_reports = list((VAULT_ROOT.parent / ".memory" / "bridge" / "reports").glob("*.md"))
+    recent = [r for r in bridge_reports
+              if (datetime.now() - datetime.fromtimestamp(r.stat().st_mtime)).total_seconds() < 3600]
+    if not recent:
+        return None
+    topic_words = set(topic.lower().split())
+    for r in sorted(recent, reverse=True):
+        content = r.read_text(encoding="utf-8", errors="replace").lower()
+        if any(w in content for w in topic_words):
+            return {
+                "source": str(r.name),
+                "age_seconds": (datetime.now() - datetime.fromtimestamp(r.stat().st_mtime)).total_seconds(),
+                "report_path": str(r.relative_to(VAULT_ROOT.parent / ".memory")),
+            }
+    return None
+
+
+def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str:
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     pipeline_id = datetime.now().strftime("P-%Y%m%d-%H%M%S")
     slug = re.sub(r'[^a-z0-9\s-]', '', topic.lower())
     slug = re.sub(r'\s+', '-', slug)[:60]
+
+    flash_ctx = _check_flash_exploration(topic) if check_flash else None
     
     # Warm up model cache + seed CodeExperience
     try:
@@ -191,6 +218,14 @@ def init(topic: str, profile: str = "standard") -> str:
         lines.append(f"| 5 | Mnemosyne | :hourglass: pending | curation | — | — |")
     else:
         lines.append(f"| 4 | Mnemosyne | :hourglass: pending | curation | — | — |")
+    if flash_ctx:
+        lines.insert(0, f"> 🟢 Flash exploration found: `{flash_ctx['report_path']}` ({int(flash_ctx['age_seconds'])}s old)")
+        lines.append("")
+        lines.append("## Dual Context (Flash)")
+        lines.append(f"- **Report**: {flash_ctx['report_path']}")
+        lines.append(f"- **Age**: {int(flash_ctx['age_seconds'])}s")
+        lines.append("")
+
     lines += [
         "",
         "## Profile Info",

@@ -118,10 +118,10 @@
       }
     },
     "metis": {
-      "description": "Agente de estrategia — planeación, OKRs, roadmaps, análisis competitivo, reportes",
+      "description": "Agente de estrategia — planeación, OKRs, roadmaps, análisis competitivo, reportes - orquestador del sistema DUAL",
       "mode": "subagent",
       "color": "#E8A87C",
-      "steps": 8,
+      "steps": 12,
       "temperature": 0.4,
       "permission": {
         "websearch": "allow",
@@ -144,6 +144,9 @@
         "exa-search_*": true,
         "mcp-obsidian-cli_*": true,
         "obsidian_*": true,
+        "vault_*": true,
+        "agy-bridge_agy_ask_flash": true,
+        "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true
       }
     },
