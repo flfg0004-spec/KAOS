@@ -11,6 +11,7 @@ CONTEXT_PATH = BASE / "_pipeline" / "context.json"
 PIPELINE_DIR = BASE / "_pipeline"
 QUALITY_DIR = BASE.parent / ".vault" / "quality"
 TIMESERIES_DIR = QUALITY_DIR / "timeseries"
+FLASH_PROD_FILE = TIMESERIES_DIR / "flash-production.json"
 
 
 def _load_context() -> dict:
@@ -32,22 +33,17 @@ def _count_flash_calls(hours: int = 24) -> list[Path]:
 
 def _flash_to_production_ratio(reports: list[Path]) -> float:
     """Calculate ratio of pipelines that used flash context vs total pipelines."""
-    if not PIPELINE_DIR.exists():
+    if not FLASH_PROD_FILE.exists():
         return 0.0
-    context_files = list(PIPELINE_DIR.glob("context*.json"))
-    if not context_files:
+    try:
+        data = json.loads(FLASH_PROD_FILE.read_text(encoding="utf-8"))
+        links = data.get("links", [])
+        if not links:
+            return 0.0
+        recent = [l for l in links if l.get("pipeline_id", "").startswith("P-")]
+        return round(len(recent) / max(len(links), 1) * 100, 1)
+    except Exception:
         return 0.0
-    total = 0
-    with_flash = 0
-    for cf in context_files:
-        try:
-            ctx = json.loads(cf.read_text(encoding="utf-8"))
-            total += 1
-            if ctx.get("cross_agent", {}).get("flash_exploration"):
-                with_flash += 1
-        except Exception:
-            pass
-    return round(with_flash / max(total, 1) * 100, 1)
 
 
 def _avg_time_to_commit(reports: list[Path]) -> float | None:

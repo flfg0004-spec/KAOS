@@ -197,6 +197,29 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
         init_code_memory_hook()
     except Exception:
         pass
+
+    # Track flash→production link
+    if flash_ctx:
+        try:
+            fps_dir = VAULT_ROOT.parent / ".vault" / "quality" / "timeseries"
+            fps_dir.mkdir(parents=True, exist_ok=True)
+            fps_file = fps_dir / "flash-production.json"
+            data = {"links": []}
+            if fps_file.exists():
+                try:
+                    data = json.loads(fps_file.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+            data["links"].append({
+                "pipeline_id": pipeline_id,
+                "flash_report": flash_ctx.get("report_path", ""),
+                "topic": topic,
+                "timestamp": datetime.now().isoformat(),
+            })
+            data["links"] = data["links"][-100:]
+            fps_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
     
     prof = _load_profile(profile)
     tools_str = ", ".join(prof.get("tools", ["exa-search", "searxng", "sequential-thinking"]))
