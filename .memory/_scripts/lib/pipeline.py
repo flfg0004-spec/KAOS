@@ -171,6 +171,16 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
 
     flash_ctx = _check_flash_exploration(topic) if check_flash else None
     
+    # Track estimated cost
+    estimated_cost = 0.0
+    try:
+        from lib.dsol import TokenTracker
+        tt = TokenTracker()
+        stats = tt.get_stats()
+        estimated_cost = stats.get("total_cost_usd", 0.0)
+    except Exception:
+        pass
+    
     # Warm up model cache + seed CodeExperience
     try:
         from lib.vectorstore import warmup_model
@@ -391,6 +401,31 @@ def step_done(agent: str) -> str:
     _write_status(new_lines)
     _log_entry(f"Pipeline step done: {agent}" + (f" → {next_agent} ready" if next_agent else " → COMPLETE"))
 
+    if not next_agent:
+        try:
+            from lib.dsol import TokenTracker
+            tt = TokenTracker()
+            stats = tt.get_stats()
+            qual_dir = VAULT_ROOT.parent / ".vault" / "quality" / "timeseries"
+            qual_dir.mkdir(parents=True, exist_ok=True)
+            durations_file = qual_dir / "pipeline-durations.json"
+            data = {"entries": []}
+            if durations_file.exists():
+                try:
+                    data = json.loads(durations_file.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+            data["entries"].append({
+                "timestamp": datetime.now().isoformat(),
+                "duration_s": 0,
+                "total_cost_usd": stats.get("total_cost_usd", 0),
+                "total_calls": stats.get("total_calls", 0),
+            })
+            data["entries"] = data["entries"][-100:]
+            durations_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
     # Capture Kratos output into CodeExperience
     if agent_cap == "Kratos":
         try:
@@ -441,6 +476,15 @@ def step_done(agent: str) -> str:
             _log_entry("Dashboard auto-updated after pipeline completion")
         except Exception as e:
             _log_entry(f"Dashboard update failed: {e}")
+
+        try:
+            subprocess.Popen(
+                [PYTHON, str(SCRIPTS / "vault.py"), "improve", "wikilinks", "--apply"],
+                cwd=SCRIPTS.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            _log_entry("Wikilink auto-fix triggered after pipeline completion")
+        except Exception as e:
+            _log_entry(f"Wikilink auto-fix failed: {e}")
 
     return f"Pipeline: {agent} done" + (f", {next_agent} ready" if next_agent else ", pipeline complete!")
 

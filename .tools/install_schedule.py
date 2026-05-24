@@ -79,6 +79,12 @@ tasks = [
         "trigger": "DAILY",
         "time": "09:00",
     },
+    {
+        "name": "KAOS-Obsidian-Sync",
+        "action": ["py", "-3", str(BASE / ".tools/vault-sync.py"), "--quick"],
+        "trigger": "DAILY",
+        "time": "06:30",
+    },
 ]
 
 for t in tasks:

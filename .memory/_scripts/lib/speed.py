@@ -8,7 +8,9 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent.parent
 BRIDGE_REPORTS = BASE / "bridge" / "reports"
 CONTEXT_PATH = BASE / "_pipeline" / "context.json"
+PIPELINE_DIR = BASE / "_pipeline"
 QUALITY_DIR = BASE.parent / ".vault" / "quality"
+TIMESERIES_DIR = QUALITY_DIR / "timeseries"
 
 
 def _load_context() -> dict:
@@ -29,11 +31,23 @@ def _count_flash_calls(hours: int = 24) -> list[Path]:
 
 
 def _flash_to_production_ratio(reports: list[Path]) -> float:
-    if not reports:
+    """Calculate ratio of pipelines that used flash context vs total pipelines."""
+    if not PIPELINE_DIR.exists():
         return 0.0
-    ctx = _load_context()
-    has_flash = ctx.get("cross_agent", {}).get("flash_exploration") is not None
-    return 100.0 if has_flash else 0.0
+    context_files = list(PIPELINE_DIR.glob("context*.json"))
+    if not context_files:
+        return 0.0
+    total = 0
+    with_flash = 0
+    for cf in context_files:
+        try:
+            ctx = json.loads(cf.read_text(encoding="utf-8"))
+            total += 1
+            if ctx.get("cross_agent", {}).get("flash_exploration"):
+                with_flash += 1
+        except Exception:
+            pass
+    return round(with_flash / max(total, 1) * 100, 1)
 
 
 def _avg_time_to_commit(reports: list[Path]) -> float | None:
@@ -45,13 +59,29 @@ def _avg_time_to_commit(reports: list[Path]) -> float | None:
     return round(avg_min, 1)
 
 
+def _pipeline_benchmarks() -> dict:
+    """Return pipeline duration data from timeseries."""
+    bench = {"exploracion": [], "desarrollo": [], "produccion": []}
+    durations_file = TIMESERIES_DIR / "pipeline-durations.json"
+    if durations_file.exists():
+        try:
+            data = json.loads(durations_file.read_text(encoding="utf-8"))
+            for entry in data.get("entries", []):
+                profile = entry.get("profile", "desarrollo")
+                if profile in bench:
+                    bench[profile].append(entry["duration_s"])
+        except Exception:
+            pass
+    return bench
+
+
 def report() -> str:
     """Generate speed metrics report."""
     reports_24h = _count_flash_calls(24)
     reports_1h = _count_flash_calls(1)
-    ctx = _load_context()
-    flash_ctx = ctx.get("cross_agent", {}).get("flash_exploration")
+    ratio = _flash_to_production_ratio(reports_24h)
     avg_commit = _avg_time_to_commit(reports_24h)
+    benchmarks = _pipeline_benchmarks()
 
     lines = [
         "# Speed Report — Sistema DUAL",
@@ -59,14 +89,25 @@ def report() -> str:
         "",
         "## Últimas 24h",
         f"- Llamadas Flash: {len(reports_24h)}",
-        f"- Flash→Production: {'✅' if flash_ctx else '⏳'} {'vinculado' if flash_ctx else 'pendiente'}",
+        f"- Flash→Production ratio: {ratio}%",
         f"- Time-to-commit promedio: {avg_commit if avg_commit else 'N/A'} min",
         "",
         "## Última hora",
         f"- Iteraciones: {len(reports_1h)}",
         "",
-        "## Reportes Recientes",
+        "## Benchmarks por Perfil",
     ]
+    for profile, durations in benchmarks.items():
+        if durations:
+            avg_dur = sum(durations) / len(durations)
+            lines.append(f"- **{profile}**: {avg_dur:.0f}s avg ({len(durations)} ejecuciones)")
+        else:
+            lines.append(f"- **{profile}**: sin datos")
+
+    lines.extend([
+        "",
+        "## Reportes Recientes",
+    ])
     for r in reports_24h[:5]:
         mtime = datetime.fromtimestamp(r.stat().st_mtime).strftime("%H:%M")
         size = r.stat().st_size

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 13:42:17",
+  "timestamp": "2026-05-24 13:59:52",
   "vault": {
     "total_md": 233,
     "by_directory": {
@@ -12,7 +12,7 @@
     "total_scripts": 74
   },
   "health": {
-    "git_clean": false,
+    "git_clean": true,
     "lint_issues": 1,
     "overall": "warning"
   },
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 344
+    "total_deduped": 347
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs",
       "1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection",
       "8d9a1b8 fix: 37 issues - security, pipeline, bridge locking, pre-commit hooks, dead code, absolute paths",
       "e2d1baf feat: agy-bridge MCP server with model-tiered access (Flash/Sonnet/Opus) + filesystem signaling",
-      "31c10bf chore: mcp-embed scheduled task, dashboard auto-update, GitHub push daily",
-      "644cb90 docs: README with badges, fix mcp-embed service script"
+      "31c10bf chore: mcp-embed scheduled task, dashboard auto-update, GitHub push daily"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 95,
-    "total_cost_usd": 2.66,
+    "total_calls": 96,
+    "total_cost_usd": 2.688,
     "cache_hit_rate": 0.0
   },
   "quality": {
