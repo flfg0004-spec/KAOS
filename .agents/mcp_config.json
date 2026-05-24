@@ -13,6 +13,11 @@
       ],
       "enabled": true
     },
+    "embed": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_embed.py"],
+      "enabled": true
+    },
     "txtai": {
       "type": "local",
       "command": ["py", "-3", ".memory/_scripts/mcp_txtai.py"],

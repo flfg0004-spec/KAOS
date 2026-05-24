@@ -14,18 +14,29 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 KAOS = Path(__file__).resolve().parent.parent.parent  # KAOS root
 
-_model = None
 _vectorizer = None
 _matrix = None
 _file_index: list[tuple[str, str]] = []  # (path, content)
 
 
-def _get_model():
-    global _model
-    if _model is None:
-        from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-    return _model
+def _mcp_embed_query(texts: list[str]) -> list[list[float]]:
+    """Try to get embeddings from mcp_embed server via subprocess call."""
+    try:
+        import subprocess, json
+        req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                          "params": {"name": "embed", "arguments": {"texts": texts}}})
+        r = subprocess.run(
+            ["py", "-3", str(KAOS / ".memory/_scripts/mcp_embed.py")],
+            input=req, capture_output=True, text=True, timeout=10
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            resp = json.loads(r.stdout.strip())
+            content = resp.get("result", {}).get("content", [])
+            if content:
+                return json.loads(content[0]["text"])
+    except Exception:
+        pass
+    return []
 
 
 def _load_files(path: str) -> list[tuple[str, str]]:

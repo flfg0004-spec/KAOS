@@ -314,6 +314,11 @@
       "url": "https://mcp.supermemory.ai/mcp",
       "enabled": false
     },
+    "mcp-embed": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_embed.py"],
+      "enabled": true
+    },
     "knowledge-graph": {
       "type": "local",
       "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\cache\\knowledge-graph"],

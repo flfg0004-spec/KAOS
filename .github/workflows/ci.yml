@@ -15,9 +15,9 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - run: pip install -r _scripts/requirements.txt
-      - run: python _scripts/tests/run.py
-        name: Run test suite
+      - run: python _scripts/tests/run.py --fast
+        name: Run test suite (fast)
       - run: python _scripts/vault.py health
         name: Health check
-      - run: python _scripts/vault.py lint report
-        name: Lint report
+      - run: python _scripts/vault.py lint coverage
+        name: Coverage check

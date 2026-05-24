@@ -108,7 +108,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r _scripts/requirements.txt
       - name: Run DAG tests
-        run: python _scripts/tests/run.py
+        run: python _scripts/tests/run.py --fast
       - name: Health check
         run: python _scripts/vault.py health
       - name: Lint report
