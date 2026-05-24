@@ -48,6 +48,24 @@ tasks = [
         "day": "FRI",
         "time": "18:00",
     },
+    {
+        "name": "KAOS-mcp-embed",
+        "action": ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(BASE / ".agents/scripts/mcp-embed-service.ps1"), "start"],
+        "trigger": "DAILY",
+        "time": "05:00",
+    },
+    {
+        "name": "KAOS-Dashboard-Update",
+        "action": ["py", "-3", str(BASE / ".memory/_scripts/vault.py"), "dashboard"],
+        "trigger": "DAILY",
+        "time": "05:30",
+    },
+    {
+        "name": "KAOS-GitHub-Push",
+        "action": ["powershell.exe", "-Command", "cd", str(BASE), ";", "git", "push", "origin", "master"],
+        "trigger": "DAILY",
+        "time": "23:00",
+    },
 ]
 
 for t in tasks:

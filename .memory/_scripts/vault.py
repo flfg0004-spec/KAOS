@@ -356,6 +356,51 @@ def cmd_distill(args):
     sys.exit(result.returncode)
 
 
+def cmd_consolidate(args):
+    """Run episodic memory consolidation (DBSCAN + pattern extraction)."""
+    import subprocess, json
+    script = str(KAOS_ROOT / ".tools" / "agenternal.py")
+    r = subprocess.run([PYTHON, script], capture_output=True, text=True, timeout=120)
+    out = r.stdout or r.stderr or ""
+    print(out)
+    try:
+        from lib.quality import calculate
+        q = calculate()
+        print(f"Quality score after consolidation: {q.get('score', '?')}/100")
+    except Exception:
+        pass
+
+
+def cmd_improve(args):
+    """Auto-fix lint issues and suggest wikilink improvements."""
+    from lib import lint, wikilinks, index as index_mod
+    from lib.config import VAULT_ROOT
+
+    if args.action == "wikilinks":
+        suggs = wikilinks.suggest()
+        if not suggs:
+            print("No wikilink suggestions.")
+            return
+        for s in suggs[:10]:
+            kw = ", ".join(s["keywords"][:5])
+            print(f"  {s['from']} <-> {s['to']} (score: {s['score']}): [{kw}]")
+        if args.apply:
+            count = 0
+            for s in suggs[:10]:
+                r = wikilinks.inject(s["from"], s["to"])
+                if "Injected" in r or "already" in r:
+                    count += 1
+            print(f"Applied {count} wikilinks.")
+    elif args.action == "index":
+        result = index_mod.regenerate()
+        print(result)
+    elif args.action == "lint":
+        result = lint.run()
+        print(result)
+    else:
+        print("Actions: wikilinks, index, lint. Use --apply to apply suggestions.")
+
+
 def cmd_viz(args):
     from lib import viz
     output = Path(args.output) if args.output else None
@@ -497,6 +542,14 @@ def main():
     p.add_argument("--new-only", action="store_true", help="Solo destilar archivos nuevos")
     p.add_argument("--slug", default="", help="Nombre del archivo raw/ (modo file)")
     p.set_defaults(func=cmd_distill)
+
+    p = sub.add_parser("consolidate", help="Run episodic memory consolidation (DBSCAN)")
+    p.set_defaults(func=cmd_consolidate)
+
+    p = sub.add_parser("improve", help="Auto-fix lint issues and suggest improvements")
+    p.add_argument("action", nargs="?", default="lint", choices=["wikilinks", "index", "lint"])
+    p.add_argument("--apply", action="store_true", help="Apply suggestions")
+    p.set_defaults(func=cmd_improve)
 
     p = sub.add_parser("viz", help="Generate Mermaid visualization files")
     p.add_argument("--output", default="", help="Output directory (default: vault root)")

@@ -147,6 +147,16 @@ def extract_session(agent: str, summary: str, pages: list[str] | None = None) ->
     commit_msg = f"session: {agent} - {summary}"
     commit_result = git.add_and_commit(commit_msg)
 
+    try:
+        import subprocess, sys
+        subprocess.run(
+            [sys.executable, str(VAULT_ROOT / "_scripts/vault.py"), "dashboard"],
+            capture_output=True, timeout=30,
+            cwd=VAULT_ROOT,
+        )
+    except Exception:
+        pass
+
     results = [
         f"Session extracted for {agent}.",
         f"log.md updated.",

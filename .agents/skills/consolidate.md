@@ -1,16 +1,11 @@
 ---
 name: consolidate
-description: Ejecuta ciclo de sueño NREM/REM para consolidar conocimiento
+description: Ejecuta DBSCAN consolidation + quality check
 ---
 
 # /consolidate
 
-Ejecuta el ciclo de consolidación de memoria (sleep-time compute) sobre el vault.
-
-## Flujo
-
-1. NREM (70%): DBSCAN clustering sobre embeddings → LLM destila patrones
-2. REM (30%): Entity linking cross-dominio → síntesis de esquemas L3
+Consolida la memoria episódica (CodeExperience) en patrones semánticos usando DBSCAN.
 
 ## Uso
 
@@ -18,14 +13,20 @@ Ejecuta el ciclo de consolidación de memoria (sleep-time compute) sobre el vaul
 /consolidate
 ```
 
-## Output
+## Proceso
 
-- L1 (Episodic): CodeExperience DB actualizada
-- L2 (Semantic): Knowledge Graph MCP + conceptos wiki
-- L3 (Schema): Patrones consolidados en schema/
+1. Lee experiencias de CodeExperience DB (confidence > 0.3)
+2. DBSCAN clustering (eps=0.3, min_samples=3)
+3. Asigna pattern_category a cada cluster
+4. Log de compresión en `cache/compression-log.json`
+5. Recalcula quality score post-consolidación
 
-## Monitoreo
+## Ver resultados
 
 ```
-/tasks
+vault.py consolidate
 ```
+
+## Schedule
+
+Correr semanalmente (domingos 22:00).

@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-20 18:49:24",
+  "timestamp": "2026-05-23 22:18:31",
   "vault": {
-    "total_md": 133,
+    "total_md": 228,
     "by_directory": {
-      "wiki": 70,
-      "schema": 15,
-      "raw": 20,
-      "_scripts": 44,
+      "wiki": 131,
+      "schema": 21,
+      "raw": 23,
+      "_scripts": 67,
       "_pipeline": 3
     },
-    "total_scripts": 44
+    "total_scripts": 67
   },
   "health": {
     "git_clean": false,
@@ -17,72 +17,72 @@
     "overall": "warning"
   },
   "cache": {
-    "entries": 6,
+    "entries": 3,
     "max_entries": 30,
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "complete",
-    "profile": "standard"
+    "status": "aletheia-ready",
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 673
+    "total_deduped": 314
   },
   "synapse": {
-    "concepts": 34,
-    "wikilinks": 102
+    "concepts": 91,
+    "wikilinks": 377
   },
   "activity": {
     "recent_commits": [
-      "720dca2 sync: embeddings 127, pipeline state, token usage, dashboard",
-      "acb9999 Final Wave 4: health --auto + quality dashboard sync + MCP cleanup",
-      "63e7db6 embeddings full rebuild 127 pages",
-      "e6857ad Arquitectura integracion: LangFuse + Leantime eval + report command + 0 lint",
-      "dbaf8fa Global fixes: wikilinks contamination + ingest cleaning + synapse index + embeddings rebuild"
+      "644cb90 docs: README with badges, fix mcp-embed service script",
+      "3b1713e chore: untrack VIZ files, add mcp-embed service, ingest embedding hook",
+      "907ddb5 KAOS 3.0: fastembed, Mermaid viz, agy Companion, persistence tests, 100% coverage, CI update",
+      "254cfe6 session: test_full_cycle - Persistence cycle test",
+      "59ed45a session: test_full_cycle - Persistence cycle test"
     ],
     "recent_logs": [
       [
-        "2026-05-20",
-        "distill-v2",
-        "raw → wiki"
+        "2026-05-23",
+        "session",
+        "test_agent session completed"
       ],
       [
-        "2026-05-20",
-        "distill-v2",
-        "raw → wiki"
+        "2026-05-23",
+        "session",
+        "test_agent session completed"
       ],
       [
-        "2026-05-20",
-        "distill-v2",
-        "raw → wiki"
+        "2026-05-23",
+        "session",
+        "test_agent session completed"
       ],
       [
-        "2026-05-20",
-        "distill-v2",
-        "raw → wiki"
+        "2026-05-23",
+        "session",
+        "test_agent session completed"
       ],
       [
-        "2026-05-20",
-        "doc",
-        "pipeline-maid creado: documentación de arquitectura del pipeline MAID"
+        "2026-05-23",
+        "session",
+        "test_agent session completed"
       ]
     ]
   },
   "wikilinks": {
-    "valid": 117,
-    "broken": 0
+    "valid": 465,
+    "broken": 34
   },
   "deepseek": {
-    "total_calls": 18,
-    "total_cost_usd": 0.504,
+    "total_calls": 85,
+    "total_cost_usd": 2.38,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 48.9,
-    "has_confidence_matrix": 7,
-    "total_investigations": 20,
-    "completeness": 48.9
+    "score": 97.0,
+    "has_confidence_matrix": 23,
+    "total_investigations": 23,
+    "completeness": 97.0
   },
   "agents": {
     "total": 4,
