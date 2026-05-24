@@ -1,4 +1,4 @@
-[[index]] [[checkpoint]] [[vault]]
+[[index]] [[checkpoint]] [[vault]] [[adr]] [[gestion-conocimiento]]
 
 # Sistema DUAL: Gemini Flash + DeepSeek
 
