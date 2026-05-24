@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-23 22:17*
+*Auto-generated: 2026-05-24 11:34*
 
 ## Agentes
 
@@ -192,4 +192,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-23 22:17*
+*Ultima actualizacion: 2026-05-24 11:34*

@@ -14,9 +14,32 @@ Knowledge Agent Operating System — vault of persistent knowledge powered by ag
     - Never overwrite existing knowledge; use ADD-only pattern
     - Run `/health` after any write to the vault
 
+## Skills
+
+| Skill | Model | Cost | Purpose |
+|-------|-------|------|---------|
+| `/strategy` | Claude Opus | Pago | Strategic analysis, critical decisions |
+| `/review` | Gemini Flash | **Free** | Code review, routine analysis |
+| `/validate` | Claude Sonnet | Pago | ADR validation, architecture review |
+| `/health` | Gemini Flash | **Free** | Vault health check |
+| `/quality` | Gemini Flash | **Free** | Quality score |
+| `/export-vault` | — | **Free** | Mermaid viz generation |
+
+## MCP Bridge (OpenCode ↔ agy)
+
+OpenCode agents can call agy models via the `agy-bridge` MCP server:
+
+| Agent | Tools available | Use case |
+|-------|----------------|----------|
+| Aletheia | agy_ask_flash, sonnet, opus | Research validation |
+| Kosmos | agy_ask_sonnet, opus | Architecture review |
+| Metis | agy_ask_opus | Strategy analysis |
+| Kratos | agy_ask_flash, sonnet | Code review |
+| Mnemosyne | agy_status, agy_ask_flash | Quality checks |
+
 ## Companion vs OpenCode
 
 | Tool | Role |
 |------|------|
 | OpenCode | 5-agent pipeline: research → architecture → strategy → code → curation |
-| agy (this) | Async operations, quality checks, visualization, remote/SSH, Desktop export |
+| agy (this) | Async operations, quality checks, visualization, model-tiered access via bridge |

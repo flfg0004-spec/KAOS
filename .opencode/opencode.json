@@ -37,7 +37,10 @@
         "sequential-thinking_*": true,
         "vault_*": true,
         "txtai_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "agy-bridge_agy_ask_flash": true,
+        "agy-bridge_agy_ask_sonnet": true,
+        "agy-bridge_agy_ask_opus": true
       }
     },
     "mnemosyne": {
@@ -64,7 +67,9 @@
         "vault_*": true,
         "txtai_*": true,
         "knowledge-graph_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "agy-bridge_agy_status": true,
+        "agy-bridge_agy_ask_flash": true
       }
     },
     "kosmos": {
@@ -107,7 +112,9 @@
         "git_*": true,
         "lucidity_*": true,
         "mcp-obsidian-cli_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "agy-bridge_agy_ask_sonnet": true,
+        "agy-bridge_agy_ask_opus": true
       }
     },
     "metis": {
@@ -136,7 +143,8 @@
         "paperjsx_*": true,
         "exa-search_*": true,
         "mcp-obsidian-cli_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "agy-bridge_agy_ask_opus": true
       }
     },
     "kratos": {
@@ -170,7 +178,9 @@
         "git_*": true,
         "exa-search_*": true,
         "mcp-obsidian-cli_*": true,
-        "obsidian_*": true
+        "obsidian_*": true,
+        "agy-bridge_agy_ask_flash": true,
+        "agy-bridge_agy_ask_sonnet": true
       }
     }
   },
@@ -189,7 +199,8 @@
     "knowledge-graph_*": false,
     "vault_*": false,
     "sequential-thinking_*": false,
-    "exa-search_*": false
+    "exa-search_*": false,
+    "agy-bridge_*": false
   },
   "mcp": {
     "mcp-obsidian-cli": {
@@ -323,6 +334,12 @@
       "type": "local",
       "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\cache\\knowledge-graph"],
       "enabled": true
+    },
+    "agy-bridge": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_agy_bridge.py"],
+      "enabled": true,
+      "timeout": 300
     }
   },
   "compaction": {

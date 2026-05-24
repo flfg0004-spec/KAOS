@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-23 22:18:31",
+  "timestamp": "2026-05-24 11:34:42",
   "vault": {
     "total_md": 228,
     "by_directory": {
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "31c10bf chore: mcp-embed scheduled task, dashboard auto-update, GitHub push daily",
       "644cb90 docs: README with badges, fix mcp-embed service script",
       "3b1713e chore: untrack VIZ files, add mcp-embed service, ingest embedding hook",
       "907ddb5 KAOS 3.0: fastembed, Mermaid viz, agy Companion, persistence tests, 100% coverage, CI update",
-      "254cfe6 session: test_full_cycle - Persistence cycle test",
-      "59ed45a session: test_full_cycle - Persistence cycle test"
+      "254cfe6 session: test_full_cycle - Persistence cycle test"
     ],
     "recent_logs": [
       [

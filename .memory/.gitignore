@@ -5,6 +5,9 @@ raw/archive/
 # Generated visualization files (regenerate with: vault.py viz)
 VIZ_*.md
 
+# Bridge signaling (regenerated on each call)
+bridge/
+
 __pycache__/
 *.pyc
 .vault/
