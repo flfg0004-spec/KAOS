@@ -84,3 +84,24 @@ def remove_deprecated_ps(dry_run: bool = True) -> str:
 def add_mnemosyne_to_index(dry_run: bool = True) -> str:
     """One-shot fix: Mnemosyne already in index. Kept for compatibility."""
     return "Mnemosyne already in index."
+
+
+def archive_raw_older_than(days: int = 30, dry_run: bool = True) -> str:
+    """Move raw/ files older than N days with no curation to _archive/."""
+    from datetime import datetime, timedelta
+    cutoff = datetime.now() - timedelta(days=days)
+    archive_dir = VAULT / "_archive" / "raw"
+    moved = 0
+    for f in sorted((VAULT / "raw").glob("*.md")):
+        if f.stat().st_mtime < cutoff.timestamp():
+            # Check if there's a corresponding wiki page (curation)
+            slug = f.stem
+            curated = list((VAULT / "wiki").rglob(f"{slug}.md"))
+            if not curated:
+                dest = archive_dir / f.name
+                if not dry_run:
+                    archive_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(f), str(dest))
+                moved += 1
+    mode = " (dry-run)" if dry_run else ""
+    return f"Would archive {moved} files{mode}" if dry_run else f"Archived {moved} files to {archive_dir}"

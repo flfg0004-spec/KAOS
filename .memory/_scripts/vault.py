@@ -205,6 +205,12 @@ def cmd_scan(args):
         print("Unknown scan action")
 
 
+def cmd_archive(args):
+    from lib.cleaner import archive_raw_older_than
+    result = archive_raw_older_than(days=args.days, dry_run=not args.really)
+    print(result)
+
+
 def cmd_clean(args):
     dry_run = not args.really
     print(f"{'DRY-RUN' if dry_run else 'REAL'} mode")
@@ -354,6 +360,19 @@ def cmd_distill(args):
         cmd.append("--new-only")
     result = subprocess.run(cmd, cwd=KAOS_ROOT)
     sys.exit(result.returncode)
+
+
+def cmd_docker(args):
+    """Check Docker service health."""
+    from lib import docker_health
+    print(docker_health.report())
+
+
+def cmd_validate(args):
+    """Cross-validation: Gemini Flash critiques DeepSeek output."""
+    from lib import cross_validator
+    result = cross_validator.run(args.path, args.profile)
+    print(result)
 
 
 def cmd_consolidate(args):
@@ -509,6 +528,11 @@ def main():
     p.add_argument("action", choices=["dead-refs", "duplicates", "orphans", "stale", "summary"])
     p.set_defaults(func=cmd_scan)
 
+    p = sub.add_parser("archive", help="Archive old raw/ files (>30 days)")
+    p.add_argument("--days", type=int, default=30, help="Age threshold in days")
+    p.add_argument("--really", action="store_true", help="Execute (default: dry-run)")
+    p.set_defaults(func=cmd_archive)
+
     p = sub.add_parser("clean", help="Fix vault issues")
     p.add_argument("--really", action="store_true", help="Execute changes (default: dry-run)")
     p.set_defaults(func=cmd_clean)
@@ -549,6 +573,14 @@ def main():
     p.add_argument("--new-only", action="store_true", help="Solo destilar archivos nuevos")
     p.add_argument("--slug", default="", help="Nombre del archivo raw/ (modo file)")
     p.set_defaults(func=cmd_distill)
+
+    p = sub.add_parser("docker", help="Check Docker service health")
+    p.set_defaults(func=cmd_docker)
+
+    p = sub.add_parser("validate", help="Cross-validate output with Gemini Flash")
+    p.add_argument("--path", default="", help="Path to output file")
+    p.add_argument("--profile", default="desarrollo", choices=["desarrollo", "produccion", "auditoria"])
+    p.set_defaults(func=cmd_validate)
 
     p = sub.add_parser("consolidate", help="Run episodic memory consolidation (DBSCAN)")
     p.set_defaults(func=cmd_consolidate)

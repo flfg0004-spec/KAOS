@@ -4,42 +4,57 @@
 [![Quality](https://github.com/flfg0004-spec/KAOS/actions/workflows/quality.yml/badge.svg)](https://github.com/flfg0004-spec/KAOS/actions/workflows/quality.yml)
 [![Pipeline](https://github.com/flfg0004-spec/KAOS/actions/workflows/pipeline.yml/badge.svg)](https://github.com/flfg0004-spec/KAOS/actions/workflows/pipeline.yml)
 
-Persistent knowledge vault powered by multi-agent AI. Research → Architecture → Strategy → Code → Curation.
+Persistent knowledge vault powered by multi-agent AI — **Quality Score: 94.6/100**
 
-## Quick Start
+## Quick Start (5 min)
 
 ```bash
-# Install dependencies
 pip install -r .memory/_scripts/requirements.txt
-
-# Run quality checks
-py .memory/_scripts/vault.py lint run
 py .memory/_scripts/vault.py health --auto
-
-# Generate visualizations
-py .memory/_scripts/vault.py viz
-
-# Run fast test suite
+py .memory/_scripts/vault.py lint run
 py .memory/_scripts/tests/run.py --fast
+py .memory/_scripts/vault.py viz
 ```
 
-## Visualization
-
-The vault auto-generates Mermaid diagrams for the knowledge graph, pipeline, quality trends, and timeline.
-
-![Pipeline](.memory/VIZ_PIPELINE.md rendered on GitHub)
+See [QUICKSTART.md](docs/QUICKSTART.md) for detailed usage.
 
 ## Architecture
 
-| Layer | Path | Description |
-|-------|------|-------------|
-| Raw | `.memory/raw/` | Immutable research outputs |
-| Wiki | `.memory/wiki/` | Curated knowledge with wikilinks |
-| Schema | `.memory/schema/` | ADRs, architecture, policies |
+```
+OpenCode (5 subagents)          agy Companion (7 skills)
+       │                              │
+       └──────────┬───────────────────┘
+                  │
+          .memory/ vault (shared state)
+          ├── raw/       → Research outputs
+          ├── wiki/      → Curated knowledge
+          ├── schema/    → ADRs & policies
+          └── bridge/    → Inter-agent signaling
+```
+
+## System DUAL
+
+| Mode | Model | Cost | Speed | Use |
+|------|-------|------|-------|-----|
+| **Explore** | Gemini Flash (agy) | Free | <2 min | Prototyping, review, debug |
+| **Produce** | DeepSeek (OpenCode) | ~$0.003 | 5-15 min | Pipeline, ADRs, production |
 
 ## Agents
 
 | Agent | Tool | Role |
 |-------|------|------|
 | OpenCode | 5 subagents | Research → Architecture → Strategy → Code → Curation |
-| agy (Companion) | 6 skills | Async ingest, consolidation, health, quality, viz, backup |
+| agy (Companion) | 7 skills | Ingest, consolidate, health, quality, viz, sync, explore |
+
+## Quality Dashboard
+
+```bash
+py .memory/_scripts/vault.py quality     # Score compuesto
+py .memory/_scripts/vault.py speed       # Métricas DUAL
+py .memory/_scripts/vault.py lint run    # Broken wikilinks, orphans
+py .memory/_scripts/vault.py lint coverage  # Coverage raw/
+```
+
+## Troubleshooting
+
+See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues.

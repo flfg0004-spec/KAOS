@@ -195,7 +195,6 @@
     "scholar-search_*": false,
     "rss-reader_*": false,
     "context7_*": false,
-    "postgres_*": false,
     "git_*": false,
     "mcp-obsidian-cli_*": false,
     "obsidian_*": false,
@@ -269,19 +268,7 @@
       "command": ["npx", "-y", "exa-mcp-server"],
       "enabled": true,
       "env": {
-        "EXA_API_KEY": ""
-      }
-    },
-    "gptr-deep-research": {
-      "type": "local",
-      "command": ["npx", "-y", "gpt-researcher-mcp"],
-      "enabled": false,
-      "env": {
-        "GPTR_MODEL_PROVIDER": "deepseek",
-        "GPTR_MODEL": "deepseek-v4-flash",
-        "GPTR_REPORT_MODEL": "deepseek-v4-pro",
-        "GPTR_SEARCH_PROVIDER": "exa",
-        "GPTR_EXA_API_KEY": ""
+        "EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
       }
     },
     "searxng": {
@@ -298,11 +285,6 @@
       "type": "local",
       "command": ["py", "-3", ".memory/_scripts/mcp_txtai.py"],
       "enabled": true
-    },
-    "postgres": {
-      "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "--connection-string", "postgresql://localhost/kaos"],
-      "enabled": false
     },
     "structurizr": {
       "type": "local",
@@ -322,11 +304,6 @@
         "OBSIDIAN_API_KEY": "",
         "OBSIDIAN_REST_URL": "https://127.0.0.1:27124"
       }
-    },
-    "supermemory": {
-      "type": "remote",
-      "url": "https://mcp.supermemory.ai/mcp",
-      "enabled": false
     },
     "mcp-embed": {
       "type": "local",

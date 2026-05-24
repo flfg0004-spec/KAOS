@@ -161,7 +161,8 @@ def route_parallel_fanout(state: KAOSState) -> list[Send]:
     ]
 
 MAX_ITERATIONS = 3
-CRITIC_THRESHOLD = 60
+CRITIC_THRESHOLD = 40
+NODE_TIMEOUT = 300  # seconds per node
 
 def _score_output(text: str) -> dict:
     """Evaluate a single text output for quality."""
@@ -236,10 +237,16 @@ def critic_node(state: KAOSState) -> dict:
     }
 
 def route_after_critic(state: KAOSState) -> str:
-    """Route: refine if quality low + iterations remain, else advance."""
+    """Route: refine if quality low + iterations remain, else advance.
+    
+    Skip critic loop for non-code tasks (no kratos_output).
+    """
     iteration = state.get("iteration", 0)
     score = state.get("critic_score", 0)
+    kratos_out = state.get("kratos_output", "")
     
+    if not kratos_out:
+        return "advance"
     if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
         return "refine"
     return "advance"

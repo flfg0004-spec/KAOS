@@ -51,13 +51,13 @@ def test_critic_routing_advance():
 
 def test_critic_routing_refine():
     from lib.orchestrator import route_after_critic, KAOSState
-    state = KAOSState(topic="test", critic_score=30, iteration=1)
+    state = KAOSState(topic="test", critic_score=30, iteration=1, kratos_output="# Code\nprint('test')")
     assert route_after_critic(state) == "refine"
 
 
 def test_critic_routing_refine_max_iterations():
     from lib.orchestrator import route_after_critic, KAOSState
-    state = KAOSState(topic="test", critic_score=30, iteration=3)
+    state = KAOSState(topic="test", critic_score=30, iteration=3, kratos_output="# Code\nprint('test')")
     assert route_after_critic(state) == "advance"
 
 
@@ -127,6 +127,15 @@ def test_mnemosyne_node_no_llm():
     assert "mnemosyne_output" in result
     assert "Curation prompt written" in result["mnemosyne_output"]
 
+
+def test_code_memory_hook_can_activate():
+    """Verifica que el hook de CodeExperience se puede activar."""
+    from lib.kratos_hook import init_code_memory_hook
+    import builtins
+    was_active = getattr(builtins, '_code_memory_hook_active', False)
+    if not was_active:
+        init_code_memory_hook()
+    assert getattr(builtins, '_code_memory_hook_active', False)
 
 def test_slugify():
     from lib.agent_executor import _slugify

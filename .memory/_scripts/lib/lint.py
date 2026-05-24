@@ -156,8 +156,12 @@ def coverage_check():
     raw = Path(__file__).resolve().parent.parent.parent / "raw"
     if not raw.exists():
         return "No raw/ investigations found."
+    archive = Path(__file__).resolve().parent.parent.parent / "_archive" / "raw"
     items = []
     for f in sorted(raw.glob("*.md")):
+        # Skip files also present in _archive/raw/ (archived)
+        if archive.exists() and (archive / f.name).exists():
+            continue
         text = f.read_text(encoding="utf-8", errors="replace")
         sources = len(re.findall(r"\[\[([^\]]+)\]\]", text))
         matrix = "## Matriz de Confianza" in text

@@ -73,6 +73,12 @@ tasks = [
         "day": "SUN",
         "time": "20:00",
     },
+    {
+        "name": "KAOS-Docker-Health",
+        "action": ["py", "-3", str(BASE / ".memory/_scripts/vault.py"), "docker"],
+        "trigger": "DAILY",
+        "time": "09:00",
+    },
 ]
 
 for t in tasks:

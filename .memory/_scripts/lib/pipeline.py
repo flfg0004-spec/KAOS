@@ -182,6 +182,11 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
         seed_code_experiences()
     except Exception:
         pass
+    try:
+        from lib.kratos_hook import init_code_memory_hook
+        init_code_memory_hook()
+    except Exception:
+        pass
     
     prof = _load_profile(profile)
     tools_str = ", ".join(prof.get("tools", ["exa-search", "searxng", "sequential-thinking"]))
