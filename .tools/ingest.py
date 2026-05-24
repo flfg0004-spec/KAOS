@@ -99,6 +99,14 @@ def ingest_text(text: str, title: str, source_type: str = "text", original_ref: 
     manifest["total_ingested"] += 1
     _save_manifest(manifest)
 
+    try:
+        slug_clean = slug.replace("-", "_")
+        sys.path.insert(0, str(BASE / ".memory" / "_scripts"))
+        from lib.embeddings import update
+        update(str(path.relative_to(BASE)))
+    except Exception:
+        pass
+
     return {"status": "ingested", "sha256": sha, "path": str(path.relative_to(BASE))}
 
 
