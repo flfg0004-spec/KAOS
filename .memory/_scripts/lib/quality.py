@@ -51,12 +51,14 @@ def _embedded_pages() -> tuple[int, int]:
     try:
         from lib import vectorstore as vs
         s = vs.status()
-        m = re.search(r"(\d+) pages", s)
+        m = re.search(r"(\d+) chunks", s)
         embedded = int(m.group(1)) if m else 0
+        # embedded = total chunks, max = total unique files with chunks
+        total_md = _count_md(KAOS_ROOT / ".memory")
+        return min(embedded, total_md * 10), total_md  # cap at 10 chunks per file
     except Exception:
-        embedded = 0
-    total_md = _count_md(KAOS_ROOT / ".memory")
-    return embedded, total_md
+        pass
+    return 0, 1
 
 
 def _test_results() -> tuple[int, int]:

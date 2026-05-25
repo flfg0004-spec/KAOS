@@ -244,9 +244,13 @@ def status() -> str:
         return "Vector store: txtai not initialized."
 
     try:
-        results = embeddings.search("SELECT COUNT(*) AS cnt FROM txtai")
-        total = results[0].get("cnt", 0) if results else 0
-        return f"Vector store: txtai ({total} chunks)."
+        results = embeddings.search("SELECT id, text FROM txtai LIMIT 10000")
+        unique_paths = set()
+        for r in results:
+            doc_id = r.get("id", "")
+            path_part = doc_id.split("::")[0] if "::" in doc_id else doc_id
+            unique_paths.add(path_part)
+        return f"Vector store: txtai ({len(results)} chunks, {len(unique_paths)} pages)."
     except Exception:
         return "Vector store: txtai (unknown size)."
 

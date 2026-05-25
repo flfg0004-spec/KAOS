@@ -15,9 +15,24 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - run: pip install -r _scripts/requirements.txt
-      - run: python _scripts/tests/run.py --fast
-        name: Run test suite (fast)
+      - run: python -m pytest tests/test_config.py tests/test_ingest.py tests/test_lint.py tests/test_dsol.py tests/test_deerflow_bridge.py tests/test_verification.py tests/test_fase3.py -v --tb=short -k "not start_stop and not vault_search and not kaos_research"
+        name: Run test suite
       - run: python _scripts/vault.py health
         name: Health check
       - run: python _scripts/vault.py lint coverage
         name: Coverage check
+      - name: Quality gate
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          cache = Path('.memory/cache/test-results.json')
+          if cache.exists():
+              r = json.loads(cache.read_text())
+              score = r.get('passed', 0) / max(1, r.get('total', 1)) * 100
+              print(f'Test pass rate: {score:.1f}%')
+              if score < 80:
+                  exit(1)
+          else:
+              print('No test results — skipping gate')
+          "

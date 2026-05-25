@@ -1,4 +1,4 @@
-"""LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE."""
+"""LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE + Langfuse."""
 import os, re, json, sqlite3, logging
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -16,6 +16,26 @@ _LOG = logging.getLogger(__name__)
 DB_PATH = VAULT_ROOT / "cache" / "langgraph.db"
 HITL_PATH = VAULT_ROOT / "_pipeline" / "hitl.json"
 EVAL_PATH = VAULT_ROOT / "_pipeline" / "evaluation.json"
+
+# ── Langfuse Tracing ─────────────────────────────────────────
+LANGFUSE_ENABLED = os.environ.get("LANGFUSE_PUBLIC_KEY", "") and os.environ.get("LANGFUSE_SECRET_KEY", "")
+if LANGFUSE_ENABLED:
+    try:
+        from langfuse.callback import CallbackHandler
+        _LANGFUSE_HANDLER = CallbackHandler(
+            public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+            secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+            host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+        )
+        _LOG.info("Langfuse tracing enabled")
+    except Exception as e:
+        _LANGFUSE_HANDLER = None
+        _LOG.warning(f"Langfuse init failed: {e}")
+else:
+    _LANGFUSE_HANDLER = None
+
+def get_langfuse_handler():
+    return _LANGFUSE_HANDLER
 
 # ── DeerFlow / Agno LIVE mode ──────────────────────────────────────
 DEERFLOW_ENABLED = os.environ.get("DEERFLOW_ENABLED", "false").lower() == "true"

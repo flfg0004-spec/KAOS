@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KAOS Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',monospace;background:#0d1117;color:#c9d1d9;padding:20px}
+h1{color:#58a6ff;font-size:1.5em;margin-bottom:20px}
+h2{color:#8b949e;font-size:1em;margin:15px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px}
+.card h3{color:#58a6ff;font-size:0.82em;margin-bottom:6px}
+.val{font-size:1.8em;font-weight:bold}
+.val.green{color:#3fb950}.val.yellow{color:#d29922}.val.red{color:#f85149}.val.muted{color:#484f58}
+.trend{font-size:0.78em;color:#8b949e;margin-top:4px}
+.meta{font-size:0.72em;color:#484f58;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:0.82em}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid #21262d}
+th{color:#8b949e}
+.alert-band{background:#3a1e1e;border:1px solid #f85149;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:0.85em}
+.alert-band.ok{background:#0d2818;border-color:#3fb950}
+.alert-band.warn{background:#3a2e1e;border-color:#d29922}
+.alert-band.crit{background:#3a1e1e;border-color:#f85149}
+.status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status.ok{background:#3fb950}.status.warn{background:#d29922}.status.crit{background:#f85149}
+.footer{text-align:center;color:#484f58;font-size:0.72em;margin-top:25px}
+</style>
+</head>
+<body>
+<h1>⚡ KAOS Dashboard</h1>
+<div id="alerts"></div>
+<div class="grid" id="metrics"></div>
+<h2>Tendencias (7d)</h2>
+<div id="trends"></div>
+<h2>Agentes</h2>
+<div id="agents"></div>
+<div class="footer" id="footer"></div>
+<script>
+async function load(){
+  try {
+    const r=await fetch('/api/data');
+    const d=await r.json();
+    document.getElementById('metrics').innerHTML=d.metrics.map(m=>{
+      let v=typeof m.value==='number'?m.value.toFixed(1):m.value;
+      let cls=typeof m.value==='number'&&m.value>0?(m.value>=m.target?'green':m.value>m.warn?'yellow':'red'):'muted';
+      if(m.value==='—') cls='muted';
+      return '<div class=card><h3>'+m.name+'</h3><div class="val '+cls+'">'+v+'</div><div class=trend>'+m.trend+'</div><div class=meta>'+m.source+'</div></div>'
+    }).join('');
+    document.getElementById('alerts').innerHTML=d.alerts.map(a=>'<div class="alert-band '+a.level+'"><span class="status '+a.level+'"></span>'+a.message+'</div>').join('');
+    document.getElementById('trends').innerHTML=d.trends.length?'<table><tr><th>Fecha</th><th>Score</th><th>Δ</th></tr>'+d.trends.map(r=>'<tr><td>'+r.date+'</td><td>'+r.score.toFixed(1)+'</td><td>'+(r.delta>0?'+':'')+r.delta.toFixed(1)+'</td></tr>').join('')+'</table>':'<p>Sin datos historicos</p>';
+    document.getElementById('agents').innerHTML=d.agents.length?'<table><tr><th>Agente</th><th>Score</th><th>Tareas</th></tr>'+d.agents.map(a=>'<tr><td>'+a.name+'</td><td>'+a.score.toFixed(1)+'</td><td>'+a.tasks+'</td></tr>').join('')+'</table>':'<p>Sin datos de agentes</p>';
+    document.getElementById('footer').textContent='Actualizado: '+d.updated+' | KAOS v3';
+  } catch(e){document.getElementById('alerts').innerHTML='<div class="alert-band crit"><span class="status crit"></span>Error cargando datos</div>'}
+}
+load();setInterval(load,30000);
+</script>
+</body>
+</html>
