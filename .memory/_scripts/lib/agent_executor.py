@@ -232,6 +232,18 @@ def aletheia_node(state: dict) -> dict:
         if parts:
             quality_hint = "\n\n## Feedback de Iteración Anterior\n" + "\n".join(parts) + "\n"
 
+    # Gap-driven re-research: inject gaps from BCG evaluation
+    gaps_section = ""
+    gap_iteration = state.get("gap_iteration", 0)
+    pending_gaps = state.get("aletheia_pending_gaps", [])
+    if gap_iteration > 0 and pending_gaps:
+        gap_lines = "\n".join(f"- {g}" for g in pending_gaps[:5])
+        gaps_section = (
+            f"\n## Gaps de Conocimiento a Investigar (Iteración {gap_iteration})\n"
+            f"{gap_lines}\n\n"
+            f"Enfoca tu investigación en cubrir estos gaps específicos.\n"
+        )
+
     prompt = (
         f"# Pipeline: Investigación\n\n"
         f"## Tema\n{topic}\n\n"
@@ -239,6 +251,7 @@ def aletheia_node(state: dict) -> dict:
         f"## Complejidad: {plan.get('complexity', 'desconocida')}\n"
         f"## Enfoque: {focus}\n"
         f"{quality_hint}"
+        f"{gaps_section}"
         f"Investiga a fondo el tema. Busca fuentes, evidencia, análisis.\n"
         f"Produce un informe detallado en markdown con:\n"
         f"1. Resumen ejecutivo\n"
@@ -267,8 +280,12 @@ def aletheia_node(state: dict) -> dict:
         ctx["context_summary"]["aletheia"]["sources_used"] = sources
         _save_context(ctx)
         _notify_step(state, "Aletheia Research", "completed")
+        # Increment gap_iteration for gap-driven re-research routing
+        new_gap_iter = gap_iteration + 1 if gap_iteration > 0 else gap_iteration
         return {
             **state, "aletheia_output": raw, "aletheia_prompt": prompt,
+            "gap_iteration": new_gap_iter,
+            "aletheia_pending_gaps": [],
         }
     
     ctx = _load_context()
@@ -281,10 +298,13 @@ def aletheia_node(state: dict) -> dict:
     ctx["cross_agent"]["aletheia_question"] = topic
     _save_context(ctx)
     
+    new_gap_iter = gap_iteration + 1 if gap_iteration > 0 else gap_iteration
     return {
         **state,
         "aletheia_output": f"Prompt written to {output_path}",
         "aletheia_prompt": prompt,
+        "gap_iteration": new_gap_iter,
+        "aletheia_pending_gaps": [],
     }
 
 def kosmos_node(state: dict) -> dict:
@@ -442,6 +462,32 @@ def metis_node(state: dict) -> dict:
         confidence = parsed_refined.get("confidence", confidence) if isinstance(parsed_refined, dict) else confidence
         final_output = refined if parsed_refined else raw
 
+        # ── Extract knowledge gaps from Devil's Advocate critique ──
+        gaps_identified = []
+        critique_lower = critique.lower()
+        gap_patterns = [
+            r"(?:gap|falta|missing|falta|carece|debilidad)\s*:?\s*([^\n.]+)",
+            r"(?:no se consideró|no se mencionó|no se analizó|not considered|not analyzed)\s*:?\s*([^\n.]+)",
+            r"(?:supuesto débil|weak assumption)\s*:?\s*([^\n.]+)",
+        ]
+        for pat in gap_patterns:
+            matches = re.findall(pat, critique_lower)
+            gaps_identified.extend(m.strip() for m in matches if len(m.strip()) > 10)
+        gaps_identified = list(set(gaps_identified))[:5]  # dedup, max 5
+
+        # ── Decompose OKRs into initiatives ──
+        initiatives = []
+        kr_assignment = {}
+        execution_plan = {}
+        if okrs:
+            try:
+                from lib.strategy_tools import scope_initiatives, assign_krs, build_execution_plan
+                initiatives = scope_initiatives(okrs, topic)
+                kr_assignment = assign_krs(okrs, initiatives)
+                execution_plan = build_execution_plan(okrs, initiatives, kr_assignment)
+            except Exception:
+                pass
+
         ctx = _load_context()
         ctx["agents"].append("metis")
         ctx["context_summary"]["metis"] = {"started_at": datetime.now().isoformat()}
@@ -451,11 +497,14 @@ def metis_node(state: dict) -> dict:
             "risks": risks,
             "confidence": confidence,
             "priority": "high",
+            "initiatives": initiatives,
+            "kr_assignment": kr_assignment,
+            "execution_plan": execution_plan,
         }
         ctx["cross_agent"]["metis_to_aletheia"] = {
             "strategy_summary": final_output[:500],
             "confidence": confidence,
-            "gaps_identified": [],
+            "gaps_identified": gaps_identified,
             "generated_at": datetime.now().isoformat(),
         }
         _save_context(ctx)
@@ -548,6 +597,10 @@ def kratos_node(state: dict) -> dict:
     code_context = ctx.get("cross_agent", {}).get("aletheia_to_kratos", {})
     
     strategy_summary = strategy.get("strategy_summary", topic)
+    okrs = strategy.get("okrs", [])
+    initiatives = strategy.get("initiatives", [])
+    execution_plan = strategy.get("execution_plan", {})
+    kr_assignment = strategy.get("kr_assignment", {})
     model_key = _resolve_kratos_model(state)
     
     # ── PRGII Step 1: Retrieve from CodeExperience ──
@@ -577,10 +630,36 @@ def kratos_node(state: dict) -> dict:
         experiences_section = ""
     
     # ── PRGII Step 2: Build comprehensive prompt ──
+    # Build structured initiatives section
+    initiatives_section = ""
+    if initiatives:
+        init_lines = []
+        for ini in initiatives:
+            deps = ", ".join(ini.get("dependencies", [])) or "ninguna"
+            cp = " [CRITICAL PATH]" if ini.get("critical_path") else ""
+            init_lines.append(
+                f"- **{ini['id']}**: {ini['key_result'][:80]}{cp}\n"
+                f"  - Dependencias: {deps}\n"
+                f"  - Esfuerzo estimado: {ini.get('effort_weeks', '?')} semanas\n"
+                f"  - Criterio de éxito: {ini.get('success_criteria', [''])[0][:80]}"
+            )
+        initiatives_section = "\n".join(init_lines)
+
+    okrs_section = ""
+    if okrs:
+        okr_lines = []
+        for oi, okr in enumerate(okrs):
+            krs = okr.get("key_results", [])
+            kr_text = "\n".join(f"    - KR: {k}" for k in krs[:3])
+            okr_lines.append(f"- OKR {oi+1}: {okr.get('objective', '')[:80]}\n{kr_text}")
+        okrs_section = "\n".join(okr_lines)
+
     prompt = (
         f"# Pipeline: Implementación — PRGII (1M Contexto)\n\n"
         f"## Tarea\n{topic}\n\n"
-        f"## Contexto Estratégico (de Metis)\n{strategy_summary}\n\n"
+        f"## OKRs Estratégicos (de Metis)\n{okrs_section}\n\n"
+        f"## Contexto Estratégico\n{strategy_summary}\n\n"
+        f"## Initiatives Asignadas\n{initiatives_section}\n\n"
         f"{experiences_section}"
         f"## Contexto de Investigación (de Aletheia)\n"
         f"{str(code_context)[:1500] if code_context else 'Sin contexto de código específico.'}\n\n"
@@ -616,24 +695,70 @@ def kratos_node(state: dict) -> dict:
 
     if LLM_DIRECT_ENABLED:
         _notify_step(state, "Kratos Implementation", "in_progress")
+        
+        # ── PRGII Loop: Generate → Test → Repair (max 3 iterations) ──
         raw = _llm_or_executor_call("kratos", prompt, model_override=model_key)
+        max_iterations = 3
+        iteration = 0
+        iteration_log = []
+        
+        while iteration < max_iterations:
+            iteration += 1
+            # Self-test: ask LLM to review its own output for issues
+            _notify_step(state, f"Kratos Self-Test ({iteration}/{max_iterations})", "in_progress")
+            review_prompt = (
+                f"Revisa este código en busca de errores sintácticos, lógicos o de edge cases.\n\n"
+                f"## Código\n{raw[:4000]}\n\n"
+                f"Responde SOLO con JSON:\n"
+                f'{{"has_errors": true|false, "issues": ["descripción del error"], '
+                f'"severity": "critical|minor|none"}}'
+            )
+            try:
+                review = agent_llm_call("critic", review_prompt)
+                import json as _json
+                review_data = _json.loads(review.strip().strip("```json").strip("```").strip())
+                has_errors = review_data.get("has_errors", False)
+                issues = review_data.get("issues", [])
+            except Exception:
+                has_errors = False
+                issues = []
+            
+            if not has_errors or not issues:
+                iteration_log.append(f"✅ Iteración {iteration}: sin errores")
+                break
+            
+            # Repair: feed errors back to LLM
+            _notify_step(state, f"Kratos Repair ({iteration}/{max_iterations})", "in_progress")
+            repair_prompt = (
+                f"## Tarea Original\n{topic}\n\n"
+                f"## Código Actual (con errores)\n```\n{raw[:4000]}\n```\n\n"
+                f"## Errores Detectados\n" + "\n".join(f"- {i}" for i in issues[:5]) + "\n\n"
+                f"Corrige el código. SOLO el código corregido, sin explicación."
+            )
+            raw = _llm_or_executor_call("kratos", repair_prompt, model_override=model_key)
+            iteration_log.append(f"🔄 Iteración {iteration}: reparado — {', '.join(issues[:2])}")
+        
         output_path.write_text(raw, encoding="utf-8")
         ctx = _load_context()
         ctx["agents"].append("kratos")
         ctx["context_summary"]["kratos"] = {"started_at": datetime.now().isoformat()}
         
-        # Improved completeness check
         decision = "complete" if _is_complete_code(raw) else "needs_curation"
         ctx["cross_agent"]["kratos_decision"] = decision
+        ctx["cross_agent"]["kratos_iterations"] = iteration_log
         
         _save_context(ctx)
         _notify_step(state, "Kratos Implementation", "completed")
         
-        # ── Ingest experiences if code has errors ──
+        # ── Ingest experiences (both errors and successes) ──
         try:
-            if "error" in raw.lower() or "traceback" in raw.lower():
-                from lib.kratos_hook import capture_agent_output
+            has_errors = "error" in raw.lower() or "traceback" in raw.lower()
+            from lib.kratos_hook import capture_agent_output
+            if has_errors:
                 capture_agent_output(raw)
+            else:
+                from lib.code_memory import capture_from_bash
+                capture_from_bash(exit_code=0, stderr="", cmd=f"kratos_generate: {topic[:200]}", cwd=detected_lang)
         except Exception:
             pass
         
@@ -729,12 +854,31 @@ def bcg_evaluator_node(state: dict) -> dict:
         except Exception:
             okr_result = {}
 
+        # Track to strategy analytics timeseries
+        try:
+            from lib.strategy_analytics import track_bcg as _track
+            _track({**state, "bcg_score": bcg.get("total_score_10", 0),
+                     "bcg_passed": bcg.get("passed", False),
+                     "bcg_details": bcg,
+                     "okr_quality": okr_result})
+        except Exception:
+            pass
+
+        # Detect knowledge gaps from critique context
+        try:
+            ctx = _load_context()
+            metis_feedback = ctx.get("cross_agent", {}).get("metis_to_aletheia", {})
+            gaps = metis_feedback.get("gaps_identified", [])
+        except Exception:
+            gaps = []
+
         return {
             **state,
             "bcg_score": bcg.get("total_score_10", 0),
             "bcg_passed": bcg.get("passed", False),
             "bcg_details": bcg,
             "okr_quality": okr_result,
+            "aletheia_pending_gaps": gaps,
         }
     except Exception as e:
         return {**state, "bcg_score": 0, "bcg_passed": False, "bcg_details": {"error": str(e)}}

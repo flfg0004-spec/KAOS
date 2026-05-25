@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-25 02:43:45",
+  "timestamp": "2026-05-25 02:49:47",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 1787,
-    "avg_duration_min": 139.2,
+    "total_messages": 1860,
+    "avg_duration_min": 140.1,
     "feedback_avg": 0,
     "feedback_count": 0
   },
@@ -13,10 +13,10 @@
       "wiki": 132,
       "schema": 22,
       "raw": 26,
-      "_scripts": 148,
+      "_scripts": 156,
       "_pipeline": 3
     },
-    "total_scripts": 148
+    "total_scripts": 156
   },
   "health": {
     "git_clean": false,
@@ -30,23 +30,23 @@
   },
   "pipeline": {
     "status": "aletheia-ready",
-    "profile": "deep"
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 3,
     "total_deduped": 443
   },
   "synapse": {
-    "concepts": 0,
-    "wikilinks": 0
+    "concepts": 91,
+    "wikilinks": 377
   },
   "activity": {
     "recent_commits": [
+      "3807542 session: mnemosyne - curation-cycle",
+      "4114b25 session: test_agent - Integration test cycle",
       "1f77955 session: mnemosyne - curation-cycle",
       "8c42e08 session: mnemosyne - curation-cycle",
-      "7a0c3eb session: mnemosyne - curation-cycle",
-      "5bba511 session: mnemosyne - curation-cycle",
-      "80f518d session: mnemosyne - curation-cycle"
+      "7a0c3eb session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -72,7 +72,7 @@
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
+        "test_agent session completed"
       ]
     ]
   },
@@ -81,18 +81,18 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 135,
-    "total_prompt_tokens": 15967,
-    "total_completion_tokens": 10320,
-    "total_cache_hit_tokens": 392,
-    "total_cache_miss_tokens": 12060,
-    "total_reasoning_tokens": 10,
-    "total_cost_usd": 12.5084,
+    "total_calls": 138,
+    "total_prompt_tokens": 16067,
+    "total_completion_tokens": 10370,
+    "total_cache_hit_tokens": 432,
+    "total_cache_miss_tokens": 12120,
+    "total_reasoning_tokens": 20,
+    "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 15,
-        "prompt_tokens": 3967,
-        "cost_usd": 9.1484
+        "calls": 18,
+        "prompt_tokens": 4067,
+        "cost_usd": 9.6944
       },
       "2026-05-24": {
         "calls": 35,
@@ -131,19 +131,19 @@
         "completion_tokens": 2270
       },
       "kratos": {
-        "calls": 11,
+        "calls": 13,
         "cost_usd": 0.0,
         "prompt_tokens": 0,
         "completion_tokens": 0
       },
       "crewai": {
-        "calls": 1,
-        "cost_usd": 0.546,
-        "prompt_tokens": 100,
-        "completion_tokens": 50
+        "calls": 2,
+        "cost_usd": 1.092,
+        "prompt_tokens": 200,
+        "completion_tokens": 100
       }
     },
-    "cache_hit_rate": 2.5,
+    "cache_hit_rate": 2.7,
     "unknown": {
       "calls": 120,
       "cost_usd": 3.3600000000000025,
@@ -169,31 +169,31 @@
       "completion_tokens": 2270
     },
     "kratos": {
-      "calls": 11,
+      "calls": 13,
       "cost_usd": 0.0,
       "prompt_tokens": 0,
       "completion_tokens": 0
     },
     "crewai": {
-      "calls": 1,
-      "cost_usd": 0.546,
-      "prompt_tokens": 100,
-      "completion_tokens": 50
+      "calls": 2,
+      "cost_usd": 1.092,
+      "prompt_tokens": 200,
+      "completion_tokens": 100
     }
   },
   "token_usage": {
-    "total_calls": 135,
-    "total_prompt_tokens": 15967,
-    "total_completion_tokens": 10320,
-    "total_cache_hit_tokens": 392,
-    "total_cache_miss_tokens": 12060,
-    "total_reasoning_tokens": 10,
-    "total_cost_usd": 12.5084,
+    "total_calls": 138,
+    "total_prompt_tokens": 16067,
+    "total_completion_tokens": 10370,
+    "total_cache_hit_tokens": 432,
+    "total_cache_miss_tokens": 12120,
+    "total_reasoning_tokens": 20,
+    "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 15,
-        "prompt_tokens": 3967,
-        "cost_usd": 9.1484
+        "calls": 18,
+        "prompt_tokens": 4067,
+        "cost_usd": 9.6944
       },
       "2026-05-24": {
         "calls": 35,
@@ -232,19 +232,19 @@
         "completion_tokens": 2270
       },
       "kratos": {
-        "calls": 11,
+        "calls": 13,
         "cost_usd": 0.0,
         "prompt_tokens": 0,
         "completion_tokens": 0
       },
       "crewai": {
-        "calls": 1,
-        "cost_usd": 0.546,
-        "prompt_tokens": 100,
-        "completion_tokens": 50
+        "calls": 2,
+        "cost_usd": 1.092,
+        "prompt_tokens": 200,
+        "completion_tokens": 100
       }
     },
-    "cache_hit_rate": 2.5
+    "cache_hit_rate": 2.7
   },
   "quality": {
     "score": 89.0,

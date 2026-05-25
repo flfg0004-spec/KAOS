@@ -13,6 +13,8 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from lib.format import boxify as _box
+
 _LOG = logging.getLogger(__name__)
 
 CHECK_INTERVAL = 300
@@ -27,16 +29,6 @@ def _should_alert(key: str) -> bool:
         _LAST_ALERTS[key] = now
         return True
     return False
-
-def _box(msg: str, title: str = "⚠️ ALERTA") -> str:
-    lines = msg.split("\n")
-    w = max(len(l) for l in lines) + 2
-    top = "╔" + "═" * (w + 2) + "╗"
-    hdr = "║ " + title.ljust(w) + " ║"
-    sep = "╠" + "═" * (w + 2) + "╣"
-    body = "\n".join("║ " + l.ljust(w) + " ║" for l in lines)
-    bot = "╚" + "═" * (w + 2) + "╝"
-    return f"`{top}\n{hdr}\n{sep}\n{body}\n{bot}`"
 
 async def cmd_alertas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global ALERTS_ENABLED

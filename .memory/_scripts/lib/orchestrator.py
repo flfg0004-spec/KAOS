@@ -60,6 +60,11 @@ class KAOSState(TypedDict):
     hitl_approved: Optional[bool] = None
     evaluation: Optional[dict] = None
     evaluation_score: Optional[float] = None
+    okrs: Optional[list[dict]] = None
+    initiatives: Optional[list[dict]] = None
+    kr_assignment: Optional[dict] = None
+    aletheia_pending_gaps: Optional[list] = None
+    gap_iteration: int = 0
 
 def interrupt_human(prompt: str, context: dict = None) -> bool:
     """Human-in-the-Loop: pause pipeline and wait for approval.
@@ -115,10 +120,28 @@ def route_after_strategy(state: KAOSState) -> str:
         return "kratos"
     return "mnemosyne"
 
+def route_after_bcg(state: KAOSState) -> str:
+    """Route after BCG evaluation: gaps → Aletheia (re-research) else normal routing.
+    
+    Max 1 gap iteration to prevent infinite loops.
+    """
+    gaps = state.get("aletheia_pending_gaps", [])
+    gap_iter = state.get("gap_iteration", 0)
+    if gaps and len(gaps) > 0 and gap_iter < 1:
+        return "aletheia"
+    return route_after_strategy(state)
+
 def route_after_aletheia(state: KAOSState) -> str:
-    """Route to Mnemosyne gap check if needed, else Kosmos."""
+    """Route to Mnemosyne gap check if needed, else Kosmos.
+    
+    For gap re-research (triggered by BCG), increment gap_iteration
+    and route to Kosmos for re-architecture.
+    """
     if state.get("needs_gap_check", False):
         return "mnemosyne_gap_check"
+    gap_iter = state.get("gap_iteration", 0)
+    if gap_iter > 0:
+        return "kosmos"
     return "kosmos"
 
 def _cross_validator_node(state: KAOSState) -> dict:
@@ -509,6 +532,8 @@ def build_graph(with_parallel: bool = False):
         route_after_aletheia,
         {"mnemosyne_gap_check": "mnemosyne_gap_check", "kosmos": "kosmos"}
     )
+    # Gap re-research: Aletheia → Kosmos (re-architecture with new info)
+    builder.add_edge("aletheia", "kosmos")
     builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     
@@ -516,8 +541,8 @@ def build_graph(with_parallel: bool = False):
     builder.add_edge("metis", "bcg_evaluator")
     builder.add_conditional_edges(
         "bcg_evaluator",
-        route_after_strategy,
-        {"kratos": "kratos", "mnemosyne": "mnemosyne", "cross_validator": "cross_validator"}
+        route_after_bcg,
+        {"aletheia": "aletheia", "kratos": "kratos", "mnemosyne": "mnemosyne", "cross_validator": "cross_validator"}
     )
     # Cross-validation for production profile only
     builder.add_conditional_edges(

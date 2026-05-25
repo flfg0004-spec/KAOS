@@ -6,19 +6,10 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from lib.format import boxify as _box
 from telegram_bot.hermes_bridge import _hermes_run, _hermes_available
 
 _LOG = logging.getLogger(__name__)
-
-def _box(msg: str, title: str = "⏰ CRON") -> str:
-    lines = msg.split("\n")
-    w = max(len(l) for l in lines) + 2
-    top = "╔" + "═" * (w + 2) + "╗"
-    hdr = "║ " + title.ljust(w) + " ║"
-    sep = "╠" + "═" * (w + 2) + "╣"
-    body = "\n".join("║ " + l.ljust(w) + " ║" for l in lines)
-    bot = "╚" + "═" * (w + 2) + "╝"
-    return f"`{top}\n{hdr}\n{sep}\n{body}\n{bot}`"
 
 async def cmd_cron(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _hermes_available():

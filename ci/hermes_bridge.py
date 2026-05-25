@@ -1,9 +1,14 @@
-"""Hermes CI Bridge — notifica resultados del pipeline via Telegram."""
-import json, subprocess, os
+"""Hermes CI Bridge — notifica resultados del pipeline via Telegram.
+
+Refactorizado: delega en lib/hermes_router para envío y formato.
+"""
+import json
+import logging
 from pathlib import Path
 
-HERMES_CMD = "hermes"
-CHANNEL = os.environ.get("HERMES_CHANNEL", "kaos-ci")
+from lib.hermes_router import send_boxed
+
+_LOG = logging.getLogger(__name__)
 
 
 def notify_result(result_path: str = "pipeline-result.json") -> bool:
@@ -25,53 +30,34 @@ def notify_result(result_path: str = "pipeline-result.json") -> bool:
     duration = r.get("duration_seconds", 0)
     passed = r.get("passed", False)
 
-    status_icon = "✅" if passed else "❌"
-    status_text = "PASÓ" if passed else "FALLÓ"
+    icon = "✅" if passed else "❌"
+    status = "PASÓ" if passed else "FALLÓ"
+    minutes, sec = divmod(int(duration), 60)
 
-    msg = (
-        f"{status_icon} Pipeline KAOS {status_text}\n"
+    body = (
+        f"{icon} Pipeline KAOS — {status}\n"
         f"📌 {topic}\n"
         f"📊 Composite: {score}/100\n"
         f"💚 Health: {health}/100\n"
         f"⭐ Critic: {critic}/100\n"
-        f"⏱ {duration}s"
+        f"⏱ {minutes}m {sec}s"
     )
 
-    try:
-        cmd = [HERMES_CMD, "gateway", "send",
-               "--channel", CHANNEL,
-               "--message", msg]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        if result.returncode == 0:
-            print(f"Notification sent to #{CHANNEL}")
-            return True
-        else:
-            print(f"Notification failed: {result.stderr}")
-            return False
-    except FileNotFoundError:
-        print(f"Hermes CLI not found ('{HERMES_CMD}'). Install with: npm i -g hermes-agent")
-        return False
-    except Exception as e:
-        print(f"Notification error: {e}")
-        return False
+    ok = send_boxed(body, f"{icon} PIPELINE {status}")
+    if ok:
+        print("Notification sent via Hermes router")
+    else:
+        print("Notification failed")
+    return ok
 
 
-def notify_degradation(current_score: float, previous_score: float,
-                       threshold: float = 10.0) -> None:
-    """Send alert if composite dropped significantly."""
+def notify_degradation(current_score: float, previous_score: float, threshold: float = 10.0) -> None:
     drop = previous_score - current_score
     if drop >= threshold:
-        msg = (
-            f"⚠️ DEGRADACIÓN DETECTADA\n"
-            f"Composite bajó de {previous_score} a {current_score} "
-            f"({drop:+.1f} puntos)"
+        send_boxed(
+            f"⚠️ DEGRADACIÓN DETECTADA\nComposite bajó de {previous_score} a {current_score} ({drop:+.1f} pts)",
+            "⚠️ DEGRADACIÓN"
         )
-        try:
-            subprocess.run([HERMES_CMD, "gateway", "send",
-                           "--channel", CHANNEL, "--message", msg],
-                          capture_output=True, timeout=15)
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":

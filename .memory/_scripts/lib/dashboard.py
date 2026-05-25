@@ -77,6 +77,21 @@ def _lifecycle_data() -> dict:
         return {"tiers": {}, "total": 0, "avg_confidence": 0, "flagged": 0}
 
 
+def _strategy_metrics() -> dict:
+    """Strategy analytics metrics for dashboard."""
+    try:
+        from lib.strategy_analytics import get_summary
+        return get_summary()
+    except Exception:
+        return {
+            "total_sessions": 0,
+            "latest_bcg": 0,
+            "latest_okr": 0,
+            "trend": "stable",
+            "recommendation": "Analytics module not available",
+        }
+
+
 def _contradictions_data() -> dict:
     try:
         from lib import contradictions as ct
@@ -295,6 +310,7 @@ def collect_data() -> dict:
         "quality": _calc_quality_v2(),
         "lifecycle": _lifecycle_data(),
         "contradictions": _contradictions_data(),
+        "strategy": _strategy_metrics(),
     "agents": {
         "total": 4,
         "active": [

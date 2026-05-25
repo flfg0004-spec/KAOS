@@ -8,6 +8,8 @@ from pathlib import Path
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from lib.format import boxify as _box
+
 _LOG = logging.getLogger(__name__)
 
 POWER_LOG = Path(__file__).resolve().parent.parent.parent / "_pipeline" / "power_events.log"
@@ -23,16 +25,6 @@ def _log_power(event: str, detail: str = ""):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(POWER_LOG, "a", encoding="utf-8") as f:
         f.write(f"[{ts}] {event} {detail}\n".strip() + "\n")
-
-def _box(msg: str, title: str = "⚡ POWER") -> str:
-    lines = msg.split("\n")
-    w = max(len(l) for l in lines) + 2
-    top = "╔" + "═" * (w + 2) + "╗"
-    hdr = "║ " + title.ljust(w) + " ║"
-    sep = "╠" + "═" * (w + 2) + "╣"
-    body = "\n".join("║ " + l.ljust(w) + " ║" for l in lines)
-    bot = "╚" + "═" * (w + 2) + "╝"
-    return f"`{top}\n{hdr}\n{sep}\n{body}\n{bot}`"
 
 async def cmd_sleep(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(

@@ -90,6 +90,8 @@ def save_context(agent: str, data: dict) -> None:
             ctx["cross_agent"]["aletheia_to_mnemosyne"] = data["research_context"]
     if agent == "metis" and "strategy_summary" in data:
         ctx["cross_agent"]["metis_to_kratos"] = data["strategy_summary"]
+        if "metis_to_aletheia" in data:
+            ctx["cross_agent"]["metis_to_aletheia"] = data["metis_to_aletheia"]
     
     # Mnemosyne → Aletheia feedback loop (post-curation)
     if agent == "mnemosyne":
@@ -494,6 +496,13 @@ def step_done(agent: str) -> str:
         except Exception:
             pass
 
+    # Notify Kanban on each pipeline step
+    try:
+        from lib.kanban_dispatcher import comment as kb_comment
+        kb_comment(state.get("ticket_id", ""), f"🔄 {agent_cap}: {status_text.replace('_', ' ')}")
+    except Exception:
+        pass
+
     # Capture Kratos output into CodeExperience
     if agent_cap == "Kratos":
         try:
@@ -515,7 +524,25 @@ def step_done(agent: str) -> str:
             topic = "pipeline completed"
             tm = re.search(r"\*\*topic\*\*:\s*(.+?)$", "\n".join(_read_status()), re.MULTILINE)
             if tm: topic = tm.group(1).strip()
-            notify_pipeline(topic=topic, score=0, duration_s=int(duration_s) if 'duration_s' in dir() else 0, passed=True)
+
+            _score = 0
+            _duration_s = 0
+            try:
+                ev_path = VAULT_ROOT / "_pipeline" / "evaluation.json"
+                if ev_path.exists():
+                    ev = json.loads(ev_path.read_text(encoding="utf-8"))
+                    _score = int(ev.get("composite", ev.get("pipeline_score", ev.get("system_health", 0))))
+            except Exception:
+                pass
+            try:
+                started_path = VAULT_ROOT / "_pipeline" / "started_at.txt"
+                if started_path.exists():
+                    started = float(started_path.read_text().strip())
+                    _duration_s = int(datetime.now().timestamp() - started)
+            except Exception:
+                pass
+
+            notify_pipeline(topic=topic, score=_score, duration_s=_duration_s, passed=True)
         except Exception:
             pass
 

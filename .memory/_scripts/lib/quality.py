@@ -167,6 +167,13 @@ def calculate() -> dict:
 
     total = round(conf_score + embed_score + test_score + lint_score + wiki_score + conn_score + fresh_score + strategy_score, 1)
 
+    strategy_analytics = {}
+    try:
+        from lib.strategy_analytics import get_summary
+        strategy_analytics = get_summary()
+    except Exception:
+        pass
+
     return {
         "score": total,
         "details": {
@@ -177,7 +184,7 @@ def calculate() -> dict:
             "wikilinks": {"valid": valid_links, "broken": broken_links, "score": round(wiki_score, 1)},
             "connectivity": {"score": round(conn_score, 1), "avg_pr": connectivity},
             "freshness": {"score": round(fresh_score, 1), "pct_fresh": round(freshness, 3)},
-            "strategy": {"score": round(strategy_score, 1), "details": strategy_details},
+            "strategy": {"score": round(strategy_score, 1), "details": strategy_details, "analytics": strategy_analytics},
         },
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }

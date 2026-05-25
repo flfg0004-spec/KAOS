@@ -354,6 +354,12 @@
       "type": "local",
       "command": ["py", "-3", ".memory/_scripts/mcp_strategy_extras.py"],
       "enabled": true
+    },
+    "hermes-gateway": {
+      "type": "local",
+      "command": ["hermes", "mcp", "serve", "--accept-hooks"],
+      "enabled": true,
+      "timeout": 300
     }
   },
   "compaction": {

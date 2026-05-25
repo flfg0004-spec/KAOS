@@ -1,8 +1,18 @@
-"""Unified LLM Client — OpenCode Go + DeepSeek with fallback routing."""
+"""Unified LLM Client — multi-provider with fallback chain."""
+import logging
 from openai import OpenAI
 from lib.config import DEEPSEEK_API_KEY, OPENCODE_GO_KEY, OPENCODE_GO_ENDPOINT, LLM_FALLBACK_ENABLED
 
+_LOG = logging.getLogger(__name__)
+
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/v1"
+OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1"
+
+PROVIDER_CHAIN = [
+    {"name": "opencode-go", "priority": 1, "timeout": 30},
+    {"name": "deepseek", "priority": 2, "timeout": 30},
+    {"name": "openrouter", "priority": 3, "timeout": 30},
+]
 
 MODELS = {
     "deepseek-flash": {"provider": "deepseek", "model": "deepseek-v4-flash"},
@@ -55,57 +65,73 @@ DEFAULT_STEP_TEMPERATURES = {
 def get_client(provider: str = "deepseek") -> OpenAI:
     if provider == "opencode-go":
         return OpenAI(api_key=OPENCODE_GO_KEY, base_url=OPENCODE_GO_ENDPOINT)
+    if provider == "openrouter":
+        key = __import__("os").environ.get("OPENROUTER_API_KEY", "")
+        return OpenAI(api_key=key, base_url=OPENROUTER_ENDPOINT) if key else None
     return OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_ENDPOINT)
 
 
 def _llm_call_impl(prompt: str, system: str = "", model: str = "go-flash",
                    temperature: float = 0.2, max_tokens: int = 16384) -> tuple[str, dict]:
-    """Returns (content, usage_dict) — usage captures token counts from API response."""
+    """Returns (content, usage_dict) — iterates provider chain on failure."""
     cfg = MODELS.get(model, MODELS["go-flash"])
-    client = get_client(cfg["provider"])
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
-    try:
-        resp = client.chat.completions.create(
-            model=cfg["model"],
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=120,
-        )
-        content = resp.choices[0].message.content or ""
-        usage = {
-            "prompt_tokens": resp.usage.prompt_tokens if resp.usage else 0,
-            "completion_tokens": resp.usage.completion_tokens if resp.usage else 0,
-            "total_tokens": resp.usage.total_tokens if resp.usage else 0,
-            "cached_tokens": (resp.usage.prompt_tokens_details.cached_tokens
-                              if resp.usage and resp.usage.prompt_tokens_details else 0),
-            "reasoning_tokens": (resp.usage.completion_tokens_details.reasoning_tokens
-                                 if resp.usage and resp.usage.completion_tokens_details else 0),
-            "model": cfg["model"],
-            "provider": cfg["provider"],
-        }
-        return content, usage
-    except Exception as e:
-        if LLM_FALLBACK_ENABLED and cfg["provider"] != "opencode-go":
-            fallback_client = get_client("opencode-go")
-            fallback_model = MODELS.get("go-flash", MODELS["go-flash"])
-            try:
-                resp2 = fallback_client.chat.completions.create(
-                    model=fallback_model["model"],
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    timeout=120,
-                )
-                content = resp2.choices[0].message.content or ""
-                return content, {"error": None, "model": fallback_model["model"], "provider": "opencode-go"}
-            except Exception as e2:
-                return f"# LLM Error: {e} (fallback: {e2})", {"error": str(e2)}
-        return f"# LLM Error: {e}", {"error": str(e)}
+    # Build ordered provider list: primary first, then fallbacks
+    primary_provider = cfg["provider"]
+    providers_to_try = [primary_provider]
+    if LLM_FALLBACK_ENABLED:
+        for p in PROVIDER_CHAIN:
+            if p["name"] not in providers_to_try:
+                providers_to_try.append(p["name"])
+
+    last_error = None
+    for provider_name in providers_to_try:
+        client = get_client(provider_name)
+        if client is None:
+            continue
+        try:
+            resp = client.chat.completions.create(
+                model=_resolve_model(provider_name),
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=120,
+            )
+            content = resp.choices[0].message.content or ""
+            usage = {
+                "prompt_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+                "completion_tokens": resp.usage.completion_tokens if resp.usage else 0,
+                "total_tokens": resp.usage.total_tokens if resp.usage else 0,
+                "cached_tokens": (resp.usage.prompt_tokens_details.cached_tokens
+                                  if resp.usage and resp.usage.prompt_tokens_details else 0),
+                "reasoning_tokens": (resp.usage.completion_tokens_details.reasoning_tokens
+                                     if resp.usage and resp.usage.completion_tokens_details else 0),
+                "model": resp.model,
+                "provider": provider_name,
+            }
+            if provider_name != primary_provider:
+                _LOG.info("LLM fallback to %s succeeded (primary %s failed: %s)",
+                         provider_name, primary_provider, str(last_error)[:60])
+            return content, usage
+        except Exception as e:
+            last_error = e
+            _LOG.warning("LLM provider %s failed: %s", provider_name, str(e)[:80])
+            continue
+
+    return f"# LLM Error: all providers failed — {last_error}", {"error": str(last_error)}
+
+
+def _resolve_model(provider: str) -> str:
+    mapping = {
+        "opencode-go": "qwen3.5-plus",
+        "deepseek": "deepseek-chat",
+        "openrouter": "openai/gpt-4o-mini",
+    }
+    return mapping.get(provider, "qwen3.5-plus")
 
 
 def llm_call(prompt: str, system: str = "", model: str = "go-flash",

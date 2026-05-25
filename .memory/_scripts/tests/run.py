@@ -55,6 +55,9 @@ MODULES = [
     "test_metis",
     "test_mcp_metis",
     "test_bcg_evaluator",
+    "test_pipeline_okr",
+    "test_strategy_analytics",
+    "test_cross_agent",
     "test_code_memory",
     "test_bandit",
     "test_ast_match",
@@ -69,6 +72,7 @@ MODULES = [
     "test_mar_reviewer",
     "test_hebbian_memory",
     "test_crew_integration",
+    "test_deerflow_bridge",
 ]
 
 SLOW_MODULES = {

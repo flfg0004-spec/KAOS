@@ -12,6 +12,7 @@ from telegram.ext import Application, MessageHandler, filters, CommandHandler, C
 from telegram_bot.config import TOKEN, ALLOWED_CHATS, HERMES_OUTBOX_ENABLED
 from telegram_bot.classifiers.content_classifier import classify
 
+from lib.format import boxify as _box
 from telegram_bot.power_commands import (
     cmd_sleep, cmd_hibernate, cmd_shutdown, cmd_restart,
     cmd_confirm, cmd_cancel_power, cmd_powerstatus,
@@ -24,6 +25,7 @@ from telegram_bot.kaos_commands import (
     cmd_kaosagentes, cmd_kaoshealth, cmd_kaosscores,
 )
 from telegram_bot.cron_commands import cmd_cron
+from telegram_bot.kanban_commands import cmd_kanban
 
 from processors.web_scraper import process_url
 from processors.youtube_transcriber import process_youtube
@@ -34,16 +36,6 @@ from processors.audio_transcriber import process_audio
 logging.basicConfig(level=logging.INFO)
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "_scripts"
-
-def _box(msg: str, title: str = "🤖 KAOS") -> str:
-    lines = msg.split("\n")
-    w = max(len(l) for l in lines) + 2
-    top = "╔" + "═" * (w + 2) + "╗"
-    hdr = "║ " + title.ljust(w) + " ║"
-    sep = "╠" + "═" * (w + 2) + "╣"
-    body = "\n".join("║ " + l.ljust(w) + " ║" for l in lines)
-    bot = "╚" + "═" * (w + 2) + "╝"
-    return f"`{top}\n{hdr}\n{sep}\n{body}\n{bot}`"
 
 def _load_dashboard_data() -> dict:
     try:
@@ -280,6 +272,9 @@ def main():
 
     # System monitor
     app.add_handler(CommandHandler("alertas", cmd_alertas))
+
+    # Kanban
+    app.add_handler(CommandHandler("kanban", cmd_kanban))
 
     # Cron
     app.add_handler(CommandHandler("cron", cmd_cron))

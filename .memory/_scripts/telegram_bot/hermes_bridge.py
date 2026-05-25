@@ -34,8 +34,9 @@ def _hermes_available() -> bool:
     return HERMES_AVAILABLE
 
 def _hermes_run(*args: str) -> tuple[bool, str]:
+    env = {**__import__("os").environ}
     try:
-        r = subprocess.run([HERMES_BIN, *args], capture_output=True, text=True, timeout=15)
+        r = subprocess.run([HERMES_BIN, *args], capture_output=True, text=True, timeout=15, env=env)
         return r.returncode == 0, r.stdout.strip()
     except Exception as e:
         return False, str(e)
@@ -43,41 +44,39 @@ def _hermes_run(*args: str) -> tuple[bool, str]:
 def ticket_create(title: str, tag: str = "telegram") -> Optional[str]:
     if not _hermes_available():
         return None
-    ok, out = _hermes_run("kanban", "create", "--title", title, "--tag", tag)
-    if ok:
-        for line in out.split("\n"):
-            if "id:" in line.lower() or "ticket" in line.lower():
-                tid = line.split(":")[-1].strip()
-                _LOG.info("Hermes ticket created: %s", tid)
+    ok, out = _hermes_run("kanban", "create", "--json", title)
+    if ok and out:
+        try:
+            data = json.loads(out)
+            tid = data.get("id")
+            if tid:
+                _LOG.info("Hermes ticket created: %s (%s)", tid, title[:60])
                 return tid
-    _LOG.warning("Hermes ticket creation failed: %s", out)
+        except json.JSONDecodeError:
+            pass
+    _LOG.warning("Hermes ticket creation failed: %s", out[:200])
     return None
 
 def ticket_comment(ticket_id: str, message: str) -> bool:
     if not _hermes_available():
         return False
-    ok, out = _hermes_run("kanban", "comment", ticket_id, "--message", message)
+    ok, _ = _hermes_run("kanban", "comment", ticket_id, message)
     return ok
 
 def outbox_poll(limit: int = 5) -> list[dict]:
     if not _hermes_available():
         return []
-    ok, out = _hermes_run("kanban", "list", "--tag", OUTBOX_TAG, "--status", "ready", "--limit", str(limit))
-    if not ok:
+    ok, out = _hermes_run("kanban", "list", "--json")
+    if not ok or not out:
         return []
-    tickets = []
-    for line in out.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split("|")
-        if len(parts) >= 3:
-            tickets.append({
-                "id": parts[0].strip(),
-                "title": parts[1].strip(),
-                "message": parts[2].strip() if len(parts) > 2 else "",
-            })
-    return tickets
+    try:
+        tasks = json.loads(out)
+        if isinstance(tasks, dict):
+            tasks = tasks.get("tasks", tasks)
+        ready = [t for t in (tasks or []) if t.get("status") == "ready"]
+        return [{"id": t["id"], "title": t.get("title", ""), "message": t.get("body", "")} for t in ready[:limit]]
+    except json.JSONDecodeError:
+        return []
 
 def outbox_complete(ticket_id: str) -> bool:
     if not _hermes_available():
@@ -85,11 +84,9 @@ def outbox_complete(ticket_id: str) -> bool:
     ok, _ = _hermes_run("kanban", "complete", ticket_id)
     return ok
 
-def gateway_send(channel: str, message: str) -> bool:
-    if not _hermes_available():
-        return False
-    ok, out = _hermes_run("gateway", "send", channel, message)
-    return ok
+def gateway_send(message: str) -> bool:
+    from lib.hermes_router import send as _router_send
+    return _router_send(message, channel="telegram")
 
 def format_ticket(title: str, sender: str = "", content: str = "") -> str:
     msg = f"📋 **{title}**"

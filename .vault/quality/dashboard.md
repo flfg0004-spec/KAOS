@@ -58,6 +58,14 @@
 - Contexto: ✅ Compaction duplicado (10 turns / 16K tokens). Context sharing implementado.
 - DSOL: ✅ build_optimized_context() conectado a hydrate. build_prompt() marcado como deprecated.
 
+## Score de Estrategia (Metis)
+| Métrica | Valor | Objetivo |
+|---------|-------|----------|
+| BCG Score (último) | — | ≥7.0/10 |
+| OKR Health (último) | — | ≥70% |
+| Sesiones de estrategia | 0 | — |
+| Tendencia 30d | — | — |
+
 ## Score de Curación (Mnemosyne)
 | Métrica | Valor | Objetivo |
 |---------|-------|----------|
