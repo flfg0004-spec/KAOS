@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-05-24 21:12:24",
+  "timestamp": "2026-05-24 21:27:30",
   "vault": {
-    "total_md": 234,
+    "total_md": 239,
     "by_directory": {
       "wiki": 132,
       "schema": 21,
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 380
+    "total_deduped": 383
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "9843725 score: 84/84 tests, BM25 unified, DeepEval real metric, parallel tests, duration tracking, lint 0",
       "7bd6871 fix: 0 lint, embeddings 234/233, quality 99.1, Flash→Production tracking verified",
       "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks",
       "117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed",
-      "efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks",
-      "e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs"
+      "efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks"
     ],
     "recent_logs": [
       [
@@ -74,15 +74,15 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 107,
-    "total_cost_usd": 2.996,
+    "total_calls": 108,
+    "total_cost_usd": 3.024,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 99.1,
+    "score": 98.7,
     "has_confidence_matrix": 23,
     "total_investigations": 23,
-    "completeness": 99.1
+    "completeness": 98.7
   },
   "agents": {
     "total": 4,

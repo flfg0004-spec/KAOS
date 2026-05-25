@@ -88,18 +88,42 @@ def _restore_model(model: str):
 
 
 def _read_transcript(conv_id: str) -> str:
-    """Read the model response from a conversation transcript."""
+    """Read the model response from a conversation transcript.
+    
+    The transcript.jsonl file may have embedded newlines in JSON string values,
+    so we use a streaming JSON parser to find PLANNER_RESPONSE entries.
+    """
     transcript = BRAIN_DIR / conv_id / ".system_generated" / "logs" / "transcript.jsonl"
     if not transcript.exists():
         return ""
-    for line in transcript.read_text(encoding="utf-8").strip().split("\n"):
-        try:
-            entry = json.loads(line)
-            if entry.get("source") == "MODEL" and entry.get("type") == "PLANNER_RESPONSE":
-                return entry.get("content", "")
-        except Exception:
-            continue
-    return ""
+    
+    content = transcript.read_text(encoding="utf-8", errors="replace")
+    
+    # Find JSON objects by tracking brace balance
+    entries = []
+    depth = 0
+    start = 0
+    for i, ch in enumerate(content):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    entry = json.loads(content[start:i+1])
+                    entries.append(entry)
+                except Exception:
+                    pass
+    
+    last = ""
+    for entry in entries:
+        if entry.get("source") == "MODEL" and entry.get("type") == "PLANNER_RESPONSE":
+            content = entry.get("content", "")
+            if content and len(content) > len(last):
+                last = content
+    return last
 
 
 def call_agy(prompt: str, tier: ModelTier = "flash", timeout: int = 180) -> dict:

@@ -170,6 +170,9 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     slug = re.sub(r'\s+', '-', slug)[:60]
 
     flash_ctx = _check_flash_exploration(topic) if check_flash else None
+    if not flash_ctx:
+        hint_cmd = 'vault.py dual "' + topic + '"'
+        print("Sugerencia: explora primero con '" + hint_cmd + "' para iteracion rapida con Gemini Flash (gratis, <2min)")
     
     # Track estimated cost
     estimated_cost = 0.0

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from lib import pipeline, wikilinks, lint, index as index_mod
 from lib.config import VAULT_ROOT
+from lib.agy_client import call_agy
 
 
 def register(sub, kaos_root):
@@ -171,6 +172,28 @@ def register(sub, kaos_root):
             print(json.dumps(result, indent=2, ensure_ascii=False))
 
     # Register parsers
+    def cmd_dual(args):
+        """Explore with Flash, then optionally consolidate with DeepSeek pipeline."""
+        print("Explorando con Gemini Flash:", args.topic)
+        result = call_agy(args.topic, tier="flash", timeout=120)
+        text = result.get("text") or result.get("response") or "(sin respuesta del modelo)"
+        if text and text != "(sin respuesta del modelo)":
+            print("\nResultado Flash:\n" + text[:500])
+            print("\nReporte guardado en:", result.get('report_path', '?'))
+            if args.pipeline:
+                print("\nConsolidando con DeepSeek pipeline...")
+                print(pipeline.init(topic=args.topic, profile="desarrollo"))
+            else:
+                print("\nEjecuta con --pipeline para consolidar con DeepSeek")
+        else:
+            err = result.get('error') or 'la transcripcion no se encontro'
+            print("Error en exploracion Flash:", err)
+
+    p = sub.add_parser("dual", help="Explora con Flash + consolida con DeepSeek (sistema DUAL)")
+    p.add_argument("topic", help="Tema a explorar")
+    p.add_argument("--pipeline", action="store_true", help="Consolidar automáticamente con DeepSeek")
+    p.set_defaults(func=cmd_dual)
+
     p = sub.add_parser("pipeline", help="Pipeline operations")
     p.add_argument("action", choices=["init", "check", "step-done", "stale", "watch"])
     p.add_argument("--topic", default="")

@@ -57,7 +57,7 @@ def _avg_time_to_commit(reports: list[Path]) -> float | None:
 
 def _pipeline_benchmarks() -> dict:
     """Return pipeline duration data from timeseries."""
-    bench = {"exploracion": [], "desarrollo": [], "produccion": []}
+    bench = {"exploracion": [], "desarrollo": [], "produccion": [], "standard": [], "flash": [], "deep": [], "massive": []}
     durations_file = TIMESERIES_DIR / "pipeline-durations.json"
     if durations_file.exists():
         try:
