@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 12:41:13",
+  "timestamp": "2026-05-25 15:54:01",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 606,
-    "avg_duration_min": 72.5,
+    "total_messages": 748,
+    "avg_duration_min": 53.4,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 266,
+    "total_md": 267,
     "by_directory": {
       "wiki": 132,
       "schema": 25,
       "raw": 26,
-      "_scripts": 177,
+      "_scripts": 182,
       "_pipeline": 3
     },
-    "total_scripts": 177
+    "total_scripts": 182
   },
   "health": {
     "git_clean": false,
@@ -30,11 +30,11 @@
   },
   "pipeline": {
     "status": "aletheia-ready",
-    "profile": "standard"
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 458
+    "total_deduped": 473
   },
   "synapse": {
     "concepts": 0,
@@ -42,22 +42,17 @@
   },
   "activity": {
     "recent_commits": [
-      "6acfe85 session: mnemosyne - curation-cycle",
-      "ab94a47 session: test_agent - Integration test cycle",
-      "2e32724 session: mnemosyne - curation-cycle",
-      "8e121b5 session: mnemosyne - curation-cycle",
-      "4e672d2 session: mnemosyne - curation-cycle"
+      "7989949 session: mnemosyne - curation-cycle",
+      "138a74f session: mnemosyne - curation-cycle",
+      "a06a6dd session: test_agent - Integration test cycle",
+      "5567208 session: test_full_cycle - Persistence cycle test",
+      "85bacd3 session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
-      ],
-      [
-        "2026-05-25",
-        "session",
-        "metis session completed"
+        "test_agent session completed"
       ],
       [
         "2026-05-25",
@@ -67,12 +62,17 @@
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
+        "test_full_cycle session completed"
       ],
       [
         "2026-05-25",
         "session",
         "test_agent session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
       ]
     ]
   },
@@ -81,185 +81,35 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 146,
-    "total_prompt_tokens": 16067,
-    "total_completion_tokens": 10370,
-    "total_cache_hit_tokens": 432,
-    "total_cache_miss_tokens": 12120,
-    "total_reasoning_tokens": 20,
-    "total_cost_usd": 13.0544,
-    "daily_breakdown": {
-      "2026-05-25": {
-        "calls": 26,
-        "prompt_tokens": 4067,
-        "cost_usd": 9.6944
-      },
-      "2026-05-24": {
-        "calls": 35,
-        "prompt_tokens": 3500,
-        "cost_usd": 0.98
-      },
-      "2026-05-23": {
-        "calls": 85,
-        "prompt_tokens": 8500,
-        "cost_usd": 2.38
-      }
-    },
-    "per_agent": {
-      "unknown": {
-        "calls": 120,
-        "cost_usd": 3.3600000000000025,
-        "prompt_tokens": 12000,
-        "completion_tokens": 6000
-      },
-      "aletheia": {
-        "calls": 7,
-        "cost_usd": 0.224,
-        "prompt_tokens": 1500,
-        "completion_tokens": 800
-      },
-      "kosmos": {
-        "calls": 1,
-        "cost_usd": 1.044,
-        "prompt_tokens": 2000,
-        "completion_tokens": 1200
-      },
-      "metis": {
-        "calls": 1,
-        "cost_usd": 7.3344,
-        "prompt_tokens": 367,
-        "completion_tokens": 2270
-      },
-      "kratos": {
-        "calls": 15,
-        "cost_usd": 0.0,
-        "prompt_tokens": 0,
-        "completion_tokens": 0
-      },
-      "crewai": {
-        "calls": 2,
-        "cost_usd": 1.092,
-        "prompt_tokens": 200,
-        "completion_tokens": 100
-      }
-    },
-    "cache_hit_rate": 2.7,
-    "unknown": {
-      "calls": 120,
-      "cost_usd": 3.3600000000000025,
-      "prompt_tokens": 12000,
-      "completion_tokens": 6000
-    },
-    "aletheia": {
-      "calls": 7,
-      "cost_usd": 0.224,
-      "prompt_tokens": 1500,
-      "completion_tokens": 800
-    },
-    "kosmos": {
-      "calls": 1,
-      "cost_usd": 1.044,
-      "prompt_tokens": 2000,
-      "completion_tokens": 1200
-    },
-    "metis": {
-      "calls": 1,
-      "cost_usd": 7.3344,
-      "prompt_tokens": 367,
-      "completion_tokens": 2270
-    },
-    "kratos": {
-      "calls": 15,
-      "cost_usd": 0.0,
-      "prompt_tokens": 0,
-      "completion_tokens": 0
-    },
-    "crewai": {
-      "calls": 2,
-      "cost_usd": 1.092,
-      "prompt_tokens": 200,
-      "completion_tokens": 100
-    }
+    "total_calls": 0,
+    "total_cost_usd": 0,
+    "cache_hit_rate": null,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "per_agent": {}
   },
   "token_usage": {
-    "total_calls": 146,
-    "total_prompt_tokens": 16067,
-    "total_completion_tokens": 10370,
-    "total_cache_hit_tokens": 432,
-    "total_cache_miss_tokens": 12120,
-    "total_reasoning_tokens": 20,
-    "total_cost_usd": 13.0544,
-    "daily_breakdown": {
-      "2026-05-25": {
-        "calls": 26,
-        "prompt_tokens": 4067,
-        "cost_usd": 9.6944
-      },
-      "2026-05-24": {
-        "calls": 35,
-        "prompt_tokens": 3500,
-        "cost_usd": 0.98
-      },
-      "2026-05-23": {
-        "calls": 85,
-        "prompt_tokens": 8500,
-        "cost_usd": 2.38
-      }
-    },
-    "per_agent": {
-      "unknown": {
-        "calls": 120,
-        "cost_usd": 3.3600000000000025,
-        "prompt_tokens": 12000,
-        "completion_tokens": 6000
-      },
-      "aletheia": {
-        "calls": 7,
-        "cost_usd": 0.224,
-        "prompt_tokens": 1500,
-        "completion_tokens": 800
-      },
-      "kosmos": {
-        "calls": 1,
-        "cost_usd": 1.044,
-        "prompt_tokens": 2000,
-        "completion_tokens": 1200
-      },
-      "metis": {
-        "calls": 1,
-        "cost_usd": 7.3344,
-        "prompt_tokens": 367,
-        "completion_tokens": 2270
-      },
-      "kratos": {
-        "calls": 15,
-        "cost_usd": 0.0,
-        "prompt_tokens": 0,
-        "completion_tokens": 0
-      },
-      "crewai": {
-        "calls": 2,
-        "cost_usd": 1.092,
-        "prompt_tokens": 200,
-        "completion_tokens": 100
-      }
-    },
-    "cache_hit_rate": 2.7
+    "total_calls": 0,
+    "total_cost_usd": 0,
+    "cache_hit_rate": null,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "per_agent": {}
   },
   "quality": {
-    "score": 75.4,
+    "score": 88.6,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 0.0,
+    "embeddings": 13.2,
     "confidence_matrix": 23.1,
-    "completeness": 75.4
+    "completeness": 88.6
   },
   "lifecycle": {
     "tiers": {
       "new": 132
     },
     "total": 132,
-    "avg_confidence": 0.992,
+    "avg_confidence": 0.991,
     "flagged": 132
   },
   "contradictions": {
@@ -268,13 +118,13 @@
     "complements": 0
   },
   "strategy": {
-    "total_sessions": 4,
+    "total_sessions": 7,
     "latest_bcg": 4.2,
-    "latest_okr": 18.8,
-    "avg_bcg_30d": 5.0,
+    "latest_okr": 10.7,
+    "avg_bcg_30d": 4.7,
     "trend": "declining",
     "delta_30d": -3.3,
-    "data_points_30d": 4,
+    "data_points_30d": 7,
     "recommendation": "BCG score bajo. Revisar calidad de outputs estratégicos."
   },
   "agents": {

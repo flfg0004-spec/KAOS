@@ -4,15 +4,29 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from crewai.memory.storage.backend import MemoryRecord
-from lib.crew_memory import KAOSStorageBackend
-from lib.crew_orchestrator import KAOSEmbeddingFunction, get_crewai_llm
+try:
+    import pytest
+    from crewai.memory.storage.backend import MemoryRecord
+    from lib.crew_memory import KAOSStorageBackend
+    from lib.crew_orchestrator import KAOSEmbeddingFunction, get_crewai_llm
+    HAS_CREWAI = True
+except ImportError:
+    HAS_CREWAI = False
+
+if not HAS_CREWAI:
+    try:
+        import pytest
+        pytestmark = pytest.mark.skip(reason="crewai not installed")
+    except ImportError:
+        pass
 
 
 def test_kaos_embedding_function():
     """
     Verifica que KAOSEmbeddingFunction se inicialice y devuelva embeddings con formato correcto.
     """
+    if not HAS_CREWAI:
+        return
     embedder = KAOSEmbeddingFunction()
     test_texts = ["Hola KAOS", "CrewAI integration test"]
     embeddings = embedder(test_texts)
@@ -29,6 +43,8 @@ def test_kaos_storage_backend_save():
     """
     Verifica que KAOSStorageBackend guarde registros localmente y emita señales en el bridge.
     """
+    if not HAS_CREWAI:
+        return
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
         # Instancia el backend apuntando al directorio temporal
@@ -66,34 +82,38 @@ def test_get_crewai_llm():
     """
     Verifica que get_crewai_llm retorne una instancia de LLM configurada correctamente.
     """
+    if not HAS_CREWAI:
+        return
     llm = get_crewai_llm(model_name="gemini-3.5-flash", temperature=0.1)
     assert llm.model == "openai/gemini-3.5-flash"
     assert llm.temperature == 0.1
     assert "opencode.ai" in llm.base_url
 
 
-@patch("crewai.Crew.kickoff")
-def test_run_crew_kickoff(mock_kickoff):
+def test_run_crew_kickoff():
     """
     Verifica el flujo general de ejecución y registro de tokens de CrewAI con mocking.
     """
+    if not HAS_CREWAI:
+        return
     from lib.crew_orchestrator import run_research_crew
     
-    # Mock de la respuesta de kickoff
-    mock_response = MagicMock()
-    mock_response.raw = "Resultado simulado de la investigación."
-    
-    mock_metrics = MagicMock()
-    mock_metrics.prompt_tokens = 100
-    mock_metrics.cached_prompt_tokens = 40
-    mock_metrics.completion_tokens = 50
-    mock_metrics.reasoning_tokens = 10
-    
-    mock_response.token_usage = mock_metrics
-    mock_kickoff.return_value = mock_response
-    
-    # Ejecuta el flujo
-    result = run_research_crew(topic="test-topic")
-    
-    assert result == "Resultado simulado de la investigación."
-    assert mock_kickoff.called
+    with patch("crewai.Crew.kickoff") as mock_kickoff:
+        # Mock de la respuesta de kickoff
+        mock_response = MagicMock()
+        mock_response.raw = "Resultado simulado de la investigación."
+        
+        mock_metrics = MagicMock()
+        mock_metrics.prompt_tokens = 100
+        mock_metrics.cached_prompt_tokens = 40
+        mock_metrics.completion_tokens = 50
+        mock_metrics.reasoning_tokens = 10
+        
+        mock_response.token_usage = mock_metrics
+        mock_kickoff.return_value = mock_response
+        
+        # Ejecuta el flujo
+        result = run_research_crew(topic="test-topic")
+        
+        assert result == "Resultado simulado de la investigación."
+        assert mock_kickoff.called

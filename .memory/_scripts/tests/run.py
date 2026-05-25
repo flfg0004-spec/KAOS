@@ -128,7 +128,12 @@ def run_all() -> int:
 
         tests = [f for f in dir(mod) if f.startswith("test_")]
         for test_name in tests:
-            if FAST_ONLY and (_is_slow(mod, test_name) or mod_name in SLOW_TEST_PREFIXES):
+            is_slow = (
+                _is_slow(mod, test_name) or
+                mod_name in SLOW_MODULES or
+                any(prefix in test_name for prefix in SLOW_TEST_PREFIXES)
+            )
+            if FAST_ONLY and is_slow:
                 skipped += 1
                 continue
 
