@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 23:03:44",
+  "timestamp": "2026-05-24 23:09:32",
   "vault": {
     "total_md": 239,
     "by_directory": {
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 395
+    "total_deduped": 398
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "e6b8f69 session: mnemosyne - curation-cycle",
+      "d08a532 session: mnemosyne - curation-cycle",
       "2d05fc3 session: mnemosyne - curation-cycle",
       "acb1ed7 session: mnemosyne - curation-cycle",
-      "e356f04 feat: Telegram notifications via Bot API - lib/telegram.py, vault.py notify, pipeline alerts, .env config",
-      "cbd7144 session: mnemosyne - curation-cycle",
-      "348308d session: mnemosyne - curation-cycle"
+      "e356f04 feat: Telegram notifications via Bot API - lib/telegram.py, vault.py notify, pipeline alerts, .env config"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 112,
-    "total_cost_usd": 3.136,
+    "total_calls": 113,
+    "total_cost_usd": 3.164,
     "cache_hit_rate": 0.0
   },
   "quality": {
