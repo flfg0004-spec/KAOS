@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-24 23:37:26",
+  "timestamp": "2026-05-24 23:42:05",
   "vault": {
-    "total_md": 239,
+    "total_md": 240,
     "by_directory": {
       "wiki": 132,
       "schema": 21,
-      "raw": 23,
-      "_scripts": 94,
+      "raw": 24,
+      "_scripts": 105,
       "_pipeline": 3
     },
-    "total_scripts": 94
+    "total_scripts": 105
   },
   "health": {
     "git_clean": false,
@@ -22,12 +22,12 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "complete",
-    "profile": "standard"
+    "status": "aletheia-ready",
+    "profile": "deep"
   },
   "ingest": {
-    "total_ingested": 2,
-    "total_deduped": 410
+    "total_ingested": 3,
+    "total_deduped": 419
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
-      "0cd91b6 session: mnemosyne - curation-cycle",
-      "9a628c9 session: mnemosyne - curation-cycle",
-      "147f856 session: mnemosyne - curation-cycle",
-      "52e24be session: mnemosyne - curation-cycle",
-      "83c6d6e session: mnemosyne - curation-cycle"
+      "4a6cc19 session: mnemosyne - curation-cycle",
+      "a00807a session: mnemosyne - curation-cycle",
+      "9e3129f session: mnemosyne - curation-cycle",
+      "f1efe1f session: mnemosyne - curation-cycle",
+      "e935341 session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -74,17 +74,17 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 118,
-    "total_cost_usd": 3.304,
+    "total_calls": 120,
+    "total_cost_usd": 3.36,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 93.3,
+    "score": 92.2,
     "connectivity": 4.2,
     "freshness": 10.0,
     "embeddings": 14.7,
-    "confidence_matrix": 25.0,
-    "completeness": 93.3
+    "confidence_matrix": 24.0,
+    "completeness": 92.2
   },
   "lifecycle": {
     "tiers": {
