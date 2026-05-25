@@ -215,21 +215,35 @@ def collect_data() -> dict:
     cache_max = cache_data.get("maxEntries", 30)
 
     token_usage_path = KAOS_ROOT / ".memory" / "cache" / "token-usage.json"
-    dsol_metrics = {"total_calls": 0, "total_cost_usd": 0, "cache_hit_rate": None}
+    dsol_metrics = {"total_calls": 0, "total_cost_usd": 0, "cache_hit_rate": None,
+                     "total_prompt_tokens": 0, "total_completion_tokens": 0, "per_agent": {}}
     if token_usage_path.exists():
         try:
-            tu = json.loads(token_usage_path.read_text(encoding="utf-8"))
-            tot = tu.get("totals", {})
-            dsol_metrics = {
-                "total_calls": tot.get("total_calls", 0),
-                "total_cost_usd": tot.get("cost_usd", 0),
-                "cache_hit_rate": round(tot.get("cache_hit_tokens", 0) / max(tot.get("prompt_tokens", 1), 1) * 100, 1),
-            }
+            from lib.dsol import TokenTracker
+            tt = TokenTracker()
+            dsol_metrics = tt.get_stats()
+            dsol_metrics["cache_hit_rate"] = round(
+                dsol_metrics.get("total_cache_hit_tokens", 0) / max(dsol_metrics.get("total_prompt_tokens", 1), 1) * 100, 1
+            )
         except Exception:
             pass
 
+    # Session analytics
+    try:
+        from lib import session_analytics
+        sa = session_analytics.build_analytics()
+    except Exception:
+        sa = {}
+
     return {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "session_analytics": {
+            "total_sessions": sa.get("total_sessions", 0),
+            "total_messages": sa.get("total_messages", 0),
+            "avg_duration_min": sa.get("avg_duration_min"),
+            "feedback_avg": sa.get("feedback", {}).get("avg_rating", 0),
+            "feedback_count": sa.get("feedback", {}).get("total", 0),
+        },
         "vault": {
             "total_md": _count_files(KAOS_ROOT / ".memory", "**/*.md"),
             "by_directory": {
@@ -265,7 +279,8 @@ def collect_data() -> dict:
             "valid": wl_valid,
             "broken": wl_broken,
         },
-        "deepseek": dsol_metrics,
+        "deepseek": {**dsol_metrics, **dsol_metrics.get("per_agent", {})},
+        "token_usage": dsol_metrics,
         "quality": _calc_quality_v2(),
         "lifecycle": _lifecycle_data(),
         "contradictions": _contradictions_data(),
@@ -285,6 +300,7 @@ def render_html(data: dict) -> str:
     q = data.get("quality", {})
     lc = data.get("lifecycle", {})
     ct = data.get("contradictions", {})
+    dsol = data.get("token_usage", {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -393,6 +409,22 @@ def render_html(data: dict) -> str:
       <div class="row"><span class="label">Freshness</span><span>{q.get('freshness', 0)} pts</span></div>
       <div class="row"><span class="label">Completitud</span><span>{q.get('completeness', 0)}%</span></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Gasto</h2>
+    <div class="metric">{dsol.get('total_calls', 0)}</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">llamadas API</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Costo total</span><span>${dsol.get('total_cost_usd', 0):.4f}</span></div>
+      <div class="row"><span class="label">Cache hit</span><span>{dsol.get('cache_hit_rate', 0)}%</span></div>
+      <div class="row"><span class="label">Tokens prompt</span><span>{dsol.get('total_prompt_tokens', 0):,}</span></div>
+      <div class="row"><span class="label">Tokens completion</span><span>{dsol.get('total_completion_tokens', 0):,}</span></div>
+    </div>
+    {'<div style="margin-top:0.5rem;"><h3 style="font-size:0.8rem;color:#94a3b8;">Por agente</h3>' + "".join(
+        f'<div class="row"><span class="label">{agent}</span><span>${stats["cost_usd"]:.4f} ({stats["calls"]} calls)</span></div>'
+        for agent, stats in sorted(dsol.get("per_agent", {}).items(), key=lambda x: -x[1]["cost_usd"])
+    ) + "</div>" if dsol.get("per_agent") else ""}
   </div>
 </div>
 

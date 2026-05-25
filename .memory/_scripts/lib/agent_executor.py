@@ -210,19 +210,24 @@ def aletheia_node(state: dict) -> dict:
     subtask_ids = [s["id"] for s in plan.get("subtasks", [])]
     focus = "implementación" if "code" in subtask_ids else "investigación general"
 
-    # Quality Loop: inject critic feedback from previous iteration
+    # Quality Loop: inject critic feedback + suggestions from previous iteration
     iteration = state.get("iteration", 0)
     critic_feedback = state.get("critic_feedback", "")
+    critic_suggestions = state.get("critic_suggestions", {})
     quality_hint = ""
-    if iteration > 0 and critic_feedback:
-        quality_hint = (
-            f"\n\n## Feedback de Iteración Anterior\n"
-            f"Puntaje anterior: {state.get('critic_score', 0)}/100\n"
-            f"Feedback: {critic_feedback}\n\n"
-            f"## Instrucciones de Mejora\n"
-            f"Aborda específicamente el feedback anterior. "
-            f"Mejora la estructura, profundidad y calidad del informe.\n"
-        )
+    if iteration > 0:
+        parts = [f"Puntaje anterior: {state.get('critic_score', 0)}/100"]
+        if critic_feedback:
+            parts.append(f"Feedback: {critic_feedback}")
+        # Add structured suggestions for this agent if available
+        agent_sugs = critic_suggestions.get("aletheia", []) or critic_suggestions.get("kosmos", [])
+        my_sugs = critic_suggestions.get("aletheia", [])
+        if my_sugs:
+            parts.append("Sugerencias de mejora:")
+            for s in my_sugs:
+                parts.append(f"- {s}")
+        if parts:
+            quality_hint = "\n\n## Feedback de Iteración Anterior\n" + "\n".join(parts) + "\n"
 
     prompt = (
         f"# Pipeline: Investigación\n\n"

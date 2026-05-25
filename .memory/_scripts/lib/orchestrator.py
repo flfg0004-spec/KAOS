@@ -189,7 +189,7 @@ def route_parallel_fanout(state: KAOSState) -> list[Send]:
         Send("parallel_validate", {**state, "topic": state.get("topic", "")}),
     ]
 
-MAX_ITERATIONS = 3
+MAX_ITERATIONS = 2
 CRITIC_THRESHOLD = 40
 NODE_TIMEOUT = 300  # seconds per node
 
@@ -209,9 +209,35 @@ def _notify(step: str, status: str, state: KAOSState):
     if HERMES_ENABLED:
         pipeline_notify(state, step, status)
 
+def _generate_suggestions(scores: dict, outputs: dict) -> dict[str, list[str]]:
+    """Generate structured improvement suggestions per agent based on scores."""
+    suggestions = {}
+    for agent, text in outputs.items():
+        agent_sugs = []
+        text = text or ""
+        if agent in scores and scores.get(agent, 100) < CRITIC_THRESHOLD:
+            score_info = _score_output(text)
+            if not score_info["has_structure"]:
+                agent_sugs.append(f"Agregar estructura clara con secciones (## titulos) en {agent}")
+            if not score_info["has_content"]:
+                agent_sugs.append(f"Incluir contenido mas sustancial en {agent} (min 200 caracteres)")
+            if agent == "aletheia":
+                agent_sugs.append("Incluir referencias a fuentes externas con [[wikilinks]]")
+            elif agent == "kosmos":
+                agent_sugs.append("Agregar diagrama de arquitectura o ADR estructurado")
+            elif agent == "kratos":
+                agent_sugs.append("Incluir ejemplos de codigo completos con explicacion")
+            elif agent == "mnemosyne":
+                agent_sugs.append("Verificar wikilinks, cobertura y consistencia del vault")
+        if agent_sugs:
+            suggestions[agent] = agent_sugs[:3]
+    return suggestions
+
+
 def critic_node(state: KAOSState) -> dict:
     _notify("Critic Quality", "in_progress", state)
     iteration = state.get("iteration", 0)
+    score_history = state.get("score_history", [])
     
     outputs = {
         "aletheia": state.get("aletheia_output", ""),
@@ -222,14 +248,15 @@ def critic_node(state: KAOSState) -> dict:
     }
     
     if LLM_DIRECT_ENABLED:
-        eval_prompt = "Evalúa estas salidas de pipeline (0-100 cada una):\n\n"
+        eval_prompt = "Evalúa estas salidas de pipeline (0-100 cada una). Sugiere 1-2 mejoras específicas por agente:\n\n"
         for agent, text in outputs.items():
             truncated = text[:1000] if text else "(empty)"
             eval_prompt += f"## {agent}\n{truncated}\n---\n"
         eval_prompt += (
-            "\nResponde SOLO con JSON:\n"
+            '\nResponde SOLO con JSON:\n'
             '{"scores":{"aletheia":0,"kosmos":0,"metis":0,"kratos":0,"mnemosyne":0},'
-            '"avg_score":0,"feedback":"..."}'
+            '"avg_score":0,"feedback":"...",'
+            '"suggestions":{"aletheia":["mejora1","mejora2"],"kosmos":[...]}}'
         )
         raw = agent_llm_call("critic", eval_prompt)
         import json as _json
@@ -238,14 +265,15 @@ def critic_node(state: KAOSState) -> dict:
             scores = parsed.get("scores", {})
             avg_score = parsed.get("avg_score", 0)
             feedback = parsed.get("feedback", "No feedback")
+            suggestions = parsed.get("suggestions", {})
         except Exception:
             scores = {a: _score_output(t)["score"] for a, t in outputs.items()}
             avg_score = int(sum(scores.values()) / max(1, len(scores)))
             feedback = "LLM parse error, used heuristic fallback"
+            suggestions = _generate_suggestions(scores, outputs)
     else:
         scores = {agent: _score_output(text)["score"] for agent, text in outputs.items()}
         avg_score = int(sum(scores.values()) / max(1, len(scores)))
-        low_scorers = [a for a, s in scores.items() if s < CRITIC_THRESHOLD]
         feedback_parts = []
         for agent, s in scores.items():
             if s < CRITIC_THRESHOLD:
@@ -256,26 +284,40 @@ def critic_node(state: KAOSState) -> dict:
                     missing.append("contenido sustancial")
                 feedback_parts.append(f"{agent}: {s}/100 - falta {', '.join(missing)}")
         feedback = "; ".join(feedback_parts) if feedback_parts else "Calidad aceptable"
+        suggestions = _generate_suggestions(scores, outputs)
     
     _notify("Critic Quality", "completed", state)
     return {
         **state,
         "critic_score": avg_score if isinstance(avg_score, int) else int(avg_score),
         "critic_feedback": feedback,
+        "critic_suggestions": suggestions,
+        "score_history": score_history + [avg_score],
         "iteration": iteration + 1,
     }
+
 
 def route_after_critic(state: KAOSState) -> str:
     """Route: refine if quality low + iterations remain, else advance.
     
     Skip critic loop for non-code tasks (no kratos_output).
+    Abort loop if score hasn't improved from previous iteration.
     """
     iteration = state.get("iteration", 0)
     score = state.get("critic_score", 0)
     kratos_out = state.get("kratos_output", "")
+    score_history = state.get("score_history", [])
     
     if not kratos_out:
         return "advance"
+    
+    # Abort loop if no improvement from previous iteration
+    if len(score_history) >= 2 and score_history[-2] >= score:
+        return "advance"
+    
+    if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
+        return "refine"
+    return "advance"
     if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
         return "refine"
     return "advance"

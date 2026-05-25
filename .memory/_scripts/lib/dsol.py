@@ -311,7 +311,7 @@ class TokenTracker:
         self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def track(self, prompt_tokens=0, completion_tokens=0, cache_hit=0, cache_miss=0,
-              reasoning=0, model="flash", task="general"):
+              reasoning=0, model="flash", task="general", agent=""):
         today = date.today().isoformat()
         now = datetime.now().isoformat()
         cost = self._calc_cost(prompt_tokens, completion_tokens, cache_hit, cache_miss, model)
@@ -319,6 +319,7 @@ class TokenTracker:
         entry = {
             "timestamp": now,
             "model": model,
+            "agent": agent,
             "task": task,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
@@ -350,13 +351,34 @@ class TokenTracker:
         self._save()
 
     def _calc_cost(self, prompt_tokens, completion_tokens, cache_hit, cache_miss, model):
-        rates = {"flash": {"input": 0.00014, "cache_read": 0.000028, "output": 0.00028},
-                 "pro": {"input": 0.00174, "cache_read": 0.000145, "output": 0.00348}}
-        r = rates.get(model, rates["flash"])
+        rates = {
+            "flash": {"input": 0.00014, "cache_read": 0.000028, "output": 0.00028},
+            "pro": {"input": 0.00174, "cache_read": 0.000145, "output": 0.00348},
+            "deepseek-v4-flash": {"input": 0.00014, "cache_read": 0.000028, "output": 0.00028},
+            "deepseek-v4-pro": {"input": 0.000435, "cache_read": 0.00003625, "output": 0.00087},
+            "qwen3.5-plus": {"input": 0.00040, "cache_read": 0.00008, "output": 0.00240},
+            "qwen3.6-plus": {"input": 0.000325, "cache_read": 0.000406, "output": 0.00195},
+            "glm-5": {"input": 0.00100, "cache_read": 0.00020, "output": 0.00320},
+            "glm-5.1": {"input": 0.00140, "cache_read": 0.00026, "output": 0.00440},
+            "kimi-k2.5": {"input": 0.00060, "cache_read": 0.00010, "output": 0.00300},
+            "kimi-k2.6": {"input": 0.00095, "cache_read": 0.00016, "output": 0.00400},
+            "mimo-v2-pro": {"input": 0.00100, "cache_read": 0.00020, "output": 0.00300},
+            "gemini-3.5-flash": {"input": 0.00150, "cache_read": 0.00015, "output": 0.00900},
+        }
+        r = rates.get(model, rates.get("deepseek-v4-flash", rates["flash"]))
         return (cache_miss * r["input"] + cache_hit * r["cache_read"]
                 + completion_tokens * r["output"])
 
     def get_stats(self) -> dict:
+        per_agent = {}
+        for s in self.data.get("sessions", []):
+            agent = s.get("agent", "unknown")
+            if agent not in per_agent:
+                per_agent[agent] = {"calls": 0, "cost_usd": 0, "prompt_tokens": 0, "completion_tokens": 0}
+            per_agent[agent]["calls"] += 1
+            per_agent[agent]["cost_usd"] += s.get("cost_usd", 0)
+            per_agent[agent]["prompt_tokens"] += s.get("prompt_tokens", 0)
+            per_agent[agent]["completion_tokens"] += s.get("completion_tokens", 0)
         return {
             "total_calls": self.data["totals"].get("total_calls", 0),
             "total_prompt_tokens": self.data["totals"].get("prompt_tokens", 0),
@@ -366,6 +388,7 @@ class TokenTracker:
             "total_reasoning_tokens": self.data["totals"].get("reasoning_tokens", 0),
             "total_cost_usd": self.data["totals"].get("cost_usd", 0),
             "daily_breakdown": dict(sorted(self.data["daily"].items(), reverse=True)[:7]),
+            "per_agent": per_agent,
         }
 
     def get_daily_report(self) -> str:

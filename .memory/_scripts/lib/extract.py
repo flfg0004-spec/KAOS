@@ -171,4 +171,11 @@ def extract_session(agent: str, summary: str, pages: list[str] | None = None) ->
         results.append(f"⚠️ {stale_result}")
     results.append(commit_result)
 
+    feedback_msg = (
+        f"\n💬 **Feedback**: ¿Qué tan útil fue esta sesión de {agent}?\n"
+        f"   Responde con: /feedback {agent} <rating 1-5> [comentario opcional]\n"
+        f"   Ejemplo: `/feedback {agent} 5` o `/feedback {agent} 3 faltó profundidad`"
+    )
+    results.append(feedback_msg)
+
     return "\n".join(results)

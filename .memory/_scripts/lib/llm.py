@@ -46,8 +46,9 @@ def get_client(provider: str = "deepseek") -> OpenAI:
     return OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_ENDPOINT)
 
 
-def llm_call(prompt: str, system: str = "", model: str = "go-flash",
-             temperature: float = 0.2, max_tokens: int = 16384) -> str:
+def _llm_call_impl(prompt: str, system: str = "", model: str = "go-flash",
+                   temperature: float = 0.2, max_tokens: int = 16384) -> tuple[str, dict]:
+    """Returns (content, usage_dict) — usage captures token counts from API response."""
     cfg = MODELS.get(model, MODELS["go-flash"])
     client = get_client(cfg["provider"])
     messages = []
@@ -63,7 +64,19 @@ def llm_call(prompt: str, system: str = "", model: str = "go-flash",
             max_tokens=max_tokens,
             timeout=120,
         )
-        return resp.choices[0].message.content or ""
+        content = resp.choices[0].message.content or ""
+        usage = {
+            "prompt_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+            "completion_tokens": resp.usage.completion_tokens if resp.usage else 0,
+            "total_tokens": resp.usage.total_tokens if resp.usage else 0,
+            "cached_tokens": (resp.usage.prompt_tokens_details.cached_tokens
+                              if resp.usage and resp.usage.prompt_tokens_details else 0),
+            "reasoning_tokens": (resp.usage.completion_tokens_details.reasoning_tokens
+                                 if resp.usage and resp.usage.completion_tokens_details else 0),
+            "model": cfg["model"],
+            "provider": cfg["provider"],
+        }
+        return content, usage
     except Exception as e:
         if LLM_FALLBACK_ENABLED and cfg["provider"] != "opencode-go":
             fallback_client = get_client("opencode-go")
@@ -76,16 +89,42 @@ def llm_call(prompt: str, system: str = "", model: str = "go-flash",
                     max_tokens=max_tokens,
                     timeout=120,
                 )
-                return resp2.choices[0].message.content or ""
+                content = resp2.choices[0].message.content or ""
+                return content, {"error": None, "model": fallback_model["model"], "provider": "opencode-go"}
             except Exception as e2:
-                return f"# LLM Error: {e} (fallback: {e2})"
-        return f"# LLM Error: {e}"
+                return f"# LLM Error: {e} (fallback: {e2})", {"error": str(e2)}
+        return f"# LLM Error: {e}", {"error": str(e)}
+
+
+def llm_call(prompt: str, system: str = "", model: str = "go-flash",
+             temperature: float = 0.2, max_tokens: int = 16384) -> str:
+    """Returns content only (backward compatible wrapper)."""
+    content, _ = _llm_call_impl(prompt, system, model, temperature, max_tokens)
+    return content
 
 
 def agent_llm_call(agent: str, prompt: str, temperature: float = 0.2) -> str:
+    """Agent-aware LLM call with token tracking via TokenTracker."""
     model_key = AGENT_MODELS.get(agent, "go-flash")
     system = SYSTEM_PROMPTS.get(agent, "")
-    return llm_call(prompt=prompt, system=system, model=model_key, temperature=temperature)
+    content, usage = _llm_call_impl(prompt=prompt, system=system, model=model_key, temperature=temperature)
+
+    try:
+        from lib.dsol import TokenTracker
+        tt = TokenTracker()
+        tt.track(
+            agent=agent,
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            completion_tokens=usage.get("completion_tokens", 0),
+            cache_hit=usage.get("cached_tokens", 0),
+            reasoning=usage.get("reasoning_tokens", 0),
+            model=usage.get("model", model_key),
+            task=f"agent_{agent}",
+        )
+    except Exception:
+        pass
+
+    return content
 
 
 def get_available_models() -> list[str]:
