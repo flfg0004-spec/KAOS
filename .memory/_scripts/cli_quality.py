@@ -7,6 +7,7 @@ from pathlib import Path
 
 from lib import quality, dashboard as dash, speed, viz, wikilinks, docker_health, cross_validator
 from lib.agy_client import gpt55_status, call_gpt55
+from lib.telegram import send as telegram_send
 
 
 def register(sub, kaos_root):
@@ -73,9 +74,14 @@ def register(sub, kaos_root):
         elif args.action == "graph":
             print(wikilinks.graph_dot())
         elif args.action == "suggest":
-            for s in wikilinks.suggest()[:20]:
-                kw = ", ".join(s["keywords"])
-                print(f"  {s['from']} <-> {s['to']} (score: {s['score']}): {kw}")
+            mode = args.mode or "hybrid"
+            min_conf = args.min_confidence or 0.75
+            for s in wikilinks.suggest(min_confidence=min_conf, mode=mode, top_k=20):
+                rel = s.get("relation", "")
+                rel_str = f" ({rel})" if rel else ""
+                anchor = s.get("anchor_text", "")
+                anchor_str = f" anchor='{anchor}'" if anchor else ""
+                print(f"  {s['from']} <-> {s['to']} (score: {s['score']}, method: {s['method']}){rel_str}{anchor_str}")
         else:
             print("Unknown action. Use: report, graph, suggest")
 
@@ -138,7 +144,20 @@ def register(sub, kaos_root):
     p = sub.add_parser("models", help="Show available models and status")
     p.set_defaults(func=cmd_models)
 
+    def cmd_notify(args):
+        """Send a notification to Telegram."""
+        ok = telegram_send(args.message)
+        print("Notificacion enviada" if ok else "Error: TELEGRAM_BOT_TOKEN no configurado")
+
+    p = sub.add_parser("notify", help="Send notification to Telegram")
+    p.add_argument("message", help="Message text to send")
+    p.set_defaults(func=cmd_notify)
+
     p = sub.add_parser("wikilinks", help="Wikilink analysis")
     p.add_argument("action", choices=["report", "graph", "suggest"])
     p.add_argument("--suggest", action="store_true")
+    p.add_argument("--mode", choices=["embedding", "llm", "hybrid"], default="hybrid",
+                   help="Suggestion mode (default: hybrid)")
+    p.add_argument("--min-confidence", type=float, default=0.75,
+                   help="Minimum similarity threshold (0-1)")
     p.set_defaults(func=cmd_wikilinks)

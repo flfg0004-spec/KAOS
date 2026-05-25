@@ -485,6 +485,17 @@ def step_done(agent: str) -> str:
         except Exception:
             pass
 
+    # Send Telegram notification when pipeline completes
+    if not next_agent:
+        try:
+            from lib.telegram import notify_pipeline
+            topic = "pipeline completed"
+            tm = re.search(r"\*\*topic\*\*:\s*(.+?)$", "\n".join(_read_status()), re.MULTILINE)
+            if tm: topic = tm.group(1).strip()
+            notify_pipeline(topic=topic, score=0, duration_s=int(duration_s) if 'duration_s' in dir() else 0, passed=True)
+        except Exception:
+            pass
+
     # Auto-trigger curation when pipeline completes
     if not next_agent:
         import subprocess

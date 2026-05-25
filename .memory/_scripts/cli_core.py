@@ -7,6 +7,7 @@ from pathlib import Path
 from lib import lint, health, hydrate, extract, index as index_mod, git, pressure, scanner, cleaner, garbage, auditor
 from lib import tagger
 from lib import crystallize
+from lib import gaps
 from lib.config import VAULT_ROOT
 
 
@@ -121,6 +122,19 @@ def register(sub, kaos_root):
             else:
                 print("  No duplicate candidates found.")
 
+    def cmd_gaps(args):
+        if args.action == "report":
+            print(gaps.report(min_confidence=args.min_confidence))
+        elif args.action == "suggest":
+            detector = gaps.GapDetector()
+            for g in detector.suggest_gaps(min_confidence=args.min_confidence):
+                print(f"  [{g['type']}] {g.get('missing', g.get('node', g.get('id', '?')))} "
+                      f"(conf: {g.get('confidence', '-')})")
+                if g.get("reason"):
+                    print(f"    {g['reason']}")
+                if g.get("suggestion"):
+                    print(f"    → {g['suggestion']}")
+
     def cmd_audit(args):
         actions = {"pre": lambda: [print(f"  {k}: {v}") for k, v in auditor.pre_snapshot().items()],
                    "report": auditor.report}
@@ -194,6 +208,11 @@ def register(sub, kaos_root):
     p.add_argument("--dry-run", action="store_true", help="Show candidates without merging")
     p.add_argument("--min-confidence", type=float, default=0.90, help="Minimum confidence threshold")
     p.set_defaults(func=cmd_dedup)
+
+    p = sub.add_parser("gaps", help="Knowledge gap detection")
+    p.add_argument("action", choices=["report", "suggest"])
+    p.add_argument("--min-confidence", type=float, default=0.2, help="Minimum confidence threshold")
+    p.set_defaults(func=cmd_gaps)
 
     p = sub.add_parser("audit", help="Audit vault health")
     p.add_argument("action", choices=["pre", "report"])

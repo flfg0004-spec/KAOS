@@ -42,6 +42,8 @@ MODULES = [
     "test_graph_analysis",
     "test_crystallize",
     "test_tagger",
+    "test_wikilinks",
+    "test_gaps",
 ]
 
 SLOW_MODULES = {
