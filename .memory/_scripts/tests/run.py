@@ -82,6 +82,7 @@ MODULES = [
 SLOW_MODULES = {
     "test_context_cycle", "test_memory_persistence",
     "test_full_pipeline", "test_llm_quality",
+    "test_deerflow_bridge", "test_agno_real",
 }
 
 SLOW_TEST_PREFIXES = {"test_tagger_slow", "test_lifecycle_slow", "test_contradictions_slow", "test_wikilinks_slow"}

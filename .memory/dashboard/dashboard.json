@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-25 15:54:01",
+  "timestamp": "2026-05-25 16:00:37",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 748,
-    "avg_duration_min": 53.4,
+    "total_messages": 747,
+    "avg_duration_min": 52.6,
     "feedback_avg": 0,
     "feedback_count": 0
   },
@@ -29,8 +29,8 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "aletheia-ready",
-    "profile": "deep"
+    "status": "complete",
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 3,
@@ -42,18 +42,13 @@
   },
   "activity": {
     "recent_commits": [
+      "6ebfc5d session: mnemosyne - curation-cycle",
       "7989949 session: mnemosyne - curation-cycle",
       "138a74f session: mnemosyne - curation-cycle",
       "a06a6dd session: test_agent - Integration test cycle",
-      "5567208 session: test_full_cycle - Persistence cycle test",
-      "85bacd3 session: mnemosyne - curation-cycle"
+      "5567208 session: test_full_cycle - Persistence cycle test"
     ],
     "recent_logs": [
-      [
-        "2026-05-25",
-        "session",
-        "test_agent session completed"
-      ],
       [
         "2026-05-25",
         "session",
@@ -68,6 +63,11 @@
         "2026-05-25",
         "session",
         "test_agent session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
       ],
       [
         "2026-05-25",

@@ -1,0 +1,37 @@
+# Tokenization - Documento 2682
+
+## Resumen
+Este documento analiza tokenization en el contexto de sistemas multi-agente. Se discuten 4 aspectos clave relacionados con compile then query, machine learning, LLM distillation.
+
+## Introduccion
+El estudio de tokenization ha cobrado relevancia en los ultimos anos. Investigaciones recientes muestran que la integracion con agentes mejora los resultados.
+
+## Compile Then Query
+### Conceptos Clave
+- embeddings: descripcion del concepto embeddings en relacion con tokenization
+- natural language processing: descripcion del concepto natural language processing en relacion con tokenization
+- quality scoring: descripcion del concepto quality scoring en relacion con tokenization
+- tokenization: descripcion del concepto tokenization en relacion con tokenization
+
+### [[tokenization]] y [[machine-learning]]
+La relacion entre tokenization y machine learning es fundamental. Estudios recientes en [[tokenization]] demuestran que...
+
+## Llm Distillation
+### Metodologia
+1. Primero, se analiza el estado del arte en tokenization
+2. Luego, se aplican tecnicas de memory systems
+3. Finalmente, se evaluan los resultados contra tool calling
+
+### Resultados
+| Metrica | Valor | Baseline |
+|---------|-------|----------|
+| Precision | 0.83 | 0.56 |
+| Recall | 0.79 | 0.50 |
+| F1 | 0.87 | 0.57 |
+
+## Conclusiones
+El analisis muestra que tokenization tiene un impacto significativo en el rendimiento de sistemas multi-agente. Se recomienda profundizar en la integracion.
+
+## Referencias
+- Fuente: https://arxiv.org/abs/2081.88788
+- Fuente: https://github.com/ejemplo/tokenization

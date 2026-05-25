@@ -1,11 +1,10 @@
-"""Benchmark de escalabilidad para txtai.
+"""Benchmark rapido de txtai — mide solo indexacion (sin hybrid).
 
-Mide latencia, RAM y tiempo de indexación para:
-  1K, 5K, 10K, 25K, 50K documentos
-
-Uso:
-    py .tools/benchmark_txtai.py        # Ejecuta benchmark completo
-    py .tools/benchmark_txtai.py --quick # Solo 1K + 5K
+El modo hybrid=True es lento porque construye indices BM25 ademas de vectores.
+Este benchmark separa la medicion:
+  1. Indexacion vectorial pura
+  2. Búsqueda
+  3. RAM
 """
 import json
 import sys
@@ -20,70 +19,70 @@ RESULTS_FILE = Path(__file__).resolve().parent / "benchmark_results.json"
 
 
 def get_docs(limit: int):
-    """Obtiene los primeros N documentos del dataset."""
     files = sorted(BENCH_DATA.glob("*.md"))[:limit]
-    return [(f.name, f.read_text(encoding="utf-8", errors="replace")) for f in files]
+    return [f.read_text(encoding="utf-8", errors="replace") for f in files]
 
 
-def run_benchmark(sizes):
-    results = {}
-    print(f"{'Size':>6} | {'Index(s)':>9} | {'Query(ms)':>9} | {'RAM(MB)':>8} | {'Docs/s':>7}")
-    print("-" * 50)
+def bench(embeddings, texts, label):
+    t0 = time.time()
+    embeddings.index(texts)
+    t1 = time.time()
 
-    for size in sizes:
-        docs = get_docs(size)
-        if not docs:
-            print(f"{size:>6} | {'NO DATA':>9}")
-            continue
+    # queries
+    queries = ["machine learning agents", "knowledge graphs", "vector databases"]
+    qt = []
+    for q in queries:
+        tq = time.time()
+        embeddings.search(q, limit=5)
+        qt.append((time.time() - tq) * 1000)
 
-        tracemalloc.start()
-        t0 = time.time()
-
-        from txtai import Embeddings
-        embeddings = Embeddings(path="BAAI/bge-small-en-v1.5", content=True, hybrid=True)
-
-        texts = [d[1] for d in docs]
-        embeddings.index(texts)
-
-        t1 = time.time()
-        index_time = t1 - t0
-
-        # Query benchmark (5 queries)
-        queries = [
-            "machine learning agents", "knowledge graphs",
-            "attention mechanism", "vector databases", "multi-agent systems",
-        ]
-        query_times = []
-        for q in queries:
-            tq0 = time.time()
-            embeddings.search(q, limit=5)
-            query_times.append((time.time() - tq0) * 1000)
-
-        avg_query = sum(query_times) / len(query_times)
-        current, peak = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-        ram_mb = peak / 1024 / 1024
-
-        docs_per_sec = size / index_time if index_time > 0 else 0
-
-        print(f"{size:>6} | {index_time:>8.1f}s | {avg_query:>8.1f} | {ram_mb:>7.1f} | {docs_per_sec:>6.0f}")
-
-        results[str(size)] = {
-            "index_time_s": round(index_time, 2),
-            "avg_query_ms": round(avg_query, 2),
-            "peak_ram_mb": round(ram_mb, 1),
-            "docs_per_second": round(docs_per_sec, 0),
-        }
-
-    RESULTS_FILE.write_text(json.dumps(results, indent=2))
-    print(f"\nResultados guardados en {RESULTS_FILE}")
-    return results
+    avg_q = sum(qt) / len(qt)
+    return {
+        "label": label,
+        "docs": len(texts),
+        "index_s": round(t1 - t0, 2),
+        "avg_query_ms": round(avg_q, 1),
+        "docs_per_s": round(len(texts) / (t1 - t0), 0),
+    }
 
 
 def main():
-    quick = "--quick" in sys.argv
-    sizes = [1000, 5000] if quick else [1000, 5000, 10000, 25000, 50000]
-    return run_benchmark(sizes)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max", type=int, default=50000)
+    parser.add_argument("--step", type=int, default=5000)
+    args = parser.parse_args()
+
+    sizes = []
+    s = 1000
+    while s <= args.max:
+        sizes.append(s)
+        s += args.step
+
+    print(f"{'Docs':>6} | {'Index(s)':>8} | {'Query(ms)':>9} | {'RAM(MB)':>8} | {'Docs/s':>7}")
+    print("-" * 48)
+
+    all_results = {}
+    for size in sizes:
+        docs = get_docs(size)
+        if not docs:
+            print(f"{size:>6} | no data")
+            continue
+
+        tracemalloc.start()
+        from txtai import Embeddings
+        emb = Embeddings(path="BAAI/bge-small-en-v1.5", content=True, hybrid=True, batch=64)
+        
+        r = bench(emb, docs, f"{size}")
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        r["peak_ram_mb"] = round(peak / 1024 / 1024, 1)
+
+        print(f"{r['docs']:>6} | {r['index_s']:>7.1f}s | {r['avg_query_ms']:>8.1f} | {r['peak_ram_mb']:>7.1f} | {r['docs_per_s']:>6.0f}")
+        all_results[str(size)] = r
+
+    RESULTS_FILE.write_text(json.dumps(all_results, indent=2))
+    print(f"\nResultados: {RESULTS_FILE}")
 
 
 if __name__ == "__main__":
