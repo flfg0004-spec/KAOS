@@ -113,10 +113,10 @@ Feedback Loop (asíncrono):
 
 | # | Decisión | Estado | Archivos afectados |
 |---|----------|--------|-------------------|
-| 1 | Migrar Firecrawl→Crawl4AI+JinaReader+SearXNG | 🔄 En ejecución | ~24 configs + docs |
-| 2 | Pipeline 3 fases | 🔄 En ejecución | 3 archivos de agente Aletheia |
-| 3 | Integración Aletheia↔Mnemosyne | ⏳ Pendiente | 5 archivos (pipeline + agentes) |
-| 4 | Niveles de confianza | 🔄 En ejecución | SKILL.md + agent config |
+| 1 | Migrar Firecrawl→Crawl4AI+JinaReader+SearXNG | ✅ Completado | ~27 archivos config + docs |
+| 2 | Pipeline 3 fases | ✅ Completado | 3 archivos de agente Aletheia + SKILL.md |
+| 3 | Integración Aletheia↔Mnemosyne | ✅ Completado | pipeline.py + orchestrator.py + 4 archivos agente |
+| 4 | Niveles de confianza | ✅ Completado | SKILL.md + agent config |
 
 ## Referencias
 - ADR-007: Optimización de Arquitectura KAOS (Decisión 4 reemplazada)

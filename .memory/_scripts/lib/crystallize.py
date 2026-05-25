@@ -196,13 +196,37 @@ def find_candidates(min_embedding: float = 0.90, min_jaccard: float = 0.85,
     return sorted(candidates, key=lambda x: -x["confidence"])
 
 
+def _backup_file(path: Path) -> Path | None:
+    """Create a .bak copy before modifying. Returns backup path or None."""
+    try:
+        bak = path.with_suffix(path.suffix + ".bak")
+        import shutil as _sh
+        _sh.copy2(str(path), str(bak))
+        return bak
+    except Exception:
+        return None
+
+
+def _rollback(backup: Path, original: Path):
+    """Restore a file from backup."""
+    if backup and backup.exists():
+        import shutil as _sh
+        _sh.copy2(str(backup), str(original))
+        backup.unlink(missing_ok=True)
+
+
 def crystallize(file_a: str, file_b: str, dry_run: bool = True) -> dict:
     """AI fusion of two related notes into one consolidated note."""
     pa, pb = Path(file_a), Path(file_b)
     if not pa.exists() or not pb.exists():
         return {"error": "One or both files not found"}
+    if not pa.is_file() or not pb.is_file():
+        return {"error": "One or both paths are not files"}
 
     ca, cb = _read(pa), _read(pb)
+    if not ca.strip() or not cb.strip():
+        return {"error": "One or both files are empty"}
+
     title_a = pa.stem.replace("-", " ").title()
     title_b = pb.stem.replace("-", " ").title()
     merged_title = title_a if len(title_a) <= len(title_b) else title_b
@@ -231,6 +255,9 @@ def crystallize(file_a: str, file_b: str, dry_run: bool = True) -> dict:
     except Exception as e:
         return {"error": f"LLM fusion failed: {e}"}
 
+    if not merged or not merged.strip():
+        return {"error": "LLM returned empty fusion result"}
+
     merged_content = (
         "---\n"
         f"title: \"{merged_title}\"\n"
@@ -245,13 +272,24 @@ def crystallize(file_a: str, file_b: str, dry_run: bool = True) -> dict:
     merged_path = WIKI_CONCEPTS / f"{pa.stem}-{pb.stem}.md"
 
     if not dry_run:
-        _write(merged_path, merged_content)
+        backups = {}
         for orig in [pa, pb]:
-            archive_path = ARCHIVE / "concepts" / orig.name
-            archive_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(orig), str(archive_path))
-            stub = f"→ [[{merged_path.stem}]]\n\n*Nota fusionada. Contenido original en `_archive/concepts/{orig.name}`.*"
-            _write(orig, stub)
+            backups[orig] = _backup_file(orig)
+        try:
+            _write(merged_path, merged_content)
+            for orig in [pa, pb]:
+                archive_path = ARCHIVE / "concepts" / orig.name
+                archive_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(orig), str(archive_path))
+                stub = f"→ [[{merged_path.stem}]]\n\n*Nota fusionada. Contenido original en `_archive/concepts/{orig.name}`.*"
+                _write(orig, stub)
+        except Exception as e:
+            for orig, bak in backups.items():
+                if bak:
+                    _rollback(bak, orig)
+            if merged_path.exists():
+                merged_path.unlink(missing_ok=True)
+            return {"error": f"Fusion failed, rolled back: {e}"}
 
     return {
         "merged_path": str(merged_path),
@@ -265,11 +303,13 @@ def crystallize(file_a: str, file_b: str, dry_run: bool = True) -> dict:
 def run_dedup(dry_run: bool = True, min_confidence: float = 0.90) -> list[dict]:
     """Full dedup pipeline: find candidates + crystallize high-confidence pairs."""
     candidates = find_candidates(min_embedding=0.90)
+    if not candidates:
+        return []
     results = []
     for c in candidates:
         if c["confidence"] >= min_confidence and c["method"] not in ("cocitation",):
             result = crystallize(c["file_a"], c["file_b"], dry_run=dry_run)
             results.append(result)
             if not dry_run and "error" not in result:
-                break  # One fusion per run for safety
+                break
     return results

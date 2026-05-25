@@ -18,7 +18,7 @@ distill-engine: v2
 
 *Destilado automáticamente desde evaluacion-plugins-ecosistema.md*
 
-**Veredicto**: ⏳ Posponer — cuando esté disponible en npm, adoptar. Por ahora, el MCP firecrawl actual es suficiente.
+**Veredicto**: ❌ Deprecado — reemplazado por Crawl4AI + SearXNG. Ver ADR-009.
 
 ## Fuente
 - [evaluacion-plugins-ecosistema.md](../raw/evaluacion-plugins-ecosistema.md)

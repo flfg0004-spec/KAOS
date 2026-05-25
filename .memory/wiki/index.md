@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-24 23:35*
+*Auto-generated: 2026-05-24 23:48*
 
 ## Agentes
 
@@ -160,6 +160,7 @@
 - [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-23
 - [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-23
 - [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-23
+- [test-telegram](../raw/test-telegram.md) - 2026-05-24
 - [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-23
 - [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-23
 - [wiki-wiki-timeline-of-quantum-computing-and-communication](../raw/wiki-wiki-timeline-of-quantum-computing-and-communication.md) - 2026-05-20
@@ -177,6 +178,7 @@
 - [adr-007-optimizacion-arquitectura](../schema/adr-007-optimizacion-arquitectura.md) - Optimización de Arquitectura KAOS — MCPs, Configuración y Pipeline
 - [adr-008-plugin-decision](../schema/adr-008-plugin-decision.md) - Plugin Architecture Decision
 - [adr-009-arquitectura-kratos](../schema/adr-009-arquitectura-kratos.md) - Arquitectura del Code Agent Kratos
+- [adr-009-migracion-scraping-stack](../schema/adr-009-migracion-scraping-stack.md) - Migración de Stack de Scraping y Nuevo Pipeline de Investigación
 - [adr-010-integracion-dsol-langgraph](../schema/adr-010-integracion-dsol-langgraph.md) - Integracion DSOL ↔ LangGraph Orchestrator
 - [adr-011-memory-matrix](../schema/adr-011-memory-matrix.md) - Memory Matrix — Modelo Jerarquico de Memoria L0-L3
 
@@ -192,4 +194,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-24 23:35*
+*Ultima actualizacion: 2026-05-24 23:48*

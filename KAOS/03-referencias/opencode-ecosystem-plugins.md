@@ -9,7 +9,6 @@ tags:
 - plugins
 - ecosystem
 - supermemory
-- firecrawl
 - scheduler
 created: '2026-05-20'
 modified: '2026-05-20'

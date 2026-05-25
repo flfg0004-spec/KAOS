@@ -24,8 +24,16 @@ class GapDetector:
 
     def __init__(self, page_map: dict = None):
         self.page_map = page_map or build_graph()
+        if not self.page_map:
+            self.graph = nx.DiGraph()
+            self.vg = None
+            return
         self.vg = VaultGraph(self.page_map)
         self.graph = self.vg.graph
+
+    def _content_safe(self, name: str) -> str:
+        """Get content from page_map safely."""
+        return self.page_map.get(name, {}).get("content", "") if self.page_map else ""
 
     def structural_gaps(self) -> list[dict]:
         """Find structural gaps: A→C exists but a concept B logically fits between them.
@@ -34,12 +42,12 @@ class GapDetector:
         A→B→C would form a more complete path (B shares significant content overlap with both).
         """
         gaps = []
-        if self.graph.number_of_edges() < 2:
+        if not self.page_map or self.graph.number_of_edges() < 2:
             return gaps
 
         for a, c in self.graph.edges():
-            a_content = self.page_map.get(a, {}).get("content", "")
-            c_content = self.page_map.get(c, {}).get("content", "")
+            a_content = self._content_safe(a)
+            c_content = self._content_safe(c)
 
             for b in self.graph.nodes():
                 if b == a or b == c:
@@ -47,7 +55,7 @@ class GapDetector:
                 if self.graph.has_edge(a, b) or self.graph.has_edge(b, c):
                     continue
 
-                b_content = self.page_map.get(b, {}).get("content", "")
+                b_content = self._content_safe(b)
                 if not a_content or not b_content or not c_content:
                     continue
 
@@ -66,10 +74,24 @@ class GapDetector:
                             "reason": f"'{b}' comparte vocabulario con '{a}' ({ab_overlap:.1%}) "
                                       f"y con '{c}' ({bc_overlap:.1%})",
                         })
-        return sorted(gaps, key=lambda x: -x["confidence"])
+        gaps = self._deduplicate_gaps(gaps)
+        return sorted(gaps, key=lambda x: -x["confidence"])[:30]
+
+    def _deduplicate_gaps(self, gaps: list[dict]) -> list[dict]:
+        """Remove redundant gap entries (same missing concept suggested multiple times)."""
+        seen = set()
+        unique = []
+        for g in gaps:
+            key = f"{g.get('missing', '')}:{g.get('from', '')}:{g.get('to', '')}"
+            if key not in seen:
+                seen.add(key)
+                unique.append(g)
+        return unique
 
     def topic_islands(self) -> list[dict]:
         """Detect clusters that lack bridging connections to other topic areas."""
+        if self.graph.number_of_nodes() < 2:
+            return []
         undirected = self.graph.to_undirected()
         try:
             from networkx.algorithms.community import louvain_communities

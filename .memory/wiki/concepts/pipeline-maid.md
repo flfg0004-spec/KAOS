@@ -48,8 +48,8 @@ Arquitectura del pipeline de conocimiento de KAOS, desde la ingesta masiva hasta
 
 | Perfil | Duración | Profundidad | Herramientas | Uso |
 |--------|----------|-------------|--------------|-----|
-| **flash** | 5-10 min | 1 nivel | Brave + Firecrawl | Fact-checking rápido |
-| **standard** | 30-60 min | 2 niveles | Brave + Firecrawl + Scholar | Investigación general |
+| **flash** | 5-10 min | 1 nivel | Brave + SearXNG | Fact-checking rápido |
+| **standard** | 30-60 min | 2 niveles | Brave + SearXNG + Scholar | Investigación general |
 | **deep** | 2-4 hrs | 4 niveles | GPT-Researcher + SearXNG + Crawl4AI | Deep Research |
 | **massive** | 4+ hrs | Crawl completo | Crawl4AI + txtai + STORM | Ingesta de sitios completos |
 
@@ -66,7 +66,7 @@ Arquitectura del pipeline de conocimiento de KAOS, desde la ingesta masiva hasta
 
 | MCP | Propósito | Estado |
 |-----|-----------|--------|
-| `firecrawl` | Búsqueda y extracción web | ✅ Activo |
+| `firecrawl` | ~~Búsqueda y extracción web~~ | ❌ Deprecado — Crawl4AI + SearXNG (ADR-009) |
 | `brave-search` | Búsqueda web privada | ✅ Activo |
 | `scholar-search` | Búsqueda académica | ✅ Activo |
 | `gptr-deep-research` | Deep Research multi-query | ✅ Configurado |

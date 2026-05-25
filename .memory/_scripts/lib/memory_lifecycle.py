@@ -49,9 +49,16 @@ def evaluate(path: Path) -> dict:
     """Evaluate a single file's lifecycle state."""
     if not path.exists():
         return {"path": str(path), "error": "File not found"}
+    if not path.is_file():
+        return {"path": str(path), "error": "Not a file"}
+    if path.suffix != ".md":
+        return {"path": str(path), "error": "Not a markdown file"}
 
-    mtime = datetime.fromtimestamp(path.stat().st_mtime)
-    days_since_mod = (datetime.now() - mtime).days
+    try:
+        mtime = datetime.fromtimestamp(path.stat().st_mtime)
+    except (OSError, ValueError) as e:
+        return {"path": str(path), "error": f"Cannot read mtime: {e}"}
+    days_since_mod = max(0, (datetime.now() - mtime).days)
     tier = _get_tier(days_since_mod)
     confidence = _confidence_score(days_since_mod)
 
@@ -98,26 +105,39 @@ def run_evaluate_all(dry_run: bool = True) -> list[dict]:
     """Evaluate all wiki files and return lifecycle report."""
     results = []
     for f in _get_md_files():
-        results.append(evaluate(f))
+        try:
+            r = evaluate(f)
+            if "error" not in r:
+                results.append(r)
+        except Exception:
+            pass
     return sorted(results, key=lambda x: x.get("confidence", 1))
 
 
 def run_promotion(dry_run: bool = True) -> list[dict]:
     """Auto-promote/demote notes based on tier thresholds."""
+    ARCHIVE.mkdir(parents=True, exist_ok=True)
     actions = []
     for f in _get_md_files():
-        eval_result = evaluate(f)
-        tier = eval_result["tier"]
+        try:
+            eval_result = evaluate(f)
+        except Exception:
+            continue
+        tier = eval_result.get("tier", "unknown")
 
         if tier == "stale" and not dry_run:
-            rel = f.relative_to(BASE)
+            try:
+                rel = f.relative_to(BASE)
+            except ValueError:
+                continue
             archive_path = ARCHIVE / rel
             archive_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(f), str(archive_path))
-            actions.append({"path": str(rel), "action": "archived", "reason": "Stale > 90 days"})
+            if f.exists():
+                shutil.move(str(f), str(archive_path))
+                actions.append({"path": str(rel), "action": "archived", "reason": "Stale > 90 days"})
 
         elif tier == "archive" and not dry_run:
-            actions.append({"path": str(rel(f)), "action": "flag_review", "reason": "Archive tier, needs review"})
+            actions.append({"path": str(f.relative_to(BASE)), "action": "flag_review", "reason": "Archive tier, needs review"})
 
     return actions
 

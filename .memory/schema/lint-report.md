@@ -1,5 +1,5 @@
 # Vault Lint Report
-*Generated: 2026-05-24 23:35*
+*Generated: 2026-05-24 23:44*
 
 ## Broken [[wikilinks]]
 
@@ -7,7 +7,7 @@ Found 0 broken links.
 
 ## Orphan Pages
 
-Found 0 orphan pages.
+- Orphan: wiki\dual-system-guide.md
 
 ## Stale Pages (>90 days without modification)
 
@@ -18,4 +18,4 @@ Found 0 stale pages.
 - None found.
 
 ---
-**Total issues: 0** | 2026-05-24 23:35
+**Total issues: 1** | 2026-05-24 23:44

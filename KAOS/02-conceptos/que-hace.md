@@ -7,7 +7,7 @@ aliases:
 tags:
 - concept
 created: '2026-05-20'
-modified: '2026-05-21'
+modified: '2026-05-24'
 confidence: media
 status: draft
 source: evaluacion-plugins-ecosistema.md
@@ -18,6 +18,8 @@ distill-engine: v2
 # Qué hace
 
 *Destilado automáticamente desde evaluacion-plugins-ecosistema.md*
+
+⚠️ **DEPRECATED** — Firecrawl CLI reemplazado por Crawl4AI + SearXNG. Ver ADR-009.
 
 **Qué hace**: Integración nativa de Firecrawl CLI como skill de OpenCode.
 

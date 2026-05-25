@@ -26,7 +26,7 @@ def read_file(path: Path) -> str:
 
 
 def _all_md_files() -> list[Path]:
-    exclude_dirs = {"cache", "_pending", ".git", "_scripts"}
+    exclude_dirs = {"cache", "_pending", ".git", "_scripts", "_pipeline", "_archive", "dashboard"}
     files = []
     for f in VAULT_ROOT.rglob("*.md"):
         if any(part in exclude_dirs for part in f.parts):

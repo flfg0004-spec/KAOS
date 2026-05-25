@@ -63,17 +63,24 @@ def _cosine_sim(a: list[float], b: list[float]) -> float:
 def _load_state() -> list[dict]:
     if CONTRADICTIONS_FILE.exists():
         try:
-            return json.loads(CONTRADICTIONS_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+            raw = CONTRADICTIONS_FILE.read_text(encoding="utf-8", errors="replace")
+            if not raw.strip():
+                return []
+            data = json.loads(raw)
+            return data if isinstance(data, list) else []
+        except (json.JSONDecodeError, Exception):
+            import shutil
+            corrupt = CONTRADICTIONS_FILE.with_suffix(".json.corrupt")
+            shutil.copy2(str(CONTRADICTIONS_FILE), str(corrupt))
+            return []
     return []
 
 
 def _save_state(entries: list[dict]):
     PENDING_DIR.mkdir(parents=True, exist_ok=True)
-    CONTRADICTIONS_FILE.write_text(
-        json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    tmp = CONTRADICTIONS_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(CONTRADICTIONS_FILE)
 
 
 def detect() -> list[dict]:
@@ -153,10 +160,28 @@ def classify(pair: dict) -> dict:
     return {**pair, "verdict": "independent", "severity": "low", "evidence": []}
 
 
+def update_status(file_a: str, file_b: str, new_status: str) -> bool:
+    """Transition a contradiction pair's status: detected → under_review → resolved | false_positive."""
+    valid_statuses = {"detected", "under_review", "resolved", "false_positive"}
+    if new_status not in valid_statuses:
+        return False
+    state = _load_state()
+    for entry in state:
+        if entry.get("file_a") == file_a and entry.get("file_b") == file_b:
+            entry["status"] = new_status
+            entry["updated_at"] = datetime.now().isoformat()
+            _save_state(state)
+            return True
+    return False
+
+
 def run_detection(dry_run: bool = True) -> list[dict]:
     """Full contradiction detection pipeline."""
     state = _load_state()
-    existing_keys = {(e["file_a"], e["file_b"]) for e in state}
+    existing_keys = set()
+    for e in state:
+        key = (e.get("file_a", ""), e.get("file_b", ""))
+        existing_keys.add(key)
 
     candidates = detect()
     results = []

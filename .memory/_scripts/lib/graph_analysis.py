@@ -1,5 +1,5 @@
 """Topological graph analysis for the knowledge vault.
-
+ 
 Computes PageRank, Louvain communities, Betweenness Centrality,
 hub/bridge detection, and cluster isolation analysis using networkx.
 Integrates with wikilinks.parse() for graph construction.
@@ -9,7 +9,11 @@ import re
 from pathlib import Path
 from collections import Counter
 
-import networkx as nx
+try:
+    import networkx as nx
+except ImportError:
+    nx = None
+
 from lib.wikilinks import build_graph
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
@@ -19,6 +23,8 @@ class VaultGraph:
     """Directed graph of the vault with topological analysis methods."""
 
     def __init__(self, page_map: dict = None):
+        if nx is None:
+            raise ImportError("networkx is required for VaultGraph")
         self.page_map = page_map or build_graph()
         self.graph = self._build_digraph()
 
@@ -43,6 +49,11 @@ class VaultGraph:
 
     def page_rank(self, top_k: int = 10) -> list[dict]:
         """Top-K notes by PageRank (authoritative hubs)."""
+        if self.node_count == 0:
+            return []
+        if self.node_count == 1:
+            node = list(self.graph.nodes())[0]
+            return [{"node": node, "score": 1.0, "path": self.page_map.get(node, {}).get("path", "")}]
         pr = nx.pagerank(self.graph, alpha=0.85)
         sorted_pr = sorted(pr.items(), key=lambda x: -x[1])
         return [
@@ -52,12 +63,16 @@ class VaultGraph:
 
     def louvain_communities(self) -> list[dict]:
         """Detect communities using Louvain method on undirected projection."""
+        if self.node_count < 2:
+            return [{"error": "Need at least 2 nodes for community detection"}]
         undirected = self.graph.to_undirected()
         try:
             from networkx.algorithms.community import louvain_communities
             communities = louvain_communities(undirected, seed=42)
+        except ImportError:
+            return [{"error": "Louvain not available (networkx version)"}]
         except Exception:
-            return [{"error": "Louvain not available"}]
+            return [{"error": "Louvain community detection failed"}]
 
         results = []
         for i, comm in enumerate(communities):

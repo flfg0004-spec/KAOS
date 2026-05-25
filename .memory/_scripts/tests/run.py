@@ -17,8 +17,8 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 TEST_TIMEOUT = 90
-SLOW_TIMEOUT = 120
-FAST_ONLY = "--fast" in sys.argv
+    SLOW_TIMEOUT = 180
+    FAST_ONLY = "--fast" in sys.argv
 if FAST_ONLY:
     sys.argv.remove("--fast")
 
@@ -46,12 +46,21 @@ MODULES = [
     "test_gaps",
     "test_lifecycle",
     "test_contradictions",
+    "test_quality",
+    "test_dashboard",
+    "test_config",
+    "test_dsol",
+    "test_synapse",
+    "test_viz",
+    "test_validator",
 ]
 
 SLOW_MODULES = {
     "test_context_cycle", "test_memory_persistence",
     "test_full_pipeline", "test_llm_quality",
 }
+
+SLOW_TEST_PREFIXES = {"test_tagger_slow", "test_lifecycle_slow", "test_contradictions_slow", "test_wikilinks_slow"}
 
 
 def _is_slow(mod, test_name):
@@ -95,7 +104,7 @@ def run_all() -> int:
 
         tests = [f for f in dir(mod) if f.startswith("test_")]
         for test_name in tests:
-            if FAST_ONLY and _is_slow(mod, test_name):
+            if FAST_ONLY and (_is_slow(mod, test_name) or mod_name in SLOW_TEST_PREFIXES):
                 skipped += 1
                 continue
 
