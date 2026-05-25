@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-25 00:16*
+*Auto-generated: 2026-05-25 02:49*
 
 ## Agentes
 
@@ -148,6 +148,7 @@
 - [investigacion-configuracion-opencode](../raw/investigacion-configuracion-opencode.md) - 2026-05-23
 - [investigacion-gestion-conocimiento](../raw/investigacion-gestion-conocimiento.md) - 2026-05-23
 - [investigacion-herramientas-test-estrategia](../raw/investigacion-herramientas-test-estrategia.md) - 2026-05-23
+- [investigacion-mejora-metis-agente-estrategia](../raw/investigacion-mejora-metis-agente-estrategia.md) - 2026-05-25
 - [investigacion-mejoras-mcp-ecosistema](../raw/investigacion-mejoras-mcp-ecosistema.md) - 2026-05-24
 - [investigacion-modelos-agentes-memoria](../raw/investigacion-modelos-agentes-memoria.md) - 2026-05-23
 - [investigacion-obsidian-vault-alternativas](../raw/investigacion-obsidian-vault-alternativas.md) - 2026-05-23
@@ -195,4 +196,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-25 00:16*
+*Ultima actualizacion: 2026-05-25 02:49*

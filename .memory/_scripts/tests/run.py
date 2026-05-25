@@ -53,6 +53,8 @@ MODULES = [
     "test_report_engine",
     "test_strategy",
     "test_metis",
+    "test_mcp_metis",
+    "test_bcg_evaluator",
     "test_code_memory",
     "test_bandit",
     "test_ast_match",
@@ -63,6 +65,9 @@ MODULES = [
     "test_skill_library",
     "test_memex_scope",
     "test_parallel_worker",
+    "test_prompt_evolver",
+    "test_mar_reviewer",
+    "test_hebbian_memory",
     "test_crew_integration",
 ]
 

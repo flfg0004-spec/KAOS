@@ -1,6 +1,7 @@
 """Tests for RSCB-MC contextual bandit — selection, update, persistence."""
 
 import os, sys
+from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["KAOS_TESTING"] = "1"
 
@@ -79,35 +80,43 @@ def test_extract_features_defaults():
 
 def test_persistence_save_load():
     from lib.bandit import RSCBMCBandit, DB
-    _clean_bandit_db()
+    
+    # Use a temp DB path to avoid Windows file locking conflicts
+    import tempfile
+    tmp_db = Path(tempfile.mktemp(suffix=".db"))
     
     bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=3)
     features = np.array([0.5, 0.3, 0.2])
     bandit.update("persist_arm", features, 1.0)
     saved_conf = bandit.get_confidence("persist_arm")
-    bandit.save(str(DB))
+    bandit.save(str(tmp_db))
     
     new_bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=3)
-    new_bandit.load(str(DB))
+    new_bandit.load(str(tmp_db))
     loaded_conf = new_bandit.get_confidence("persist_arm")
     assert abs(loaded_conf - saved_conf) < 0.001
+    
+    tmp_db.unlink(missing_ok=True)
 
 
 def test_persistence_multiple_arms():
     from lib.bandit import RSCBMCBandit, DB
-    _clean_bandit_db()
+    import tempfile
+    tmp_db = Path(tempfile.mktemp(suffix=".db"))
     
     bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=2)
     f1 = np.array([0.8, 0.2])
     f2 = np.array([0.3, 0.7])
     bandit.update("arm1", f1, 1.0)
     bandit.update("arm2", f2, 0.5)
-    bandit.save(str(DB))
+    bandit.save(str(tmp_db))
     
     loaded = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=2)
-    loaded.load(str(DB))
+    loaded.load(str(tmp_db))
     assert loaded.get_confidence("arm1") > 0
     assert loaded.get_confidence("arm2") > 0
+    
+    tmp_db.unlink(missing_ok=True)
 
 
 def test_reset():

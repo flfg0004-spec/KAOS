@@ -407,25 +407,60 @@ def metis_node(state: dict) -> dict:
         risks = parsed.get("risks", []) if isinstance(parsed, dict) else []
         confidence = parsed.get("confidence", "media") if isinstance(parsed, dict) else "media"
 
+        # ── Devil's Advocate self-critique ──
+        _notify_step(state, "Metis Devil's Advocate", "in_progress")
+        critique_prompt = (
+            f"Eres un Devil's Advocate. Cuestiona críticamente esta estrategia.\n\n"
+            f"## Estrategia\n{raw[:2000]}\n\n"
+            f"Identifica:\n"
+            f"1. Supuestos débiles o no verificados\n"
+            f"2. Perspectivas alternativas no consideradas\n"
+            f"3. Riesgos no mencionados\n"
+            f"4. Sesgos de confirmación\n"
+            f"5. Qué falta para que esta estrategia sea ejecutable\n\n"
+            f"Sé específico y constructivo."
+        )
+        critique = _llm_or_executor_call("metis", critique_prompt, step_type="review")
+        critique_path = RAW_DIR / f"{slug}-critique.md"
+        critique_path.write_text(critique, encoding="utf-8")
+
+        # Refinar estrategia basado en crítica
+        refine_prompt = (
+            f"Refina la siguiente estrategia incorporando esta crítica.\n\n"
+            f"## Estrategia Original\n{raw[:2000]}\n\n"
+            f"## Crítica\n{critique[:1500]}\n\n"
+            f"Produce una versión refinada siguiendo el mismo formato JSON:\n"
+            f'{{"strategy": "...", "okrs": [...], "risks": [...], "confidence": "..."}}\n'
+        )
+        refined = _llm_or_executor_call("metis", refine_prompt, step_type="review")
+        refined_path = RAW_DIR / f"{slug}-strategy-refined.md"
+        refined_path.write_text(refined, encoding="utf-8")
+
+        parsed_refined = _extract_json_from_output(refined)
+        okrs = parsed_refined.get("okrs", []) if isinstance(parsed_refined, dict) else okrs
+        risks = parsed_refined.get("risks", []) if isinstance(parsed_refined, dict) else risks
+        confidence = parsed_refined.get("confidence", confidence) if isinstance(parsed_refined, dict) else confidence
+        final_output = refined if parsed_refined else raw
+
         ctx = _load_context()
         ctx["agents"].append("metis")
         ctx["context_summary"]["metis"] = {"started_at": datetime.now().isoformat()}
         ctx["cross_agent"]["metis_to_kratos"] = {
-            "strategy_summary": raw[:500],
+            "strategy_summary": final_output[:500],
             "okrs": okrs,
             "risks": risks,
             "confidence": confidence,
             "priority": "high",
         }
         ctx["cross_agent"]["metis_to_aletheia"] = {
-            "strategy_summary": raw[:500],
+            "strategy_summary": final_output[:500],
             "confidence": confidence,
             "gaps_identified": [],
             "generated_at": datetime.now().isoformat(),
         }
         _save_context(ctx)
         _notify_step(state, "Metis Strategy", "completed")
-        return {**state, "metis_output": raw, "metis_prompt": prompt}
+        return {**state, "metis_output": final_output, "metis_prompt": prompt}
     
     ctx = _load_context()
     ctx["agents"].append("metis")
@@ -669,3 +704,37 @@ def mnemosyne_node(state: dict) -> dict:
         "mnemosyne_output": f"Curation prompt written to {output_path}",
         "mnemosyne_prompt": prompt,
     }
+
+
+def bcg_evaluator_node(state: dict) -> dict:
+    """BCG Evaluation of strategy output — 8 dimensions + OKR checklist.
+
+    Evaluate metis_output using the BCG rubric. Stores scores in state.
+    Also evaluates OKRs if present in cross_agent context.
+    """
+    metis_output = state.get("metis_output", "") or ""
+    if not metis_output:
+        return {**state, "bcg_score": 0, "bcg_passed": False, "bcg_details": {}}
+
+    try:
+        from lib.bcg_evaluator import evaluate_strategy, evaluate_okrs
+        bcg = evaluate_strategy(metis_output)
+
+        okr_result = {}
+        try:
+            ctx = _load_context()
+            okrs = ctx.get("cross_agent", {}).get("metis_to_kratos", {}).get("okrs", [])
+            if okrs:
+                okr_result = evaluate_okrs(okrs)
+        except Exception:
+            okr_result = {}
+
+        return {
+            **state,
+            "bcg_score": bcg.get("total_score_10", 0),
+            "bcg_passed": bcg.get("passed", False),
+            "bcg_details": bcg,
+            "okr_quality": okr_result,
+        }
+    except Exception as e:
+        return {**state, "bcg_score": 0, "bcg_passed": False, "bcg_details": {"error": str(e)}}

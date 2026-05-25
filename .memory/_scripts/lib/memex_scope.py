@@ -182,22 +182,24 @@ class MemExScope:
         }
 
 
-# Global singleton
-_active_scope = None
+# Global session registry
+_sessions: dict = {}
 
 def get_scope(session_id: str = "default") -> MemExScope:
-    """Get or create the global MemEx scope."""
-    global _active_scope
-    if _active_scope is None or _active_scope.session_id != session_id:
-        _active_scope = MemExScope(session_id=session_id)
-    return _active_scope
+    """Get or create a named MemEx scope. Sessions persist independently."""
+    if session_id not in _sessions:
+        _sessions[session_id] = MemExScope(session_id=session_id)
+    return _sessions[session_id]
 
 def reset_scope():
-    """Reset the global scope."""
-    global _active_scope
-    if _active_scope:
-        _active_scope.reset()
-    _active_scope = None
+    """Reset all scopes."""
+    global _sessions
+    for scope in _sessions.values():
+        try:
+            scope.reset()
+        except Exception:
+            pass
+    _sessions = {}
 
 
 if __name__ == "__main__":

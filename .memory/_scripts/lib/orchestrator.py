@@ -7,7 +7,7 @@ from typing import TypedDict, Optional
 
 from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
-from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node
+from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node, bcg_evaluator_node
 from lib.hermes_bridge import pipeline_notify
 
 DB_PATH = VAULT_ROOT / "cache" / "langgraph.db"
@@ -499,6 +499,7 @@ def build_graph(with_parallel: bool = False):
     builder.add_node("parallel_validate", _parallel_validate_node)
     builder.add_node("mnemosyne_gap_check", _gap_check_node)
     builder.add_node("cross_validator", _cross_validator_node)
+    builder.add_node("bcg_evaluator", bcg_evaluator_node)
     
     builder.set_entry_point("planner")
     
@@ -511,9 +512,10 @@ def build_graph(with_parallel: bool = False):
     builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     
-    # After metis: route based on code keywords and profile
+    # After metis: BCG evaluation (always), then route
+    builder.add_edge("metis", "bcg_evaluator")
     builder.add_conditional_edges(
-        "metis",
+        "bcg_evaluator",
         route_after_strategy,
         {"kratos": "kratos", "mnemosyne": "mnemosyne", "cross_validator": "cross_validator"}
     )
