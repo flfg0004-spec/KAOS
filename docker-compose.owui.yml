@@ -22,8 +22,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
-
-  mcpo-bridge:
+    depends_on:
+      mcpo-bridge:
         condition: service_started
 
   mcpo-bridge:

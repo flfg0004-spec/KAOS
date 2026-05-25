@@ -28,21 +28,9 @@
         "OBSIDIAN_REST_URL": "https://127.0.0.1:27124"
       }
     },
-    "kaos-exa-search": {
-      "command": "npx",
-      "args": ["-y", "exa-mcp-server"],
-      "env": {
-        "EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
-      }
-    },
     "kaos-knowledge-graph": {
       "command": "npx",
       "args": ["-y", "mcp-knowledge-graph", "--memory-path", ".memory/cache/knowledge-graph"],
-      "env": {}
-    },
-    "kaos-strategy": {
-      "command": "py",
-      "args": ["-3", ".memory/_scripts/mcp_strategy.py"],
       "env": {}
     }
   }

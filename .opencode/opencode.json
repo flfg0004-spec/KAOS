@@ -327,7 +327,7 @@
       "command": ["npx", "-y", "exa-mcp-server"],
       "enabled": true,
       "env": {
-        "EXA_API_KEY": "6fa7bd38-4bb9-4667-acba-946c89bc9358"
+        "EXA_API_KEY": "TO-ROTATE-EXA-API-KEY"
       }
     },
     "searxng": {
