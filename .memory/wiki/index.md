@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-24 23:59*
+*Auto-generated: 2026-05-25 00:16*
 
 ## Agentes
 
@@ -159,6 +159,7 @@
 - [investigacion-sistemas-memoria](../raw/investigacion-sistemas-memoria.md) - 2026-05-23
 - [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-23
 - [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-23
+- [investigacion-token-tracking-telegram-sessions](../raw/investigacion-token-tracking-telegram-sessions.md) - 2026-05-25
 - [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-23
 - [test-telegram](../raw/test-telegram.md) - 2026-05-24
 - [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-23
@@ -194,4 +195,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-24 23:59*
+*Ultima actualizacion: 2026-05-25 00:16*
