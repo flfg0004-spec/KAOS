@@ -8,18 +8,18 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; padding:2rem; }
   h1 { font-size:1.5rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; }
-  .status { color:#22c55e; }
+  .status { color:#eab308; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; margin:1rem 0; }
   .card { background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155; }
   .card h2 { font-size:0.9rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; }
   .metric { font-size:2rem; font-weight:700; color:#38bdf8; }
-  .metric.green { color:#22c55e; }
+  .metric.green { color:#eab308; }
   .metric.red { color:#ef4444; }
   .row { display:flex; justify-content:space-between; padding:0.25rem 0; font-size:0.85rem; }
   .row:nth-child(even) { background:#1a2332; }
   .label { color:#94a3b8; }
   .bar { height:8px; background:#334155; border-radius:4px; margin-top:0.5rem; overflow:hidden; }
-  .bar-fill { height:100%; background:#22c55e; border-radius:4px; transition:width 0.3s; }
+  .bar-fill { height:100%; background:#eab308; border-radius:4px; transition:width 0.3s; }
   table { width:100%; border-collapse:collapse; font-size:0.8rem; }
   th { text-align:left; color:#94a3b8; padding:0.4rem 0.25rem; border-bottom:1px solid #334155; }
   td { padding:0.3rem 0.25rem; border-bottom:1px solid #1e293b; }
@@ -36,8 +36,8 @@
 </style>
 </head>
 <body>
-<h1>✅ KAOS Vault Dashboard <span class="status">●</span></h1>
-<p style="color:#64748b;font-size:0.85rem;">2026-05-24 23:28:04</p>
+<h1>⚠️ KAOS Vault Dashboard <span class="status">●</span></h1>
+<p style="color:#64748b;font-size:0.85rem;">2026-05-24 23:37:26</p>
 
 <div class="grid">
   <div class="card">
@@ -53,17 +53,17 @@
 
   <div class="card">
     <h2>Salud</h2>
-    <div class="metric green">0</div>
+    <div class="metric red">0</div>
     <div style="font-size:0.85rem;color:#94a3b8;">issues de lint</div>
     <div style="margin-top:0.5rem;">
-      <div class="row"><span class="label">Git clean</span><span>✅</span></div>
+      <div class="row"><span class="label">Git clean</span><span>❌</span></div>
     </div>
   </div>
 
   <div class="card">
     <h2>Pipeline</h2>
-    <div class="metric yellow">aletheia-ready</div>
-    <div style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">Perfil: deep</div>
+    <div class="metric green">complete</div>
+    <div style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">Perfil: standard</div>
     <div class="bar"><div class="bar-fill" style="width:10.0%"></div></div>
     <div style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">Cache: 3/30</div>
   </div>
@@ -207,7 +207,7 @@
     <h2>Actividad Reciente</h2>
     <table>
       <tr><th>Commit</th></tr>
-      <tr><td style="font-family:monospace;font-size:0.75rem;">9a628c9 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">147f856 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">52e24be session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">83c6d6e session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">6389949 session: mnemosyne - curation-cycle</td></tr>
+      <tr><td style="font-family:monospace;font-size:0.75rem;">0cd91b6 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">9a628c9 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">147f856 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">52e24be session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">83c6d6e session: mnemosyne - curation-cycle</td></tr>
     </table>
   </div>
   <div class="card">

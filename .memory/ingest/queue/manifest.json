@@ -16,9 +16,17 @@
       "original_ref": "test-ingest",
       "ingested_at": "2026-05-23T13:35:15.368978",
       "profile": "standard"
+    },
+    {
+      "sha256": "7ea91e925fd8d6af24231f434a1ea16a207228d9f2895a89bda6ca698d85f882",
+      "path": ".memory\\raw\\test-telegram.md",
+      "source_type": "test",
+      "original_ref": "manual",
+      "ingested_at": "2026-05-24T23:40:19.156158",
+      "profile": "standard"
     }
   ],
-  "total_ingested": 2,
+  "total_ingested": 3,
   "total_deduped": 413,
-  "last_updated": "2026-05-24T23:37:23.677938"
+  "last_updated": "2026-05-24T23:40:19.156158"
 }

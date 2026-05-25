@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 23:28:04",
+  "timestamp": "2026-05-24 23:37:26",
   "vault": {
     "total_md": 239,
     "by_directory": {
@@ -12,9 +12,9 @@
     "total_scripts": 94
   },
   "health": {
-    "git_clean": true,
+    "git_clean": false,
     "lint_issues": 0,
-    "overall": "healthy"
+    "overall": "warning"
   },
   "cache": {
     "entries": 3,
@@ -22,8 +22,8 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "aletheia-ready",
-    "profile": "deep"
+    "status": "complete",
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 2,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "0cd91b6 session: mnemosyne - curation-cycle",
       "9a628c9 session: mnemosyne - curation-cycle",
       "147f856 session: mnemosyne - curation-cycle",
       "52e24be session: mnemosyne - curation-cycle",
-      "83c6d6e session: mnemosyne - curation-cycle",
-      "6389949 session: mnemosyne - curation-cycle"
+      "83c6d6e session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 117,
-    "total_cost_usd": 3.276,
+    "total_calls": 118,
+    "total_cost_usd": 3.304,
     "cache_hit_rate": 0.0
   },
   "quality": {
