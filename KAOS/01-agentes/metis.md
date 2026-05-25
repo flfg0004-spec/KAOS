@@ -13,7 +13,6 @@ role: strategy
 description: Agente de estrategia — planeación, OKRs, roadmaps, reportes ejecutivos
 mode: subagent
 mcp-servers:
-- firecrawl
 - brave-search
 - paperjsx
 - excalidraw
@@ -33,7 +32,7 @@ Framework de 7 fases: Diagnosticar → Investigar → Estructurar → Diseñar �
 Consume conocimiento compilado vía [[compile-then-query]] para fundamentar sus recomendaciones
 
 ## MCP Servers
-- **Firecrawl**: Investigación de mercado
+- **Exa Search**: Búsqueda web semántica para investigación de mercado
 - **Brave Search**: Búsqueda web complementaria
 - **PaperJSX**: Generación de reportes PPTX/DOCX
 - **Excalidraw**: Mapas estratégicos, customer journeys

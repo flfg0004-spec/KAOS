@@ -9,7 +9,7 @@ distill-engine: v2
 
 *Destilado automáticamente desde evaluacion-plugins-ecosistema.md*
 
-**Qué hace**: Integración nativa de Firecrawl CLI como skill de OpenCode.
+⚠️ **DEPRECATED** — Firecrawl CLI reemplazado por Crawl4AI + SearXNG. Ver ADR-009.
 
 ## Fuente
 - [evaluacion-plugins-ecosistema.md](../raw/evaluacion-plugins-ecosistema.md)

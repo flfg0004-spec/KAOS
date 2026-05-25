@@ -57,8 +57,9 @@ def _log_entry(msg: str) -> None:
 def save_context(agent: str, data: dict) -> None:
     """Guarda resumen de contexto del agente para el siguiente en el pipeline.
     
-    Cross-agent memory:
+     Cross-agent memory:
     - Aletheia stores code_context → Kratos reads it
+    - Aletheia stores research_context → Mnemosyne reads it
     - Kratos stores curation_context → Mnemosyne reads it
     - Metis stores strategy_summary → Kratos uses it for implementation
     """
@@ -82,8 +83,11 @@ def save_context(agent: str, data: dict) -> None:
     # Cross-agent memory passing
     if "cross_agent" not in ctx:
         ctx["cross_agent"] = {}
-    if agent == "aletheia" and "code_context" in data:
-        ctx["cross_agent"]["aletheia_to_kratos"] = data["code_context"]
+    if agent == "aletheia":
+        if "code_context" in data:
+            ctx["cross_agent"]["aletheia_to_kratos"] = data["code_context"]
+        if "research_context" in data:
+            ctx["cross_agent"]["aletheia_to_mnemosyne"] = data["research_context"]
     if agent == "metis" and "strategy_summary" in data:
         ctx["cross_agent"]["metis_to_kratos"] = data["strategy_summary"]
     if agent == "kratos":
@@ -138,6 +142,7 @@ def get_cross_context(target_agent: str) -> dict:
         }
     elif target_agent == "mnemosyne":
         return {
+            "aletheia_research_context": ca.get("aletheia_to_mnemosyne", {}),
             "kratos_curation_context": ca.get("kratos_to_mnemosyne", {}),
             "kratos_decision": ca.get("kratos_decision", "needs_curation"),
         }

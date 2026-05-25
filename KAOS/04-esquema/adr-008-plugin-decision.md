@@ -21,7 +21,7 @@ La investigación de Aletheia (raw/evaluacion-plugins-ecosistema.md) evaluó 4 p
 
 | Plugin | Evaluación | Veredicto |
 |--------|-----------|-----------|
-| opencode-firecrawl | Integración nativa de Firecrawl, pero no en npm | ⏳ Posponer |
+| opencode-firecrawl | Integración nativa de Firecrawl, pero no en npm | ❌ Deprecado — ver ADR-009 |
 | opencode-supermemory | Memoria entre sesiones, pero KAOS ya tiene vault | ❌ No adoptar |
 | opencode-background-agents | Delegación async, pero task tool nativa es suficiente | ⏳ Posponer |
 | @opencode-ai/sdk | SDK oficial TypeScript para OpenCode | ✅ Adoptar |
@@ -30,7 +30,7 @@ La investigación de Aletheia (raw/evaluacion-plugins-ecosistema.md) evaluó 4 p
 
 1. **Adoptar @opencode-ai/sdk** — SDK oficial para automatización programática.
 2. **No adoptar opencode-supermemory** — KAOS ya tiene vault de memoria propio (ADR-001).
-3. **Posponer opencode-firecrawl** — hasta que esté disponible en npm; MCP firecrawl actual es suficiente.
+3. ~~**Posponer opencode-firecrawl**~~ — ❌ **Deprecado**. Reemplazado por Crawl4AI + SearXNG. Ver ADR-009.
 4. **Posponer opencode-background-agents** — OpenCode ya tiene `task` tool nativa para subagentes.
 
 ## Justificación

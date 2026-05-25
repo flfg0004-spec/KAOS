@@ -314,6 +314,6 @@ status: draft
 | GitHub MCP | No necesario para KAOS. GITHUB_TOKEN expuesto. Eliminado. | 2026-05-20 |
 | lucidity-mcp (npm) | No existe como paquete npm. Reemplazado por instalación desde GitHub. | 2026-05-19→20 |
 | brave-search | No existe como MCP. OpenCode tiene `websearch` built-in. | 2026-05-20 |
-| firecrawl (MCP) | No existe como paquete MCP. Skills de firecrawl disponibles en el sistema. | 2026-05-20 |
+| firecrawl (MCP) | ❌ Deprecado. Reemplazado por Crawl4AI + SearXNG. Ver ADR-009. | 2026-05-24 |
 | DSOL build_prompt() | Llamaba a api.deepseek.com directamente. Reemplazado por build_optimized_context() para hydratación en OpenCode. | 2026-05-20 |
 | .tools/session_runner.py (sin args) | Los comandos anteriores sin perfil explícito. Ahora requiere `smoke|functional|audit [perfil]`. | 2026-05-20 |

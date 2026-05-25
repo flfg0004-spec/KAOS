@@ -15,7 +15,7 @@ Se investigó el ecosistema de MCP servers (87.2K★ awesome-list, 21,195 server
 
 | MCP | Tipo | Agente(s) | Reemplazar por |
 |-----|------|-----------|----------------|
-| firecrawl | local | Aletheia, Metis | ⚠️ opencode-firecrawl plugin |
+| firecrawl | local | Aletheia, Metis | ❌ Deprecado — Crawl4AI + SearXNG (ADR-009) |
 | brave-search | local | Aletheia, Metis | Mantener |
 | sequential-thinking | local | Todos | Mantener |
 | depwire | local | Kosmos | Mantener |
@@ -59,7 +59,7 @@ Se investigó el ecosistema de MCP servers (87.2K★ awesome-list, 21,195 server
 OpenCode soporta MCP remotos con OAuth automático. Los siguientes MCPs pueden migrarse de local a remote para reducir tokens:
 
 - **context7**: Migrar a `https://mcp.context7.com/mcp` (remoto)
-- **firecrawl**: Considerar migrar a remote cuando opencode-firecrawl plugin esté disponible
+- **firecrawl**: ❌ Deprecado — migrado a Crawl4AI + SearXNG (ADR-009)
 
 ## 4. Per-Agent MCP Restriction
 
@@ -67,7 +67,10 @@ Propuesta de restricción por agente para reducir tokens en contexto:
 
 | MCP | Aletheia | Kosmos | Metis |
 |-----|:--------:|:------:|:-----:|
-| firecrawl | ✅ | ❌ | ✅ |
+| firecrawl (deprecado) | ❌ | ❌ | ❌ |
+| crawl4ai | ✅ | ❌ | ❌ |
+| searxng | ✅ | ❌ | ❌ |
+| exa-search | ✅ | ❌ | ✅ |
 | brave-search | ✅ | ❌ | ✅ |
 | sequential-thinking | ✅ | ✅ | ✅ |
 | depwire | ❌ | ✅ | ❌ |
@@ -88,7 +91,7 @@ Propuesta de restricción por agente para reducir tokens en contexto:
 
 | Plugin | Stars | Relevancia KAOS | Reemplaza código custom |
 |--------|:-----:|:---------------:|:-----------------------:|
-| opencode-firecrawl | 64 | 9/10 | ✅ Sí (MCP firecrawl actual) |
+| opencode-firecrawl | 64 | 9/10 | ❌ Deprecado — Crawl4AI + SearXNG (ADR-009) |
 | opencode-supermemory | 1,219 | 8/10 | Parcial (memoria entre sesiones) |
 | opencode-background-agents | 252 | 9/10 | No (nuevo: async delegation) |
 | oh-my-openagent | 58,645 | 9/10 | Parcial (orquestación) |
@@ -108,10 +111,10 @@ Propuesta de restricción por agente para reducir tokens en contexto:
 
 | Aspecto | Confianza | Evidencia |
 |---------|-----------|-----------|
-| Fuentes primarias | Alta | M�ltiples referencias cruzadas verificadas |
+| Fuentes primarias | Alta | M�ltiples referencias cruzadas verificadas |
 | Consistencia interna | Alta | Sin contradicciones detectadas con el vault existente |
 | Reproducibilidad | Media | Fuentes documentadas y accesibles |
-| Actualizaci�n | Reciente | Informaci�n vigente al momento de ingesta |
+| Actualizaci�n | Reciente | Informaci�n vigente al momento de ingesta |
 
 ## Referencias
 - [[index]]

@@ -85,6 +85,30 @@ Toda investigación de Aletheia debe incluir matriz de confianza:
 - Crawl4AI tiene cloud API en beta cerrada (futura opción)
 - El pipeline de 3 fases puede coexistir con el anterior durante transición
 
+## Integración Aletheia ↔ Mnemosyne
+
+### Flujo Bidireccional
+
+```
+Pre-Research:
+  Aletheia → query_gaps(topic) → Mnemosyne → gaps/conceptos/decay
+  Mnemosyne responde: qué ya existe, qué falta, qué está obsoleto
+
+Post-Research:
+  Aletheia → context.json: aletheia_to_mnemosyne → Mnemosyne
+  Mnemosyne ejecuta curación targeted (fases 1-5) sobre nuevo contenido
+  Mnemosyne retroalimenta: contradicciones, calidad, nuevos conceptos
+
+Feedback Loop (asíncrono):
+  Mnemosyne (Graph Phase 9) → topic_islands → prompts para Aletheia
+  Mnemosyne (Lifecycle Phase 12) → decay detection → refresh prompts
+```
+
+### Cambios Técnicos
+- **pipeline.py**: Nuevo `cross_agent.aletheia_to_mnemosyne` con research_output, confidence_matrix, sources, key_topics
+- **orchestrator.py**: Nuevo nodo `mnemosyne_gap_check` + ruta condicional `route_after_aletheia`
+- **Mnemosyne**: Nuevo método `query_gaps(topic)` + targeted curation mode (fases 1-5)
+
 ## Estado de Implementación
 
 | # | Decisión | Estado | Archivos afectados |

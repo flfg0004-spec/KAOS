@@ -74,7 +74,7 @@ Se evaluaron 4 plugins del ecosistema OpenCode para determinar su adopción en K
 
 | Plugin | Veredicto | Razón |
 |--------|-----------|-------|
-| opencode-firecrawl | ⏳ Posponer | No en npm, MCP actual suficiente |
+| opencode-firecrawl | ❌ Deprecado | Reemplazado por Crawl4AI + SearXNG. Ver ADR-009 |
 | opencode-supermemory | ❌ No adoptar | KAOS ya tiene vault, dependencia externa |
 | opencode-background-agents | ⏳ Posponer | No en npm, task tool nativa suficiente |
 | @opencode-ai/sdk | ✅ Adoptar | Oficial, en npm, necesario para Sprint 4 |

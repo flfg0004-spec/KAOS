@@ -42,6 +42,8 @@ class KAOSState(TypedDict):
     kratos_prompt: Optional[str] = None
     mnemosyne_output: Optional[str] = None
     mnemosyne_prompt: Optional[str] = None
+    mnemosyne_gaps: Optional[list] = None
+    needs_gap_check: bool = False
     kratos_decision: Optional[str] = None
     critic_score: float = 0
     critic_feedback: Optional[str] = None
@@ -103,6 +105,12 @@ def route_after_strategy(state: KAOSState) -> str:
         return "kratos"
     return "mnemosyne"
 
+def route_after_aletheia(state: KAOSState) -> str:
+    """Route to Mnemosyne gap check if needed, else Kosmos."""
+    if state.get("needs_gap_check", False):
+        return "mnemosyne_gap_check"
+    return "kosmos"
+
 def route_after_kratos(state: KAOSState) -> str:
     """Deep routing with HITL approval for code changes."""
     decision = state.get("kratos_decision", "needs_curation")
@@ -152,6 +160,21 @@ def _parallel_validate_node(state: KAOSState) -> dict:
         validation = "warning: output too short"
     _notify("Parallel Validation", "completed", state)
     return {**state, "parallel_validation": validation}
+
+def _gap_check_node(state: KAOSState) -> dict:
+    """Mnemosyne gap check: query existing knowledge gaps for the topic."""
+    _notify("Mnemosyne Gap Check", "in_progress", state)
+    topic = state.get("topic", "")
+    gaps = []
+    try:
+        from lib.pipeline import get_cross_context
+        ctx = get_cross_context("mnemosyne")
+        if ctx:
+            gaps = ctx.get("aletheia_research_context", {}).get("gaps_detected", [])
+    except Exception:
+        pass
+    _notify("Mnemosyne Gap Check", "completed", state)
+    return {**state, "mnemosyne_gaps": gaps, "needs_gap_check": False}
 
 def route_parallel_fanout(state: KAOSState) -> list[Send]:
     """Fan-out from metis: send to kratos + parallel validation simultaneously."""
@@ -275,11 +298,17 @@ def build_graph(with_parallel: bool = False):
     builder.add_node("critic", critic_node)
     builder.add_node("kosmos_evaluator", _evaluator_node)
     builder.add_node("parallel_validate", _parallel_validate_node)
+    builder.add_node("mnemosyne_gap_check", _gap_check_node)
     
     builder.set_entry_point("planner")
     
     builder.add_edge("planner", "aletheia")
-    builder.add_edge("aletheia", "kosmos")
+    builder.add_conditional_edges(
+        "aletheia",
+        route_after_aletheia,
+        {"mnemosyne_gap_check": "mnemosyne_gap_check", "kosmos": "kosmos"}
+    )
+    builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     
     if with_parallel:

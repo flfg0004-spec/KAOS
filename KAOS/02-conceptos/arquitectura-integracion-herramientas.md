@@ -76,7 +76,9 @@ pipeline.py → 4 profiles (flash/standard/deep/massive) + Mnemosyne step
 
 ### Capa 2: LLM & Búsqueda (actualizado)
 ```
-exa-search MCP     → Búsqueda web semántica (reemplaza a brave/firecrawl)
+exa-search MCP     → Búsqueda web semántica (reemplaza a brave)
+crawl4ai MCP       → Crawling masivo (reemplaza a firecrawl)
+jina-reader MCP    → Conversión URL→Markdown rápida
 gptr-deep-research → Deep Research (backends: Exa + DeepSeek v4)
 dsol.py v2         → API client + TokenTracker + retry + JSON mode
 ```

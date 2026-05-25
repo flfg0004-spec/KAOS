@@ -80,7 +80,7 @@ Aceptada — Implementada parcialmente (Fase Táctica + Estratégica completadas
 | 1 | Per-Agent MCP Restriction | ✅ **Implementada** | 14 MCPs enabled + `tools global: false` + filtro por agente |
 | 2 | Migrar database-mcp a PostgreSQL MCP | 🔄 **Entry creado** | `postgres` MCP agregado (enabled: false, pendiente conexión) |
 | 3 | Migrar context7 a Remote | ✅ **Implementada** | context7 en remote `https://mcp.context7.com/mcp` |
-| 4 | Evaluar opencode-firecrawl Plugin | ⏳ Pendiente | Depende de estabilidad del plugin |
+| 4 | ~~Evaluar opencode-firecrawl Plugin~~ | ❌ **Reemplazado** | Ver ADR-009 — migrado a Crawl4AI + SearXNG |
 | 5 | Evaluar opencode-supermemory | ✅ **Implementada** | supermemory MCP agregado y habilitado |
 | 6 | ~~Agregar GitHub MCP Server~~ | ❌ **Descartado** | GitHub removido — no necesario para KAOS |
 | 7 | ~~Agregar Lucidity MCP~~ | ❌ **Eliminado** | `lucidity-mcp` no existe en npm |

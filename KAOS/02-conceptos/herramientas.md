@@ -17,7 +17,7 @@ auto-distilled: true
 
 *Destilado automáticamente desde investigacion-modelos-agentes-memoria.md*
 
-- **Herramientas**: Web Search, Firecrawl, documentación oficial, GitHub
+- **Herramientas**: Web Search, Crawl4AI, SearXNG, Exa Search, Jina Reader, documentación oficial, GitHub
 
 ## Fuente
 - [investigacion-modelos-agentes-memoria.md](../raw/investigacion-modelos-agentes-memoria.md)

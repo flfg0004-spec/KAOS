@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 23:22:26",
+  "timestamp": "2026-05-24 23:28:04",
   "vault": {
     "total_md": 239,
     "by_directory": {
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 407
+    "total_deduped": 410
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "9a628c9 session: mnemosyne - curation-cycle",
+      "147f856 session: mnemosyne - curation-cycle",
       "52e24be session: mnemosyne - curation-cycle",
       "83c6d6e session: mnemosyne - curation-cycle",
-      "6389949 session: mnemosyne - curation-cycle",
-      "7d8b7f2 session: mnemosyne - curation-cycle",
-      "6213b0d session: mnemosyne - curation-cycle"
+      "6389949 session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 116,
-    "total_cost_usd": 3.248,
+    "total_calls": 117,
+    "total_cost_usd": 3.276,
     "cache_hit_rate": 0.0
   },
   "quality": {

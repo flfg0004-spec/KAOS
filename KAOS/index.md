@@ -124,7 +124,7 @@ status: draft
 - [awesome-mcp-servers](sources/awesome-mcp-servers.md) - -
 - [evaluacion-plugins-ecosistema-ecosystemplugins](sources/evaluacion-plugins-ecosistema-ecosystemplugins.md) - -
 - [evaluacion-plugins-ecosistema-opencode-background](sources/evaluacion-plugins-ecosistema-opencode-background.md) - -
-- [evaluacion-plugins-ecosistema-opencode-firecrawl](sources/evaluacion-plugins-ecosistema-opencode-firecrawl.md) - -
+- [evaluacion-plugins-ecosistema-opencode-firecrawl](sources/evaluacion-plugins-ecosistema-opencode-firecrawl.md) - ⚠️ DEPRECATED (ADR-009) -
 - [evaluacion-plugins-ecosistema-opencode-supermemory](sources/evaluacion-plugins-ecosistema-opencode-supermemory.md) - -
 - [evaluacion-plugins-ecosistema-sdk](sources/evaluacion-plugins-ecosistema-sdk.md) - -
 - [gist-karpathy-llm-wiki](sources/gist-karpathy-llm-wiki.md) - -

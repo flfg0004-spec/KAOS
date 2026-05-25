@@ -43,14 +43,14 @@
 
 ## MCP Configuration (Per-Agent)
 Los MCP servers están restringidos por agente para optimizar tokens:
-- **Aletheia**: firecrawl, brave-search, scholar-search, rss-reader, context7, sequential-thinking, vault
+- **Aletheia**: crawl4ai, searxng, exa-search, brave-search, scholar-search, rss-reader, context7, sequential-thinking, vault, obsidian
 - **Kosmos**: depwire, structurizr, excalidraw, git, database, postgres, github, lucidity, sequential-thinking, vault
-- **Metis**: firecrawl, brave-search, paperjsx, excalidraw, sequential-thinking, vault
-- **Todos**: firecrawl, brave-search, sequential-thinking, vault
+- **Metis**: brave-search, paperjsx, excalidraw, sequential-thinking, vault, obsidian
+- **Todos**: brave-search, sequential-thinking, vault
 
 ## Plugins
 - @opencode-ai/sdk: ✅ Adoptado (para automatización programática)
-- opencode-firecrawl: ⏳ Posponer (no disponible en npm)
+- opencode-firecrawl: ❌ Deprecado — ver ADR-009
 - opencode-supermemory: ❌ No adoptar (vault propio es suficiente)
 - opencode-background-agents: ⏳ Posponer (task tool nativa suficiente)
 

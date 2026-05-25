@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-24 21:27*
+*Auto-generated: 2026-05-24 23:35*
 
 ## Agentes
 
@@ -143,12 +143,12 @@
 - [data-farming-codeexperience](../raw/data-farming-codeexperience.md) - 2026-05-23
 - [deep-reinforcement-learning](../raw/deep-reinforcement-learning.md) - 2026-05-23
 - [deepseek-v4-flash-test](../raw/deepseek-v4-flash-test.md) - 2026-05-23
-- [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-23
+- [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-24
 - [investigacion-c4-model-arquitectura](../raw/investigacion-c4-model-arquitectura.md) - 2026-05-23
 - [investigacion-configuracion-opencode](../raw/investigacion-configuracion-opencode.md) - 2026-05-23
 - [investigacion-gestion-conocimiento](../raw/investigacion-gestion-conocimiento.md) - 2026-05-23
 - [investigacion-herramientas-test-estrategia](../raw/investigacion-herramientas-test-estrategia.md) - 2026-05-23
-- [investigacion-mejoras-mcp-ecosistema](../raw/investigacion-mejoras-mcp-ecosistema.md) - 2026-05-23
+- [investigacion-mejoras-mcp-ecosistema](../raw/investigacion-mejoras-mcp-ecosistema.md) - 2026-05-24
 - [investigacion-modelos-agentes-memoria](../raw/investigacion-modelos-agentes-memoria.md) - 2026-05-23
 - [investigacion-obsidian-vault-alternativas](../raw/investigacion-obsidian-vault-alternativas.md) - 2026-05-23
 - [investigacion-okr-estrategia](../raw/investigacion-okr-estrategia.md) - 2026-05-23
@@ -192,4 +192,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-24 21:27*
+*Ultima actualizacion: 2026-05-24 23:35*
