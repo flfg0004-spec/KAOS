@@ -1,4 +1,7 @@
 """CI Pipeline Runner — invoca LangGraph DAG headless for CI/CD."""
+import os
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
+os.environ["LANGCHAIN_ENDPOINT"] = ""
 import json, sys, time
 from datetime import datetime
 from pathlib import Path
