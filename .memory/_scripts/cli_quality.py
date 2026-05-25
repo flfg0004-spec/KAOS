@@ -51,7 +51,8 @@ def register(sub, kaos_root):
         sys.exit(subprocess.run([sys.executable, str(runner)]).returncode)
 
     def cmd_graph(args):
-        vg = graph_analysis.VaultGraph()
+        from lib.graph_analysis import VaultGraph
+        vg = VaultGraph()
         if args.action == "report":
             s = vg.summary()
             print(f"  Nodes: {s['nodes']}, Edges: {s['edges']}, Density: {s['density']}")

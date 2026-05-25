@@ -494,6 +494,7 @@ class VaultGraph:
         }
 
     def summary(self) -> dict:
+        import networkx as nx
         try:
             pr = self.page_rank(top_k=3)
             communities = self.louvain_communities()
@@ -507,7 +508,8 @@ class VaultGraph:
         return {
             "nodes": self.node_count,
             "edges": self.edge_count,
-            "density": round(nx.density(self.graph), 4) if hasattr(nx, 'density') else 0,
+            "density": round(nx.density(self.graph), 4),
+            "avg_page_rank": avg_pr,
             "avg_page_rank": avg_pr,
             "communities": len(communities),
             "islands": len(islands),

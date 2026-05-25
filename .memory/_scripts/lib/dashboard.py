@@ -309,8 +309,6 @@ def collect_data() -> dict:
 }
 
 
-_HTML_TEMPLATE = _HTML_TEMPLATE
-
 
 def render_html(data: dict) -> str:
     status_icon = "✅" if data["health"]["overall"] == "healthy" else "⚠️"

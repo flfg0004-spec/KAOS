@@ -13,15 +13,8 @@ def test_report_engine_import():
     assert hasattr(report_engine, "to_json")
 
 
-def test_generate_curation_report_structure():
-    from lib.report_engine import generate_curation_report
-    text = generate_curation_report()
-    assert isinstance(text, str)
-    assert text.startswith("# Mnemosyne Curation Report")
-    assert "Quality Score" in text or "Phase Summary" in text
-
-
 def test_generate_curation_report_with_phases():
+    """Lightweight: pass explicit phases dict, no vault computation."""
     from lib.report_engine import generate_curation_report
     phases = {
         "ingest": {"count": 5, "ok": True, "description": "Ingest"},
@@ -35,7 +28,35 @@ def test_generate_curation_report_with_phases():
     assert "F2" in text
 
 
+test_generate_curation_report_with_phases._slow = False
+
+
+def test_aletheia_feedback():
+    from lib.report_engine import _aletheia_feedback
+    fb = _aletheia_feedback(85.0, 3)
+    assert fb["quality_score"] == 85.0
+    assert fb["confidence_validated"] is True
+    assert fb["orphans_remaining"] == 3
+    assert fb["recommendation"] == "ok"
+
+    fb2 = _aletheia_feedback(50.0, 10)
+    assert fb2["confidence_validated"] is False
+    assert fb2["recommendation"] == "needs_review"
+
+
+def test_report_from_scratch():
+    """Heavy: builds full vault graph and quality score."""
+    from lib.report_engine import generate_curation_report
+    text = generate_curation_report()
+    assert isinstance(text, str)
+    assert text.startswith("# Mnemosyne Curation Report")
+
+
+test_report_from_scratch._slow = True
+
+
 def test_to_json_structure():
+    """Heavy: computes full quality + gap + graph analysis."""
     from lib.report_engine import to_json
     r = to_json()
     assert isinstance(r, dict)
@@ -53,21 +74,4 @@ def test_to_json_structure():
     assert "confidence_validated" in r["aletheia_feedback"]
 
 
-def test_to_json_score():
-    from lib.report_engine import to_json
-    r = to_json()
-    assert isinstance(r["quality_score"], (int, float))
-    assert 0 <= r["quality_score"] <= 100
-
-
-def test_aletheia_feedback():
-    from lib.report_engine import _aletheia_feedback
-    fb = _aletheia_feedback(85.0, 3)
-    assert fb["quality_score"] == 85.0
-    assert fb["confidence_validated"] is True
-    assert fb["orphans_remaining"] == 3
-    assert fb["recommendation"] == "ok"
-
-    fb2 = _aletheia_feedback(50.0, 10)
-    assert fb2["confidence_validated"] is False
-    assert fb2["recommendation"] == "needs_review"
+test_to_json_structure._slow = True

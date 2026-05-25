@@ -1,4 +1,4 @@
-"""KAOS Telegram Bot — long polling multi-modal ingestion + dashboard commands."""
+"""KAOS Telegram Bot — long polling multi-modal ingestion + dashboard + power + KAOS control."""
 
 import asyncio
 import io
@@ -9,8 +9,21 @@ from pathlib import Path
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 
-from telegram_bot.config import TOKEN, ALLOWED_CHATS
+from telegram_bot.config import TOKEN, ALLOWED_CHATS, HERMES_OUTBOX_ENABLED
 from telegram_bot.classifiers.content_classifier import classify
+
+from telegram_bot.power_commands import (
+    cmd_sleep, cmd_hibernate, cmd_shutdown, cmd_restart,
+    cmd_confirm, cmd_cancel_power, cmd_powerstatus,
+)
+from telegram_bot.hermes_bridge import outbox_loop, ticket_create
+from telegram_bot.system_monitor import cmd_alertas, monitor_loop
+from telegram_bot.file_commands import cmd_ls, cmd_cat, cmd_tail, cmd_download, cmd_allowedpaths
+from telegram_bot.kaos_commands import (
+    cmd_kaospipeline, cmd_kaosstart, cmd_kaosstop,
+    cmd_kaosagentes, cmd_kaoshealth, cmd_kaosscores,
+)
+from telegram_bot.cron_commands import cmd_cron
 
 from processors.web_scraper import process_url
 from processors.youtube_transcriber import process_youtube
@@ -21,6 +34,16 @@ from processors.audio_transcriber import process_audio
 logging.basicConfig(level=logging.INFO)
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "_scripts"
+
+def _box(msg: str, title: str = "🤖 KAOS") -> str:
+    lines = msg.split("\n")
+    w = max(len(l) for l in lines) + 2
+    top = "╔" + "═" * (w + 2) + "╗"
+    hdr = "║ " + title.ljust(w) + " ║"
+    sep = "╠" + "═" * (w + 2) + "╣"
+    body = "\n".join("║ " + l.ljust(w) + " ║" for l in lines)
+    bot = "╚" + "═" * (w + 2) + "╝"
+    return f"`{top}\n{hdr}\n{sep}\n{body}\n{bot}`"
 
 def _load_dashboard_data() -> dict:
     try:
@@ -37,19 +60,21 @@ def _load_token_usage() -> dict:
         return {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🤖 KAOS Bot\n\n"
-        "📥 Ingesta de contenido:\n"
-        "  Envía links, YouTube, imágenes, PDFs, audios\n\n"
-        "📊 Dashboard commands:\n"
-        "  /costos — tokens usados hoy/semana/mes por agente\n"
-        "  /dashboard — enviar dashboard HTML completo\n"
-        "  /modelos — desglose por modelo (paginado)\n"
-        "  /sesiones — últimas sesiones activas\n"
-        "  /agentes — breakdown por agente\n"
-        "  /status — estado del sistema\n"
-        "  /ayuda — esta lista\n"
-    )
+    await update.message.reply_text(_box(
+        "📥 Ingesta: URLs, YouTube, imágenes, PDFs, audios\n\n"
+        "📊 Dashboard:\n"
+        "  /costos /status /dashboard\n\n"
+        "⚡ Power:\n"
+        "  /sleep /hibernate /shutdown /restart\n"
+        "  /confirm /cancel /powerstatus\n\n"
+        "🤖 KAOS:\n"
+        "  /kaospipeline /kaosstart /kaosstop\n"
+        "  /kaosagentes /kaoshealth /kaosscores\n\n"
+        "🔔 Sistema:\n"
+        "  /alertas /cron /ls /download\n\n"
+        "❓ /ayuda — lista completa",
+        "🤖 KAOS BOT"
+    ), parse_mode="Markdown")
 
 async def cmd_costos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Tokens usados hoy/semana/mes por agente."""
@@ -129,18 +154,36 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🤖 **KAOS Bot — Comandos**\n\n"
-        "**Dashboard:**\n"
+        "**📊 Dashboard:**\n"
         "  /costos — tokens y gasto por agente\n"
         "  /status — estado del pipeline y salud\n"
-        "  /dashboard — enviar dashboard HTML\n"
-        "  /modelos — desglose por modelo\n"
-        "  /agentes — breakdown por agente\n"
-        "  /sesiones — últimas sesiones activas\n\n"
-        "**Ingesta:**\n"
-        "  Envía URLs, YouTube, imágenes, PDFs\n\n"
-        "**Sistema:**\n"
-        "  /ayuda — esta lista\n"
-        "  /start — mensaje de bienvenida",
+        "  /dashboard — enviar dashboard HTML\n\n"
+        "**⚡ Power Management:**\n"
+        "  /sleep — suspender a RAM\n"
+        "  /hibernate — hibernar equipo\n"
+        "  /shutdown [N] — apagar en N min\n"
+        "  /restart [N] — reiniciar en N min\n"
+        "  /confirm — confirmar apagado\n"
+        "  /cancel — cancelar apagado\n"
+        "  /powerstatus — estado del PC\n\n"
+        "**🤖 Control KAOS:**\n"
+        "  /kaospipeline — estado del pipeline\n"
+        "  /kaosstart <tema> — iniciar pipeline\n"
+        "  /kaosstop — detener pipeline\n"
+        "  /kaosagentes — estado de agentes\n"
+        "  /kaoshealth — salud del sistema\n"
+        "  /kaosscores — scores de calidad\n\n"
+        "**🔔 Sistema:**\n"
+        "  /alertas — monitoreo automático\n"
+        "  /cron — tareas programadas\n\n"
+        "**📁 Archivos:**\n"
+        "  /ls <ruta> — listar directorio\n"
+        "  /cat <ruta> — ver archivo\n"
+        "  /tail <ruta> [N] — últimas N líneas\n"
+        "  /download <ruta> — descargar archivo\n"
+        "  /allowedpaths — rutas permitidas\n\n"
+        "**📥 Ingesta:**\n"
+        "  Envía URLs, YouTube, imágenes, PDFs, audios",
         parse_mode="Markdown"
     )
 
@@ -183,23 +226,75 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await msg.reply_text(f"Error: {str(e)[:200]}")
 
+    ticket_create(
+        title=f"[TG] {update.effective_user.first_name}: {msg.text or msg.caption or content_type}",
+        tag="telegram-ingest"
+    )
+
+
+async def post_init(app: Application):
+    """Start Hermes outbox poller and system monitor as background tasks."""
+    loop = asyncio.get_event_loop()
+    chat_id = int(os.environ.get("TELEGRAM_CHAT_ID", "1487561068"))
+
+    if HERMES_OUTBOX_ENABLED:
+        loop.create_task(outbox_loop(app, chat_id))
+        logging.info("Hermes outbox loop scheduled")
+
+    loop.create_task(monitor_loop(app, chat_id))
+    logging.info("System monitor loop scheduled")
+
 
 def main():
     if not TOKEN:
         print("TELEGRAM_BOT_TOKEN no configurado")
         return
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).post_init(post_init).build()
+
     # Ingesta handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ayuda", cmd_ayuda))
     app.add_handler(CommandHandler("help", cmd_ayuda))
+
     # Dashboard command handlers
     app.add_handler(CommandHandler("costos", cmd_costos))
     app.add_handler(CommandHandler("dashboard", cmd_dashboard))
     app.add_handler(CommandHandler("status", cmd_status))
+
+    # Power management handlers
+    app.add_handler(CommandHandler("sleep", cmd_sleep))
+    app.add_handler(CommandHandler("hibernate", cmd_hibernate))
+    app.add_handler(CommandHandler("shutdown", cmd_shutdown))
+    app.add_handler(CommandHandler("restart", cmd_restart))
+    app.add_handler(CommandHandler("confirm", cmd_confirm))
+    app.add_handler(CommandHandler("cancel", cmd_cancel_power))
+    app.add_handler(CommandHandler("powerstatus", cmd_powerstatus))
+
+    # KAOS control handlers
+    app.add_handler(CommandHandler("kaospipeline", cmd_kaospipeline))
+    app.add_handler(CommandHandler("kaosstart", cmd_kaosstart))
+    app.add_handler(CommandHandler("kaosstop", cmd_kaosstop))
+    app.add_handler(CommandHandler("kaosagentes", cmd_kaosagentes))
+    app.add_handler(CommandHandler("kaoshealth", cmd_kaoshealth))
+    app.add_handler(CommandHandler("kaosscores", cmd_kaosscores))
+
+    # System monitor
+    app.add_handler(CommandHandler("alertas", cmd_alertas))
+
+    # Cron
+    app.add_handler(CommandHandler("cron", cmd_cron))
+
+    # File browser
+    app.add_handler(CommandHandler("ls", cmd_ls))
+    app.add_handler(CommandHandler("cat", cmd_cat))
+    app.add_handler(CommandHandler("tail", cmd_tail))
+    app.add_handler(CommandHandler("download", cmd_download))
+    app.add_handler(CommandHandler("allowedpaths", cmd_allowedpaths))
+
     # Message handler (catch-all for ingestion)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
-    print("KAOS Bot iniciado (long polling) — dashboard commands activos")
+
+    print("KAOS Bot iniciado (long polling) — 30+ comandos activos")
     app.run_polling()
 
 
