@@ -68,30 +68,27 @@ def migrate():
 
     try:
         import txtai
-        from txtai.api import API
 
         embeddings = txtai.Embeddings(
             path="BAAI/bge-small-en-v1.5",
             content=True,
             hybrid=True,
-            instructions={"query": "", "data": "represent this document"},
         )
 
-        # Preparar datos para txtai
-        texts = []
-        ids = []
+        # Preparar datos para txtai como (id, text, tags) tuples
+        documents = []
         for path, chunk_text, chunk_index in rows:
             doc_id = f"{path}::{chunk_index}"
-            texts.append(chunk_text)
-            ids.append(doc_id)
+            tag = path.split("/")[0] if "/" in path else "root"
+            documents.append((doc_id, chunk_text, tag))
 
-        # Indexar en lote
-        embeddings.index(texts)
+        # Indexar en lote usando upsert (acepta (id, text, tags) tuples)
+        embeddings.upsert(documents)
 
         # Guardar a disco
         embeddings.save(str(TXTAI_DIR / "embeddings"))
 
-        print(f"  Indexados {len(texts)} chunks en txtai ({TXTAI_DIR})")
+        print(f"  Indexados {len(documents)} chunks en txtai ({TXTAI_DIR})")
 
     except Exception as e:
         print(f"  ERROR en indexación txtai: {e}")

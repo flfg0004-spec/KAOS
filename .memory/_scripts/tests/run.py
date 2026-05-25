@@ -73,6 +73,10 @@ MODULES = [
     "test_hebbian_memory",
     "test_crew_integration",
     "test_deerflow_bridge",
+    "test_agno_real",
+    "test_telegram_real",
+    "test_verification",
+    "test_fase3",
 ]
 
 SLOW_MODULES = {

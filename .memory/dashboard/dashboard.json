@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-25 11:13:22",
+  "timestamp": "2026-05-25 12:41:13",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 554,
-    "avg_duration_min": 58.8,
+    "total_messages": 606,
+    "avg_duration_min": 72.5,
     "feedback_avg": 0,
     "feedback_count": 0
   },
@@ -13,10 +13,10 @@
       "wiki": 132,
       "schema": 25,
       "raw": 26,
-      "_scripts": 172,
+      "_scripts": 177,
       "_pipeline": 3
     },
-    "total_scripts": 172
+    "total_scripts": 177
   },
   "health": {
     "git_clean": false,
@@ -24,41 +24,31 @@
     "overall": "warning"
   },
   "cache": {
-    "entries": 3,
+    "entries": 4,
     "max_entries": 30,
     "pressure": "unknown"
   },
   "pipeline": {
     "status": "aletheia-ready",
-    "profile": "deep"
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 455
+    "total_deduped": 458
   },
   "synapse": {
-    "concepts": 91,
-    "wikilinks": 377
+    "concepts": 0,
+    "wikilinks": 0
   },
   "activity": {
     "recent_commits": [
+      "6acfe85 session: mnemosyne - curation-cycle",
+      "ab94a47 session: test_agent - Integration test cycle",
       "2e32724 session: mnemosyne - curation-cycle",
       "8e121b5 session: mnemosyne - curation-cycle",
-      "4e672d2 session: mnemosyne - curation-cycle",
-      "ce1c216 session: mnemosyne - curation-cycle",
-      "f5b1780 session: mnemosyne - curation-cycle"
+      "4e672d2 session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
-      [
-        "2026-05-25",
-        "session",
-        "mnemosyne session completed"
-      ],
-      [
-        "2026-05-25",
-        "session",
-        "test_agent session completed"
-      ],
       [
         "2026-05-25",
         "session",
@@ -73,6 +63,16 @@
         "2026-05-25",
         "session",
         "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "test_agent session completed"
       ]
     ]
   },
@@ -81,7 +81,7 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 143,
+    "total_calls": 146,
     "total_prompt_tokens": 16067,
     "total_completion_tokens": 10370,
     "total_cache_hit_tokens": 432,
@@ -90,7 +90,7 @@
     "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 23,
+        "calls": 26,
         "prompt_tokens": 4067,
         "cost_usd": 9.6944
       },
@@ -113,7 +113,7 @@
         "completion_tokens": 6000
       },
       "aletheia": {
-        "calls": 4,
+        "calls": 7,
         "cost_usd": 0.224,
         "prompt_tokens": 1500,
         "completion_tokens": 800
@@ -151,7 +151,7 @@
       "completion_tokens": 6000
     },
     "aletheia": {
-      "calls": 4,
+      "calls": 7,
       "cost_usd": 0.224,
       "prompt_tokens": 1500,
       "completion_tokens": 800
@@ -182,7 +182,7 @@
     }
   },
   "token_usage": {
-    "total_calls": 143,
+    "total_calls": 146,
     "total_prompt_tokens": 16067,
     "total_completion_tokens": 10370,
     "total_cache_hit_tokens": 432,
@@ -191,7 +191,7 @@
     "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 23,
+        "calls": 26,
         "prompt_tokens": 4067,
         "cost_usd": 9.6944
       },
@@ -214,7 +214,7 @@
         "completion_tokens": 6000
       },
       "aletheia": {
-        "calls": 4,
+        "calls": 7,
         "cost_usd": 0.224,
         "prompt_tokens": 1500,
         "completion_tokens": 800
@@ -247,12 +247,12 @@
     "cache_hit_rate": 2.7
   },
   "quality": {
-    "score": 88.6,
+    "score": 75.4,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 13.2,
+    "embeddings": 0.0,
     "confidence_matrix": 23.1,
-    "completeness": 88.6
+    "completeness": 75.4
   },
   "lifecycle": {
     "tiers": {
@@ -268,13 +268,13 @@
     "complements": 0
   },
   "strategy": {
-    "total_sessions": 1,
-    "latest_bcg": 0,
-    "latest_okr": 0,
-    "avg_bcg_30d": 0,
-    "trend": "stable",
-    "delta_30d": 0,
-    "data_points_30d": 1,
+    "total_sessions": 4,
+    "latest_bcg": 4.2,
+    "latest_okr": 18.8,
+    "avg_bcg_30d": 5.0,
+    "trend": "declining",
+    "delta_30d": -3.3,
+    "data_points_30d": 4,
     "recommendation": "BCG score bajo. Revisar calidad de outputs estratégicos."
   },
   "agents": {

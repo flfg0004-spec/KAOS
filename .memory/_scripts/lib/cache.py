@@ -3,7 +3,7 @@ import json, time, hashlib
 from pathlib import Path
 from datetime import datetime
 
-from lib.config import VAULT_ROOT, CACHE_CACHE_MAX_ENTRIES, CACHE_CACHE_DEFAULT_TTL
+from lib.config import VAULT_ROOT, CACHE_MAX_ENTRIES, CACHE_DEFAULT_TTL
 
 METADATA_FILE = VAULT_ROOT / "cache" / "metadata.json"
 PAGES_DIR = VAULT_ROOT / "cache" / "pages"

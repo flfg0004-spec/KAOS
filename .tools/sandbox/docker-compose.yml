@@ -17,3 +17,50 @@ services:
     cap_drop:
       - ALL
     network_mode: "none"
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: kaos-searxng
+    ports:
+      - "8888:8888"
+    volumes:
+      - searxng-data:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    restart: unless-stopped
+
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: kaos-crawl4ai
+    ports:
+      - "11235:11235"
+    restart: unless-stopped
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: kaos-langfuse
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      - NEXTAUTH_SECRET=kaos-langfuse-secret-2026
+      - SALT=kaos-salt
+    depends_on:
+      - langfuse-db
+    restart: unless-stopped
+
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: kaos-langfuse-db
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=langfuse
+      - POSTGRES_DB=langfuse
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  searxng-data:
+  langfuse-db-data:

@@ -8,3 +8,6 @@ networkx>=3.0
 crewai>=1.0.0
 lancedb>=0.4.0
 mem0ai>=0.1.0
+txtai>=9.9.0
+mcp>=1.26.0
+aiohttp>=3.13.0
