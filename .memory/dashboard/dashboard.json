@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 10:10:39",
+  "timestamp": "2026-05-25 11:13:22",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 378,
-    "avg_duration_min": 51.9,
+    "total_messages": 554,
+    "avg_duration_min": 58.8,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 264,
+    "total_md": 266,
     "by_directory": {
       "wiki": 132,
-      "schema": 23,
+      "schema": 25,
       "raw": 26,
-      "_scripts": 169,
+      "_scripts": 172,
       "_pipeline": 3
     },
-    "total_scripts": 169
+    "total_scripts": 172
   },
   "health": {
     "git_clean": false,
@@ -29,12 +29,12 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "complete",
-    "profile": "standard"
+    "status": "aletheia-ready",
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 449
+    "total_deduped": 455
   },
   "synapse": {
     "concepts": 91,
@@ -42,11 +42,11 @@
   },
   "activity": {
     "recent_commits": [
+      "2e32724 session: mnemosyne - curation-cycle",
+      "8e121b5 session: mnemosyne - curation-cycle",
       "4e672d2 session: mnemosyne - curation-cycle",
       "ce1c216 session: mnemosyne - curation-cycle",
-      "f5b1780 session: mnemosyne - curation-cycle",
-      "3807542 session: mnemosyne - curation-cycle",
-      "4114b25 session: test_agent - Integration test cycle"
+      "f5b1780 session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -67,7 +67,7 @@
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
+        "metis session completed"
       ],
       [
         "2026-05-25",
@@ -81,7 +81,7 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 140,
+    "total_calls": 143,
     "total_prompt_tokens": 16067,
     "total_completion_tokens": 10370,
     "total_cache_hit_tokens": 432,
@@ -90,7 +90,7 @@
     "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 20,
+        "calls": 23,
         "prompt_tokens": 4067,
         "cost_usd": 9.6944
       },
@@ -113,7 +113,7 @@
         "completion_tokens": 6000
       },
       "aletheia": {
-        "calls": 1,
+        "calls": 4,
         "cost_usd": 0.224,
         "prompt_tokens": 1500,
         "completion_tokens": 800
@@ -151,7 +151,7 @@
       "completion_tokens": 6000
     },
     "aletheia": {
-      "calls": 1,
+      "calls": 4,
       "cost_usd": 0.224,
       "prompt_tokens": 1500,
       "completion_tokens": 800
@@ -182,7 +182,7 @@
     }
   },
   "token_usage": {
-    "total_calls": 140,
+    "total_calls": 143,
     "total_prompt_tokens": 16067,
     "total_completion_tokens": 10370,
     "total_cache_hit_tokens": 432,
@@ -191,7 +191,7 @@
     "total_cost_usd": 13.0544,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 20,
+        "calls": 23,
         "prompt_tokens": 4067,
         "cost_usd": 9.6944
       },
@@ -214,7 +214,7 @@
         "completion_tokens": 6000
       },
       "aletheia": {
-        "calls": 1,
+        "calls": 4,
         "cost_usd": 0.224,
         "prompt_tokens": 1500,
         "completion_tokens": 800
@@ -250,7 +250,7 @@
     "score": 88.6,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 13.3,
+    "embeddings": 13.2,
     "confidence_matrix": 23.1,
     "completeness": 88.6
   },

@@ -1,74 +1,88 @@
-"""sqlite-vec vector store — persistent, queryable, zero-dependency vector DB."""
+"""txtai vector store — reemplazo completo de sqlite-vec.
+
+Usa txtai (v9.9.0) como backend unificado con búsqueda híbrida (BM25 + vector + RRF).
+Sin servidor, ~50-80MB RAM, sin Docker.
+
+API pública compatible con la anterior implementación sqlite-vec:
+  - build_index(full=False) -> str
+  - query(text, top_k=5) -> list[dict]
+  - update(path) -> str
+  - update_many(paths) -> str
+  - status() -> str
+  - get_all_entries() -> list[dict]
+  - query_vectors(target_path, top_k=3) -> list[dict]
+  - concept_vector(path) -> list | None
+"""
 
 import json
-import sqlite3
 import re
 import sys
-import warnings
 from pathlib import Path
 from functools import lru_cache
-from contextlib import contextmanager
 
 CHUNK_SIZE = 512
-CHUNK_OVERLAP = 128
 EMBED_DIM = 384
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 KAOS_ROOT = BASE.parent
-DB_FILE = KAOS_ROOT / ".memory" / "cache" / "vectors.db"
+TXTAI_DIR = KAOS_ROOT / ".memory" / "cache" / "txtai"
 JSON_FILE = KAOS_ROOT / ".memory" / "cache" / "embeddings.json"
 
+_EMBEDDINGS_CACHE = None
 
-_MODEL_CACHE = None
-def _import_model():
-    global _MODEL_CACHE
-    if _MODEL_CACHE is not None:
-        return _MODEL_CACHE
+
+def _get_embeddings(create: bool = True):
+    """Obtiene instancia singleton de txtai.Embeddings."""
+    global _EMBEDDINGS_CACHE
+    if _EMBEDDINGS_CACHE is not None:
+        return _EMBEDDINGS_CACHE
+
     try:
-        from fastembed import TextEmbedding
-        _MODEL_CACHE = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-        return _MODEL_CACHE
-    except ImportError:
-        try:
-            from sentence_transformers import SentenceTransformer
-            _MODEL_CACHE = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-            return _MODEL_CACHE
-        except ImportError:
+        import txtai
+
+        if TXTAI_DIR.exists() and (TXTAI_DIR / "embeddings").exists():
+            embeddings = txtai.Embeddings()
+            embeddings.load(str(TXTAI_DIR / "embeddings"))
+        elif create:
+            embeddings = txtai.Embeddings(
+                path="BAAI/bge-small-en-v1.5",
+                content=True,
+                hybrid=True,
+            )
+        else:
             return None
 
+        _EMBEDDINGS_CACHE = embeddings
+        return embeddings
+    except ImportError:
+        return None
+
+
 def warmup_model():
-    """Pre-load model singleton into cache (call at pipeline init)."""
-    return _import_model()
+    """Pre-load txtai model (call at pipeline init)."""
+    return _get_embeddings()
 
 
 def chunk_text(text: str) -> list[str]:
     """Chunk text by semantic sections (#/## headings) with title prefix."""
-    import re
     sections = re.split(r'\n(?=#{1,6} )', text)
     chunks = []
     for section in sections:
         if not section.strip():
             continue
         lines = section.split('\n')
-        # Find the actual heading line (first line starting with #)
         heading = ""
         for line in lines:
             stripped = line.strip()
             if stripped.startswith('#'):
                 heading = stripped.lstrip('#').strip()
                 break
-        # Extract section title from heading
         title = heading if heading else (lines[0].strip() if lines else '')
-        # Content = all non-heading lines
         content_lines = [l for l in lines if not l.strip().startswith('#')]
         content = '\n'.join(content_lines).strip()
-        
-        # Lower threshold for sub-sections; include everything for main headings
         min_content = 5 if heading else 20
         if len(content) < min_content:
             continue
-        
-        # Prefix each chunk with section title for semantic context
         while len(content) > 0:
             chunk_end = min(CHUNK_SIZE, len(content))
             if chunk_end < len(content):
@@ -79,49 +93,7 @@ def chunk_text(text: str) -> list[str]:
             if chunk:
                 chunks.append(f"[{title}] {chunk}")
             content = content[chunk_end:].strip() if chunk_end < len(content) else ''
-    
     return chunks or [text[:CHUNK_SIZE]]
-
-
-@contextmanager
-def _db():
-    conn = sqlite3.connect(str(DB_FILE))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.enable_load_extension(True)
-    try:
-        import sqlite_vec
-        sqlite_vec.load(conn)
-    except ImportError:
-        pass
-    finally:
-        conn.enable_load_extension(False)
-    try:
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def init_db():
-    with _db() as conn:
-        conn.execute("CREATE TABLE IF NOT EXISTS vault_chunks ("
-                     "  rowid INTEGER PRIMARY KEY AUTOINCREMENT,"
-                     "  path TEXT NOT NULL,"
-                     "  chunk_text TEXT NOT NULL,"
-                     "  chunk_index INTEGER NOT NULL"
-                     ")")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_path ON vault_chunks(path)")
-        conn.execute(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS vault_vectors USING vec0("
-            f"  embedding float[{EMBED_DIM}]"
-            ")"
-        )
-
-
-def _serialize(vector):
-    """Serialize a float32 vector for sqlite-vec."""
-    import struct
-    return struct.pack(f"{len(vector)}f", *vector)
 
 
 def _get_md_files():
@@ -138,114 +110,120 @@ def _read(path: Path) -> str:
 
 
 def build_index(full: bool = False) -> str:
-    """Rebuild vector index. If full=False, only adds new pages."""
-    model = _import_model()
-    if not model:
-        return "ERROR: embedding model not installed. Run: pip install fastembed sentence-transformers"
-    init_db()
+    """Rebuild txtai index. If full=False, only adds new pages."""
+    embeddings = _get_embeddings(create=True)
+    if embeddings is None:
+        return "ERROR: txtai not installed. Run: pip install txtai"
 
-    with _db() as conn:
-        if full:
-            conn.execute("DELETE FROM vault_vectors")
-            conn.execute("DELETE FROM vault_chunks")
+    if full:
+        TXTAI_DIR.mkdir(parents=True, exist_ok=True)
 
-        existing = set()
-        for row in conn.execute("SELECT DISTINCT path FROM vault_chunks"):
-            existing.add(row[0])
+    # Track existing paths
+    existing_paths = set()
+    if hasattr(embeddings, "search"):
+        try:
+            results = embeddings.search("SELECT DISTINCT id FROM txtai")
+            for r in results:
+                pid = r.get("id", "")
+                path_part = pid.split("::")[0] if "::" in pid else pid
+                existing_paths.add(path_part)
+        except Exception:
+            pass
 
-        md_files = _get_md_files()
-        new_count = 0
-        for f in md_files:
-            rel = f.relative_to(KAOS_ROOT / ".memory").as_posix()
-            if not full and rel in existing:
-                continue
-            text = _read(f)
-            if not text.strip():
-                continue
-            chunks = chunk_text(text)
-            if not chunks:
-                continue
-            import numpy as np
-            vecs = list(model.embed(chunks))
-            vecs = [np.array(v) if not isinstance(v, np.ndarray) else v for v in vecs]
-            for i, (chunk, vec) in enumerate(zip(chunks, vecs)):
-                cur = conn.execute("INSERT INTO vault_chunks(path, chunk_text, chunk_index) VALUES (?, ?, ?)",
-                                   (rel, chunk, i))
-                rowid = cur.lastrowid
-                conn.execute("INSERT INTO vault_vectors(rowid, embedding) VALUES (?, ?)",
-                             (rowid, _serialize(vec)))
-            new_count += 1
+    md_files = _get_md_files()
+    new_count = 0
+    total_before = len(existing_paths) if existing_paths else 0
 
-        total = conn.execute("SELECT COUNT(DISTINCT path) FROM vault_chunks").fetchone()[0]
-        return f"Vector index built: {new_count} new pages, {total} total."
+    texts = []
+    paths_map = {}
+    for f in md_files:
+        rel = f.relative_to(KAOS_ROOT / ".memory").as_posix()
+        if not full and rel in existing_paths:
+            continue
+        text = _read(f)
+        if not text.strip():
+            continue
+        chunks = chunk_text(text)
+        if not chunks:
+            continue
+        for i, chunk in enumerate(chunks):
+            doc_id = f"{rel}::{i}"
+            texts.append(chunk)
+            paths_map[doc_id] = rel
+
+    if not texts:
+        total = total_before or (len(existing_paths) if existing_paths else 0)
+        return f"Vector index: {total} pages (no new content)."
+
+    embeddings.index(texts)
+    if full:
+        embeddings.save(str(TXTAI_DIR / "embeddings"))
+
+    new_count = len(set(paths_map.values()))
+    total = total_before + new_count
+    return f"Vector index built: {new_count} new pages, {total} total."
 
 
 def query(text: str, top_k: int = 5) -> list[dict]:
-    """Semantic search via sqlite-vec KNN."""
-    model = _import_model()
-    if not model:
+    """Búsqueda híbrida (BM25 + vector) via txtai."""
+    embeddings = _get_embeddings(create=False)
+    if embeddings is None:
         return _bm25_search(text, top_k)
 
-    init_db()
-    import numpy as np
-    q_vec = list(model.embed([text]))[0]
-    if not isinstance(q_vec, np.ndarray):
-        q_vec = np.array(q_vec)
-
-    with _db() as conn:
-        try:
-            results = conn.execute(
-                "SELECT c.path, c.chunk_text, v.distance "
-                "FROM vault_vectors v "
-                "JOIN vault_chunks c ON v.rowid = c.rowid "
-                "WHERE v.embedding MATCH ? AND k = ? "
-                "ORDER BY v.distance",
-                [_serialize(q_vec), top_k]
-            ).fetchall()
-        except Exception as e:
-            print(f"  ⚠️ vectorstore: query failed: {e}")
-            return _bm25_search(text, top_k)
-
-    return [
-        {"path": r[0], "snippet": r[1][:200], "score": round(1.0 / (1.0 + r[2]), 3)}
-        for r in results
-    ]
+    try:
+        results = embeddings.search(text, limit=top_k)
+        formatted = []
+        for r in results:
+            doc_id = r.get("id", "")
+            path_part = doc_id.split("::")[0] if "::" in doc_id else doc_id
+            text_part = r.get("text", "")[:200]
+            score = r.get("score", 0)
+            formatted.append({
+                "path": path_part,
+                "snippet": text_part,
+                "score": round(score, 3),
+            })
+        return formatted
+    except Exception as e:
+        return _bm25_search(text, top_k)
 
 
 def update(path: str) -> str:
-    """Re-embed a single page."""
-    model = _import_model()
-    if not model:
-        return "ERROR: embedding model not installed"
-    init_db()
+    """Re-embed a single page (add or update)."""
+    embeddings = _get_embeddings(create=True)
+    if embeddings is None:
+        return "ERROR: txtai not installed"
 
     full_path = KAOS_ROOT / ".memory" / path
-    with _db() as conn:
-        conn.execute("DELETE FROM vault_vectors WHERE rowid IN ("
-                     "  SELECT rowid FROM vault_chunks WHERE path = ?"
-                     ")", (path,))
-        conn.execute("DELETE FROM vault_chunks WHERE path = ?", (path,))
+    if not full_path.exists():
+        return f"Removed {path} (not found)."
 
-        if not full_path.exists():
-            return f"Removed {path} from index."
+    text = _read(full_path)
+    if not text.strip():
+        return f"Skipped {path} (empty)."
 
-        text = _read(full_path)
-        if not text.strip():
-            return f"Removed {path} (empty)."
+    chunks = chunk_text(text)
+    if not chunks:
+        return f"Skipped {path} (no chunks)."
 
-        chunks = chunk_text(text)
-        if not chunks:
-            return f"Skipped {path} (no chunks)."
+    # Remove old entries for this path
+    try:
+        old = embeddings.search(f"SELECT id FROM txtai WHERE id LIKE '{path}::%'")
+        old_ids = [r["id"] for r in old if "id" in r]
+        for oid in old_ids:
+            embeddings.delete([oid])
+    except Exception:
+        pass
 
-        import numpy as np
-        vecs = list(model.embed(chunks))
-        vecs = [np.array(v) if not isinstance(v, np.ndarray) else v for v in vecs]
-        for i, (chunk, vec) in enumerate(zip(chunks, vecs)):
-            cur = conn.execute("INSERT INTO vault_chunks(path, chunk_text, chunk_index) VALUES (?, ?, ?)",
-                               (path, chunk, i))
-            rowid = cur.lastrowid
-            conn.execute("INSERT INTO vault_vectors(rowid, embedding) VALUES (?, ?)",
-                         (rowid, _serialize(vec)))
+    # Add new chunks
+    texts = []
+    for i, chunk in enumerate(chunks):
+        doc_id = f"{path}::{i}"
+        texts.append((doc_id, chunk, None))
+
+    if texts:
+        embeddings.upsert(texts)
+        embeddings.save(str(TXTAI_DIR / "embeddings"))
 
     return f"Updated {path} ({len(chunks)} chunks)."
 
@@ -255,115 +233,102 @@ def update_many(paths: list[str]) -> str:
     updated = 0
     for path in paths:
         result = update(path)
-        if "Updated" in result or "Removed" in result:
+        if "Updated" in result or "Skipped" in result or "Removed" in result:
             updated += 1
     return f"Updated {updated}/{len(paths)} pages."
 
 
 def status() -> str:
-    init_db()
-    with _db() as conn:
-        pages = conn.execute("SELECT COUNT(DISTINCT path) FROM vault_chunks").fetchone()[0]
-        chunks = conn.execute("SELECT COUNT(*) FROM vault_chunks").fetchone()[0]
-        return f"Vector store: {pages} pages, {chunks} chunks."
+    embeddings = _get_embeddings(create=False)
+    if embeddings is None:
+        return "Vector store: txtai not initialized."
 
-
-def get_entries_by_path(pattern: str) -> list[dict]:
-    """Get entries matching a path pattern (e.g. wiki/concepts/%)."""
-    init_db()
-    with _db() as conn:
-        rows = conn.execute(
-            "SELECT path, chunk_text, chunk_index FROM vault_chunks "
-            "WHERE path LIKE ? ORDER BY path, chunk_index",
-            (pattern,)
-        ).fetchall()
-    entries = {}
-    for path, chunk_text, chunk_index in rows:
-        if path not in entries:
-            entries[path] = {"path": path, "chunks": [], "vectors": []}
-        entries[path]["chunks"].append(chunk_text)
-    return list(entries.values())
+    try:
+        results = embeddings.search("SELECT COUNT(*) AS cnt FROM txtai")
+        total = results[0].get("cnt", 0) if results else 0
+        return f"Vector store: txtai ({total} chunks)."
+    except Exception:
+        return "Vector store: txtai (unknown size)."
 
 
 def get_all_entries() -> list[dict]:
-    """Get all entries (backward compat for quality.py)."""
-    init_db()
-    with _db() as conn:
-        rows = conn.execute("SELECT DISTINCT path FROM vault_chunks").fetchall()
-    return [{"path": r[0]} for r in rows]
+    """Get all unique paths (backward compat for quality.py)."""
+    embeddings = _get_embeddings(create=False)
+    if embeddings is None:
+        return []
+
+    try:
+        results = embeddings.search("SELECT DISTINCT id FROM txtai")
+        seen = set()
+        entries = []
+        for r in results:
+            doc_id = r.get("id", "")
+            path_part = doc_id.split("::")[0] if "::" in doc_id else doc_id
+            if path_part not in seen:
+                seen.add(path_part)
+                entries.append({"path": path_part})
+        return entries
+    except Exception:
+        return []
 
 
 def concept_vector(path: str) -> list:
-    """Get the first embedding vector for a concept (used by synapse)."""
-    init_db()
-    alternatives = [path]
-    if path.startswith("wiki/"):
-        alternatives.append(path[5:])
-    with _db() as conn:
-        for p in alternatives:
-            row = conn.execute(
-                "SELECT v.embedding FROM vault_vectors v "
-                "JOIN vault_chunks c ON v.rowid = c.rowid "
-                "WHERE c.path = ? AND c.chunk_index = 0",
-                (p,)
-            ).fetchone()
-            if row:
-                import struct
-                vec = struct.unpack(f"{EMBED_DIM}f", row[0])
-                return list(vec)
+    """Get first embedding vector for a concept (used by synapse)."""
+    embeddings = _get_embeddings(create=False)
+    if embeddings is None:
+        return None
+    try:
+        vector = embeddings.vector(f"{path}::0")
+        if vector is not None:
+            return vector.tolist() if hasattr(vector, "tolist") else list(vector)
+    except Exception:
+        pass
     return None
 
 
 def query_vectors(target_path: str, top_k: int = 3) -> list[dict]:
-    """Find similar vectors to a given concept's first chunk (synapse cosine)."""
-    candidates = [target_path]
-    if target_path.startswith("wiki/"):
-        candidates.append(target_path[5:])
-    else:
-        candidates.append("wiki/" + target_path)
-
-    vec = None
-    actual_path = None
-    for p in candidates:
-        v = concept_vector(p)
-        if v is not None:
-            vec = v
-            actual_path = p
-            break
+    """Find similar vectors to a given concept's first chunk (synapse)."""
+    vec = concept_vector(target_path)
+    if vec is None:
+        alt = f"wiki/{target_path}" if not target_path.startswith("wiki/") else target_path[5:]
+        vec = concept_vector(alt)
     if vec is None:
         return []
 
-    init_db()
-    with _db() as conn:
-        try:
-            results = conn.execute(
-                "SELECT c.path, c.chunk_text, v.distance "
-                "FROM vault_vectors v "
-                "JOIN vault_chunks c ON v.rowid = c.rowid "
-                "WHERE v.embedding MATCH ? AND c.path != ? AND c.chunk_index = 0 AND k = ? "
-                "ORDER BY v.distance",
-                [_serialize(vec), actual_path, top_k]
-            ).fetchall()
-        except Exception:
-            return []
+    embeddings = _get_embeddings(create=False)
+    if embeddings is None:
+        return []
 
-    return [
-        {"path": r[0], "slug": Path(r[0]).stem, "score": round(1.0 / (1.0 + r[2]), 3),
-         "snippet": r[1][:200]}
-        for r in results
-    ]
+    try:
+        results = embeddings.search(
+            f"SELECT id, text, score FROM txtai WHERE id != '{target_path}::0'",
+            limit=top_k,
+        )
+        formatted = []
+        for r in results:
+            doc_id = r.get("id", "")
+            path_part = doc_id.split("::")[0] if "::" in doc_id else doc_id
+            formatted.append({
+                "path": path_part,
+                "slug": Path(path_part).stem,
+                "score": round(r.get("score", 0), 3),
+                "snippet": r.get("text", "")[:200],
+            })
+        return formatted
+    except Exception:
+        return []
 
 
 def _bm25_search(text: str, top_k: int = 5) -> list[dict]:
-    """Keyword overlap fallback — delegates to shared bm25 module."""
+    """Keyword overlap fallback."""
     from lib.bm25 import search as bm25_search
     return bm25_search(text, top_k=top_k, base_dir=KAOS_ROOT / ".memory")
 
 
 def migrate_from_json() -> str:
-    """Migrate existing embeddings.json to sqlite-vec."""
+    """Migrate embeddings.json to txtai (legacy compat)."""
     if not JSON_FILE.exists():
-        return "No embeddings.json found to migrate."
+        return "No embeddings.json found."
     try:
         data = json.loads(JSON_FILE.read_text(encoding="utf-8"))
     except Exception as e:
@@ -373,23 +338,23 @@ def migrate_from_json() -> str:
     if not entries:
         return "No entries in embeddings.json."
 
-    init_db()
-    with _db() as conn:
-        count = 0
-        for entry in entries:
-            path = entry.get("path", "")
-            chunks = entry.get("chunks", [])
-            vectors = entry.get("vectors", [])
-            if not chunks:
-                continue
-            for i, chunk in enumerate(chunks):
-                vec = vectors[i] if i < len(vectors) else None
-                cur = conn.execute("INSERT INTO vault_chunks(path, chunk_text, chunk_index) VALUES (?, ?, ?)",
-                                   (path, chunk, i))
-                rowid = cur.lastrowid
-                if vec:
-                    conn.execute("INSERT INTO vault_vectors(rowid, embedding) VALUES (?, ?)",
-                                 (rowid, _serialize(vec)))
-                count += 1
+    embeddings = _get_embeddings(create=True)
+    if embeddings is None:
+        return "ERROR: txtai not installed"
 
-    return f"Migrated {count} chunks from embeddings.json to sqlite-vec."
+    count = 0
+    for entry in entries:
+        path = entry.get("path", "")
+        chunks = entry.get("chunks", [])
+        if not chunks:
+            continue
+        texts = []
+        for i, chunk in enumerate(chunks):
+            doc_id = f"{path}::{i}"
+            texts.append((doc_id, chunk, None))
+        if texts:
+            embeddings.upsert(texts)
+            count += len(texts)
+
+    embeddings.save(str(TXTAI_DIR / "embeddings"))
+    return f"Migrated {count} chunks from embeddings.json to txtai."

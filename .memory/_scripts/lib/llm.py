@@ -1,9 +1,33 @@
 """Unified LLM Client — multi-provider with fallback chain."""
+import hashlib
 import logging
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
 from lib.config import DEEPSEEK_API_KEY, OPENCODE_GO_KEY, OPENCODE_GO_ENDPOINT, LLM_FALLBACK_ENABLED
 
 _LOG = logging.getLogger(__name__)
+
+_LLM_CACHE: OrderedDict[str, tuple[str, dict]] = OrderedDict()
+_LLM_CACHE_MAXSIZE = 100
+
+def _cache_key(system: str, prompt: str, model: str, temperature: float) -> str:
+    raw = f"{system}|{prompt}|{model}|{temperature}"
+    return hashlib.md5(raw.encode()).hexdigest()
+
+def _cached_call(system: str, prompt: str, model: str, temperature: float, max_tokens: int) -> tuple[str, dict]:
+    key = _cache_key(system, prompt, model, temperature)
+    if key in _LLM_CACHE:
+        _LLM_CACHE.move_to_end(key)
+        _LOG.debug("LLM cache hit for model=%s", model)
+        return _LLM_CACHE[key]
+    content, usage = _llm_call_impl(prompt, system, model, temperature, max_tokens)
+    if not usage.get("error"):
+        _LLM_CACHE[key] = (content, usage)
+        _LLM_CACHE.move_to_end(key)
+        if len(_LLM_CACHE) > _LLM_CACHE_MAXSIZE:
+            _LLM_CACHE.popitem(last=False)
+    return content, usage
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/v1"
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1"
@@ -71,58 +95,86 @@ def get_client(provider: str = "deepseek") -> OpenAI:
     return OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_ENDPOINT)
 
 
+def _build_messages(system: str, prompt: str) -> list[dict]:
+    msgs = []
+    if system:
+        msgs.append({"role": "system", "content": system})
+    msgs.append({"role": "user", "content": prompt})
+    return msgs
+
+
+def _extract_usage(resp, provider_name: str) -> dict:
+    return {
+        "prompt_tokens": resp.usage.prompt_tokens if resp.usage else 0,
+        "completion_tokens": resp.usage.completion_tokens if resp.usage else 0,
+        "total_tokens": resp.usage.total_tokens if resp.usage else 0,
+        "cached_tokens": (resp.usage.prompt_tokens_details.cached_tokens
+                          if resp.usage and resp.usage.prompt_tokens_details else 0),
+        "reasoning_tokens": (resp.usage.completion_tokens_details.reasoning_tokens
+                             if resp.usage and resp.usage.completion_tokens_details else 0),
+        "model": resp.model,
+        "provider": provider_name,
+    }
+
+
+def _try_provider(provider_name: str, messages: list[dict],
+                  temperature: float, max_tokens: int) -> tuple[str, dict] | None:
+    client = get_client(provider_name)
+    if client is None:
+        return None
+    resp = client.chat.completions.create(
+        model=_resolve_model(provider_name),
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        timeout=30,
+    )
+    content = resp.choices[0].message.content or ""
+    usage = _extract_usage(resp, provider_name)
+    return content, usage
+
+
 def _llm_call_impl(prompt: str, system: str = "", model: str = "go-flash",
                    temperature: float = 0.2, max_tokens: int = 16384) -> tuple[str, dict]:
-    """Returns (content, usage_dict) — iterates provider chain on failure."""
+    """Returns (content, usage_dict) — parallel fallback chain on failure."""
     cfg = MODELS.get(model, MODELS["go-flash"])
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-
-    # Build ordered provider list: primary first, then fallbacks
+    messages = _build_messages(system, prompt)
     primary_provider = cfg["provider"]
+
     providers_to_try = [primary_provider]
     if LLM_FALLBACK_ENABLED:
         for p in PROVIDER_CHAIN:
             if p["name"] not in providers_to_try:
                 providers_to_try.append(p["name"])
 
-    last_error = None
-    for provider_name in providers_to_try:
-        client = get_client(provider_name)
-        if client is None:
-            continue
-        try:
-            resp = client.chat.completions.create(
-                model=_resolve_model(provider_name),
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                timeout=120,
-            )
-            content = resp.choices[0].message.content or ""
-            usage = {
-                "prompt_tokens": resp.usage.prompt_tokens if resp.usage else 0,
-                "completion_tokens": resp.usage.completion_tokens if resp.usage else 0,
-                "total_tokens": resp.usage.total_tokens if resp.usage else 0,
-                "cached_tokens": (resp.usage.prompt_tokens_details.cached_tokens
-                                  if resp.usage and resp.usage.prompt_tokens_details else 0),
-                "reasoning_tokens": (resp.usage.completion_tokens_details.reasoning_tokens
-                                     if resp.usage and resp.usage.completion_tokens_details else 0),
-                "model": resp.model,
-                "provider": provider_name,
-            }
-            if provider_name != primary_provider:
-                _LOG.info("LLM fallback to %s succeeded (primary %s failed: %s)",
-                         provider_name, primary_provider, str(last_error)[:60])
-            return content, usage
-        except Exception as e:
-            last_error = e
-            _LOG.warning("LLM provider %s failed: %s", provider_name, str(e)[:80])
-            continue
+    # Try primary first with short timeout
+    try:
+        content, usage = _try_provider(primary_provider, messages, temperature, max_tokens)
+        return content, usage
+    except Exception as e:
+        _LOG.warning("Primary LLM provider %s failed: %s", primary_provider, str(e)[:80])
 
-    return f"# LLM Error: all providers failed — {last_error}", {"error": str(last_error)}
+    # Parallel fallback: launch all remaining providers, take first success
+    fallbacks = [p for p in providers_to_try if p != primary_provider]
+    if not fallbacks:
+        return "# LLM Error: no fallback providers", {"error": "no fallbacks"}
+
+    with ThreadPoolExecutor(max_workers=len(fallbacks)) as executor:
+        futures = {
+            executor.submit(_try_provider, p, messages, temperature, max_tokens): p
+            for p in fallbacks
+        }
+        for future in as_completed(futures):
+            provider = futures[future]
+            try:
+                content, usage = future.result()
+                _LOG.info("LLM fallback to %s succeeded", provider)
+                return content, usage
+            except Exception as e:
+                _LOG.warning("LLM fallback %s failed: %s", provider, str(e)[:80])
+                continue
+
+    return "# LLM Error: all providers failed", {"error": "all providers failed"}
 
 
 def _resolve_model(provider: str) -> str:
@@ -137,7 +189,7 @@ def _resolve_model(provider: str) -> str:
 def llm_call(prompt: str, system: str = "", model: str = "go-flash",
              temperature: float = 0.2, max_tokens: int = 16384) -> str:
     """Returns content only (backward compatible wrapper)."""
-    content, _ = _llm_call_impl(prompt, system, model, temperature, max_tokens)
+    content, _ = _cached_call(system, prompt, model, temperature, max_tokens)
     return content
 
 
@@ -158,7 +210,7 @@ def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type
         temperature = step_temps.get(step_type, 0.2)
     if temperature is None:
         temperature = 0.2
-    content, usage = _llm_call_impl(prompt=prompt, system=system, model=model_key, temperature=temperature)
+    content, usage = _cached_call(system=system, prompt=prompt, model=model_key, temperature=temperature, max_tokens=16384)
 
     try:
         from lib.dsol import TokenTracker

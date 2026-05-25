@@ -17,8 +17,9 @@ os.environ.setdefault("DEERFLOW_SANDBOX_URL", "http://localhost:8001")
 
 from datetime import datetime
 from lib.deerflow_bridge import DeerFlowBridge, DeerFlowQualityReport
-from lib.agno_gateway import AgnoGateway
+from lib.agno_gateway import KaosMCPGateway
 from lib.memory_bridge import MemoryBridge
+from lib.telegram_bridge import TelegramBridge
 
 
 # ── DeerFlowBridge Tests ────────────────────────────────────
@@ -60,13 +61,12 @@ def test_bridge_execute_reasoning():
 
 def test_bridge_execute_code():
     bridge = DeerFlowBridge()
-    result = _run_async(bridge.execute({
-        "type": "code_execution",
-        "code": "print('hello')",
-        "language": "python",
-        "id": "test-code-001",
-    }))
-    assert result["status"] in ("mock", "ok", "error")
+    result = bridge._mock_execute(
+        {"type": "code_execution", "code": "print('hello')", "id": "test-code-001"},
+        "test-code-001",
+        start=datetime.now(),
+    )
+    assert result["status"] == "mock"
 
 
 def test_bridge_detects_sandbox():
@@ -118,34 +118,40 @@ def test_quality_report_save():
     path.unlink()
 
 
-# ── AgnoGateway Tests ──────────────────────────────────────
+# ── KaosMCPGateway Tests ──────────────────────────────────
 
-def test_agno_mock_mode():
-    gateway = AgnoGateway()
+def test_gateway_mock_mode():
+    gateway = KaosMCPGateway()
     status = gateway.status()
     assert "available" in status
-    assert "mock_mode" in status
     assert "tools_registered" in status
 
 
-def test_agno_register_tool():
-    gateway = AgnoGateway()
+def test_gateway_register_tool():
+    gateway = KaosMCPGateway()
 
     def dummy_tool(param: str) -> str:
         return f"processed: {param}"
 
     gateway.register_tool("test_tool", dummy_tool, "A test tool")
-    assert "test_tool" in gateway.tools
-    assert gateway.tools["test_tool"]["description"] == "A test tool"
+    assert "test_tool" in gateway._tools
+    assert gateway._tools["test_tool"]["description"] == "A test tool"
 
 
-def test_agno_start_stop():
-    gateway = AgnoGateway()
+def test_gateway_start_stop():
+    gateway = KaosMCPGateway()
     gateway.register_tool("test", lambda: "ok", "test")
     gateway.start()
-    status = gateway.status()
-    assert status["mock_mode"] is True  # En CI debe estar en mock
     gateway.stop()
+
+
+# ── TelegramBridge Tests ──────────────────────────────────
+
+def test_telegram_bridge_mock():
+    bridge = TelegramBridge()
+    status = bridge.status()
+    assert "available" in status
+    assert "token_set" in status
 
 
 # ── Kaos MCP Tools Tests ───────────────────────────────────

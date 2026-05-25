@@ -3,18 +3,29 @@ import json, time, hashlib
 from pathlib import Path
 from datetime import datetime
 
-VAULT = (Path(__file__).resolve().parent.parent.parent)
-METADATA_FILE = VAULT / "cache" / "metadata.json"
-PAGES_DIR = VAULT / "cache" / "pages"
-SEMANTIC_CACHE_FILE = VAULT / "cache" / "semantic_cache.json"
-MAX_ENTRIES = 30
-DEFAULT_TTL = 3600
+from lib.config import VAULT_ROOT, CACHE_CACHE_MAX_ENTRIES, CACHE_CACHE_DEFAULT_TTL
+
+METADATA_FILE = VAULT_ROOT / "cache" / "metadata.json"
+PAGES_DIR = VAULT_ROOT / "cache" / "pages"
+SEMANTIC_CACHE_FILE = VAULT_ROOT / "cache" / "semantic_cache.json"
 
 try:
     import numpy as np
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
+
+_SENTENCE_MODEL = None
+
+def _get_sentence_model():
+    global _SENTENCE_MODEL
+    if _SENTENCE_MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _SENTENCE_MODEL = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        except Exception:
+            return None
+    return _SENTENCE_MODEL
 
 
 class SemanticCache:
@@ -39,9 +50,10 @@ class SemanticCache:
     def _get_vec(self, text: str):
         if not HAS_NUMPY:
             return None
+        model = _get_sentence_model()
+        if model is None:
+            return None
         try:
-            from sentence_transformers import SentenceTransformer
-            model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
             return model.encode([text])[0]
         except Exception:
             return None
@@ -96,7 +108,7 @@ def _default_meta() -> dict:
     return {
         "version": 2,
         "lastBuild": datetime.now().isoformat(),
-        "maxEntries": MAX_ENTRIES,
+        "maxEntries": CACHE_MAX_ENTRIES,
         "entries": [],
     }
 
@@ -121,14 +133,14 @@ def get(path: str) -> str | None:
     if not entry:
         return None
 
-    full = VAULT / path
+    full = VAULT_ROOT / path
     current_mtime = datetime.fromtimestamp(full.stat().st_mtime).isoformat() if full.exists() else None
 
     if entry.get("mtime") != current_mtime:
         return None
 
     age = time.time() - datetime.fromisoformat(entry["lastAccess"]).timestamp()
-    if age > entry.get("ttl", DEFAULT_TTL):
+    if age > entry.get("ttl", CACHE_DEFAULT_TTL):
         return None
 
     cached = PAGES_DIR / f"{path.replace('/', '_')}.txt"
@@ -140,11 +152,11 @@ def get(path: str) -> str | None:
     return None
 
 
-def put(path: str, content: str, ttl: int = DEFAULT_TTL) -> None:
+def put(path: str, content: str, ttl: int = CACHE_DEFAULT_TTL) -> None:
     meta = _load()
     meta["entries"] = [e for e in meta["entries"] if e["path"] != path]
 
-    full = VAULT / path
+    full = VAULT_ROOT / path
     mtime = datetime.fromtimestamp(full.stat().st_mtime).isoformat() if full.exists() else datetime.now().isoformat()
 
     meta["entries"].insert(0, {
@@ -155,9 +167,9 @@ def put(path: str, content: str, ttl: int = DEFAULT_TTL) -> None:
         "ttl": ttl,
     })
 
-    if len(meta["entries"]) > MAX_ENTRIES:
+    if len(meta["entries"]) > CACHE_MAX_ENTRIES:
         meta["entries"] = sorted(meta["entries"], key=lambda e: (e.get("hits", 0), e["lastAccess"]))
-        meta["entries"] = meta["entries"][:MAX_ENTRIES]
+        meta["entries"] = meta["entries"][:CACHE_MAX_ENTRIES]
 
     PAGES_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = PAGES_DIR / f"{path.replace('/', '_')}.txt"
@@ -188,11 +200,11 @@ def stats() -> str:
     entries = meta.get("entries", [])
     total_hits = sum(e.get("hits", 0) for e in entries)
     lines = [
-        f"Cache entries: {len(entries)}/{meta.get('maxEntries', MAX_ENTRIES)}",
+        f"Cache entries: {len(entries)}/{meta.get('maxEntries', CACHE_MAX_ENTRIES)}",
         f"Total hits: {total_hits}",
     ]
     for e in entries[:10]:
-        lines.append(f"  {e['path']} — hits={e.get('hits',0)} ttl={e.get('ttl', DEFAULT_TTL)}s")
+        lines.append(f"  {e['path']} — hits={e.get('hits',0)} ttl={e.get('ttl', CACHE_DEFAULT_TTL)}s")
     if len(entries) > 10:
         lines.append(f"  ... and {len(entries) - 10} more")
     return "\n".join(lines)

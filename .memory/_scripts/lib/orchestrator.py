@@ -9,6 +9,7 @@ from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
 from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node, bcg_evaluator_node
 from lib.hermes_bridge import pipeline_notify
+from lib.verification_hook import record as verify_record
 
 _LOG = logging.getLogger(__name__)
 
@@ -162,6 +163,26 @@ def route_after_strategy(state: KAOSState) -> str:
     if has_code:
         return "kratos"
     return "mnemosyne"
+
+def get_dsol_config(agent_name: str, topic: str) -> dict:
+    """Resuelve configuracion DSOL para un agente: model, budget, thinking.
+    
+    Contract ADR-010: LangGraph decide QUE agente, DSOL decide COMO.
+    Si topic tiene keywords de alta complejidad, usa Pro. Sino Flash.
+    """
+    complexity_keywords = {
+        "alta": ["distribuido", "escalable", "seguridad", "cripto", "machine learning",
+                 "deep learning", "arquitectura", "optimizacion", "concurrencia"],
+        "media": ["api", "rest", "base de datos", "autenticacion", "testing"],
+    }
+    tl = topic.lower()
+    for word in complexity_keywords["alta"]:
+        if word in tl:
+            return {"model": "pro", "thinking": "high", "budget": "pro"}
+    for word in complexity_keywords["media"]:
+        if word in tl:
+            return {"model": "flash", "thinking": None, "budget": "flash"}
+    return {"model": "flash", "thinking": None, "budget": "flash"}
 
 def route_after_bcg(state: KAOSState) -> str:
     """Route after BCG evaluation: gaps → Aletheia (re-research) else normal routing.
@@ -555,18 +576,14 @@ def route_after_critic(state: KAOSState) -> str:
         return "refine"
     return "advance"
 
-def build_graph(with_parallel: bool = False):
+def build_graph(with_parallel: bool = True):
     """Build LangGraph DAG.
     
     Args:
-        with_parallel: Enable parallel Aletheia+Kratos execution
+        with_parallel: Enable parallel fan-out (default True)
     """
-    # Pre-carga de modelos pesados al inicio del pipeline
-    try:
-        from lib.vectorstore import warmup_model
-        warmup_model()
-    except Exception:
-        pass
+    # Inicializar integraciones DeerFlow/Agno si estan habilitadas
+    init_integrations()
 
     builder = StateGraph(KAOSState)
     
@@ -654,6 +671,8 @@ def build_graph(with_parallel: bool = False):
     
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     checkpointer = SqliteSaver(conn)
     return builder.compile(checkpointer=checkpointer)
 

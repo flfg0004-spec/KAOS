@@ -3,10 +3,13 @@ DeepSeek Optimization Layer v2 — API client, token tracking, cache optimizatio
 Lee DEEPSEEK_API_KEY del entorno. Trackea tokens en .memory/cache/token-usage.json
 """
 import json
+import logging
 import os
 import re
 from datetime import datetime, date
 from pathlib import Path
+
+_LOG = logging.getLogger(__name__)
 
 BASE = (Path(__file__).resolve().parent.parent.parent)  # .memory/
 KAOS_ROOT = BASE.parent  # KAOS project root
@@ -292,23 +295,35 @@ def extract_cache_metrics(response: dict) -> dict:
 # ── Token Tracker ───────────────────────────────────────────
 
 class TokenTracker:
-    """Persistent token usage tracker. Stores in .memory/cache/token-usage.json"""
+    """Persistent token usage tracker with batch writes.
+    
+    Accumulates entries in memory and flushes to disk every FLUSH_INTERVAL calls
+    to avoid excessive I/O on the hot path.
+    """
+
+    FLUSH_INTERVAL = 10
 
     def __init__(self):
         self.path = TOKEN_CACHE
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.data = self._load()
+        self._pending = 0
 
     def _load(self) -> dict:
         if self.path.exists():
             try:
                 return json.loads(self.path.read_text(encoding="utf-8"))
             except Exception as e:
-                print(f"  ⚠️ TokenTracker: error loading cache: {e}")
+                _LOG.warning("TokenTracker: error loading cache: %s", e)
         return {"version": 2, "sessions": [], "totals": {}, "daily": {}}
 
     def _save(self):
         self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def flush(self):
+        if self._pending > 0:
+            self._save()
+            self._pending = 0
 
     def track(self, prompt_tokens=0, completion_tokens=0, cache_hit=0, cache_miss=0,
               reasoning=0, model="flash", task="general", agent=""):
@@ -348,7 +363,10 @@ class TokenTracker:
         d["prompt_tokens"] += prompt_tokens
         d["cost_usd"] = round(d.get("cost_usd", 0) + cost, 6)
 
-        self._save()
+        self._pending += 1
+        if self._pending >= self.FLUSH_INTERVAL:
+            self._save()
+            self._pending = 0
 
     def _calc_cost(self, prompt_tokens, completion_tokens, cache_hit, cache_miss, model):
         rates = {

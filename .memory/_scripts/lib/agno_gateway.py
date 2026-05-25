@@ -1,92 +1,86 @@
-"""Agno MCP Gateway — expone tools de KAOS como MCP server via Agno AgentOS.
+"""KAOS MCP Gateway — expone tools de KAOS como MCP server.
+
+Usa el SDK oficial MCP (mcp v1.26.0) para exponer herramientas de KAOS
+como servidor MCP bidireccional. Reemplaza la dependencia de Agno AgentOS
+cuya API cambio en v2.6.9.
 
 Decision ADR-012 (P4):
-  PR #1845 de DeerFlow (MCP Server) no esta mergeado. Agno AgentOS con
-  enable_mcp_server=True es la unica forma de exponer KAOS como MCP server hoy.
-  Cuando PR #1845 se mergee, podemos migrar a DeerFlow nativo.
+  MCP bidireccional para que DeerFlow (y otros MCP clients) consuman KAOS.
+  Cuando PR #1845 se mergee, DeerFlow expondra MCP nativo.
 
 Herramientas expuestas:
-  - kaos_research: invoca Aletheia para investigacion web
-  - kaos_analyze: invoca Kosmos para analisis arquitectonico
-  - kaos_strategize: invoca Metis para analisis estrategico
-  - vault_read: lee contenido del vault de memoria
-  - vault_search: busca en el vault de memoria
-
-Auto-deteccion: si agno no esta instalado, opera en modo 'mock'.
+  - kaos_research: invoca Aletheia
+  - kaos_analyze: invoca Kosmos
+  - kaos_strategize: invoca Metis
+  - vault_read: lee contenido del vault
+  - vault_search: busca en el vault
 """
 
-import os
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-logger = logging.getLogger("agno_gateway")
+logger = logging.getLogger("kaos_mcp_gateway")
 
-GATEWAY_LOG = Path(__file__).resolve().parent.parent.parent / "bridge" / "context" / "agno-gateway.json"
-
-AGNO_AVAILABLE = False
-MOCK_MODE = False
+GATEWAY_LOG = Path(__file__).resolve().parent.parent.parent / "bridge" / "context" / "kaos-mcp-gateway.json"
+MCP_AVAILABLE = False
 
 
-def _check_agno() -> bool:
-    global AGNO_AVAILABLE, MOCK_MODE
-    if AGNO_AVAILABLE:
+def _check_mcp() -> bool:
+    global MCP_AVAILABLE
+    if MCP_AVAILABLE:
         return True
     try:
-        from agno.os.agentos import AgentOS
-        AGNO_AVAILABLE = True
-        MOCK_MODE = False
-        logger.info("Agno AgentOS detected — MCP Gateway active")
+        import mcp.server.fastmcp
+        MCP_AVAILABLE = True
+        logger.info("MCP SDK detected — Gateway real mode")
         return True
     except ImportError:
-        MOCK_MODE = True
-        logger.warning("Agno not installed — MCP Gateway in MOCK mode")
+        logger.warning("MCP SDK not installed — pip install mcp")
         return False
 
 
-class AgnoGateway:
-    def __init__(self, host: str = "0.0.0.0", port: int = 8010):
+class KaosMCPGateway:
+    """MCP server que expone tools de KAOS."""
+
+    def __init__(self, host: str = "127.0.0.1", port: int = 8010):
         self.host = host
         self.port = port
         self.server = None
-        self.tools = {}
-        _check_agno()
+        self._tools = {}
+        self._real_mode = _check_mcp()
 
     def register_tool(self, name: str, fn, description: str = ""):
-        self.tools[name] = {"fn": fn, "description": description}
+        self._tools[name] = {"fn": fn, "description": description}
 
     def start(self):
-        if MOCK_MODE:
-            logger.info(f"[MOCK] Agno MCP Gateway would start on {self.host}:{self.port}")
-            self._log_status({"status": "mock", "tools": list(self.tools.keys())})
+        if not self._real_mode:
+            logger.info(f"[MOCK] KaosMCPGateway would start on {self.host}:{self.port}")
+            self._log_status({"status": "mock", "tools": list(self._tools.keys())})
             return
 
-        from agno.os.agentos import AgentOS
-        from agno.agent import Agent
+        from mcp.server.fastmcp import FastMCP
 
-        class KAOSAgent(Agent):
-            name = "kaos-gateway"
-            description = "KAOS Memory & Quality System MCP Gateway"
+        server = FastMCP("kaos-gateway")
 
-        kaos_agent = KAOSAgent(
-            tools=list(self.tools.values()),
-            enable_mcp_server=True,
-        )
+        for name, tool in self._tools.items():
+            fn = tool["fn"]
+            description = tool["description"]
+            # Registra la funcion como tool MCP
+            wrapped = lambda *args, fn=fn, **kwargs: str(fn(*args, **kwargs))
+            wrapped.__name__ = name
+            wrapped.__doc__ = description
+            server.add_tool(wrapped)
 
-        agent_os = AgentOS(
-            agents=[kaos_agent],
-            enable_mcp_server=True,
-        )
-        agent_os.run(host=self.host, port=self.port)
-        self.server = agent_os
-        self._log_status({"status": "running", "tools": list(self.tools.keys())})
+        self.server = server
+        self._log_status({"status": "running", "endpoint": f"http://{self.host}:{self.port}/mcp"})
+        logger.info(f"KAOS MCP Gateway starting on {self.host}:{self.port}")
+        server.run(host=self.host, port=self.port)
 
     def stop(self):
-        if self.server:
-            self.server.stop()
-            logger.info("Agno MCP Gateway stopped")
+        self.server = None
+        logger.info("KAOS MCP Gateway stopped")
 
     def _log_status(self, data: dict):
         GATEWAY_LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -95,17 +89,17 @@ class AgnoGateway:
 
     def status(self) -> dict:
         return {
-            "available": AGNO_AVAILABLE,
-            "mock_mode": MOCK_MODE,
-            "tools_registered": list(self.tools.keys()),
+            "available": MCP_AVAILABLE,
+            "real_mode": self._real_mode,
+            "tools_registered": list(self._tools.keys()),
             "server_running": self.server is not None,
         }
 
 
-# Tools de KAOS que se exponen via MCP
+# ── KAOS Tools ──────────────────────────────────────────────
 
 def _kaos_research(topic: str, depth: str = "standard") -> str:
-    """Invoca Aletheia para investigar un topic."""
+    """Investiga un tema usando el agente Aletheia."""
     try:
         from lib.pipeline import init as pipeline_init
         result = pipeline_init(topic=topic, profile=depth)
@@ -115,7 +109,7 @@ def _kaos_research(topic: str, depth: str = "standard") -> str:
 
 
 def _kaos_analyze(codebase_path: str = "") -> str:
-    """Invoca Kosmos para analisis arquitectonico."""
+    """Analiza la arquitectura del codebase usando Kosmos."""
     try:
         from lib.lint import run as lint_run
         result = lint_run()
@@ -125,7 +119,7 @@ def _kaos_analyze(codebase_path: str = "") -> str:
 
 
 def _kaos_strategize(objective: str, context: str = "") -> str:
-    """Invoca Metis para analisis estrategico."""
+    """Analisis estrategico usando Metis."""
     return f"[MOCK] Strategy analysis for: {objective}"
 
 
@@ -155,28 +149,28 @@ def _vault_search(query: str, max_results: int = 5) -> str:
         return json.dumps({"error": str(e), "query": query})
 
 
-def create_gateway(host: str = "0.0.0.0", port: int = 8010) -> AgnoGateway:
-    gateway = AgnoGateway(host=host, port=port)
+def create_gateway(host: str = "127.0.0.1", port: int = 8010) -> KaosMCPGateway:
+    gateway = KaosMCPGateway(host=host, port=port)
 
     gateway.register_tool(
         "kaos_research", _kaos_research,
-        description="Investiga un tema usando el agente Aletheia de KAOS"
+        "Investiga un tema usando el agente Aletheia de KAOS"
     )
     gateway.register_tool(
         "kaos_analyze", _kaos_analyze,
-        description="Analiza la arquitectura del codebase usando Kosmos"
+        "Analiza la arquitectura del codebase usando Kosmos"
     )
     gateway.register_tool(
         "kaos_strategize", _kaos_strategize,
-        description="Analisis estrategico usando Metis"
+        "Analisis estrategico usando Metis"
     )
     gateway.register_tool(
         "vault_read", _vault_read,
-        description="Lee contenido del vault de memoria de KAOS"
+        "Lee contenido del vault de memoria de KAOS"
     )
     gateway.register_tool(
         "vault_search", _vault_search,
-        description="Busca en el vault de memoria de KAOS"
+        "Busca en el vault de memoria de KAOS"
     )
 
     return gateway

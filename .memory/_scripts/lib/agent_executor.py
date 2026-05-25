@@ -8,23 +8,24 @@ Each function:
 """
 import json, re, os, subprocess, tempfile
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
-from lib.config import LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT, HYBRID_PRO_ENABLED
+from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT, HYBRID_PRO_ENABLED
 from lib.llm import agent_llm_call, AGENT_MODELS
 from lib.rag_injector import inject_context
 from lib.hermes_bridge import pipeline_notify
 from lib.code_memory import search as ce_search
+from lib.verification_hook import record as verify_record
 
-_RAG_CACHE: dict[str, str] = {}  # topic → RAG context
-
-ROOT = Path(__file__).resolve().parent.parent.parent
-VAULT = ROOT
-RAW_DIR = VAULT / "_pipeline" / "raw"
-CONTEXT_PATH = VAULT / "_pipeline" / "context.json"
-PLAN_PATH = VAULT / "_pipeline" / "plan.json"
+RAW_DIR = VAULT_ROOT / "_pipeline" / "raw"
+CONTEXT_PATH = VAULT_ROOT / "_pipeline" / "context.json"
+PLAN_PATH = VAULT_ROOT / "_pipeline" / "plan.json"
 
 RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+_ctx_cache: dict | None = None
+_ctx_dirty: bool = False
 
 AGENT_SLUGS = {
     "aletheia": "raw",
@@ -63,16 +64,36 @@ def _slugify(text: str) -> str:
 
 
 def _load_context() -> dict:
+    global _ctx_cache
+    if _ctx_cache is not None:
+        return _ctx_cache
     if CONTEXT_PATH.exists():
         try:
-            return json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
+            _ctx_cache = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
+            return _ctx_cache
         except Exception:
             pass
-    return {"agents": [], "context_summary": {}, "cross_agent": {}}
+    _ctx_cache = {"agents": [], "context_summary": {}, "cross_agent": {}}
+    return _ctx_cache
 
 
 def _save_context(ctx: dict) -> None:
-    CONTEXT_PATH.write_text(json.dumps(ctx, indent=2, ensure_ascii=False), encoding="utf-8")
+    global _ctx_cache, _ctx_dirty
+    _ctx_cache = ctx
+    _ctx_dirty = True
+
+
+def _flush_context() -> None:
+    global _ctx_dirty
+    if _ctx_cache is not None and _ctx_dirty:
+        CONTEXT_PATH.write_text(json.dumps(_ctx_cache, indent=2, ensure_ascii=False), encoding="utf-8")
+        _ctx_dirty = False
+
+
+def _reset_context_cache() -> None:
+    global _ctx_cache, _ctx_dirty
+    _ctx_cache = None
+    _ctx_dirty = False
 
 
 def _detect_subtasks(topic: str) -> list[dict]:
@@ -133,14 +154,17 @@ def _llm_or_executor_call(agent_name: str, prompt: str, step_type: str = None) -
         return _executor_call(prompt, agent_name)
     return agent_llm_call(agent_name, prompt, step_type=step_type)
 
+@lru_cache(maxsize=50)
+def _cached_rag(topic: str) -> str:
+    return inject_context(topic)
+
 def _build_rag_context(topic: str) -> str:
     if not RAG_ENABLED:
         return ""
-    if topic in _RAG_CACHE:
-        return _RAG_CACHE[topic]
-    ctx = inject_context(topic)
-    _RAG_CACHE[topic] = ctx
-    return ctx
+    try:
+        return _cached_rag(topic)
+    except Exception:
+        return ""
 
 def _notify_step(state, agent_name: str, status: str = "in_progress"):
     if HERMES_ENABLED:
@@ -418,49 +442,44 @@ def metis_node(state: dict) -> dict:
     output_path.write_text(prompt, encoding="utf-8")
 
     if LLM_DIRECT_ENABLED:
-        _notify_step(state, "Metis Strategy", "in_progress")
-        raw = _llm_or_executor_call("metis", prompt, step_type="analysis")
-        output_path.write_text(raw, encoding="utf-8")
+        _notify_step(state, "Metis Strategy + Devil's Advocate", "in_progress")
+        combined_prompt = (
+            f"{prompt}\n\n"
+            f"## Auto-Crítica y Refinamiento\n"
+            f"Después de generar la estrategia, haz lo siguiente:\n"
+            f"1. **Auto-crítica (Devil's Advocate)**: Cuestiona tu propia estrategia.\n"
+            f"   - Supuestos débiles o no verificados\n"
+            f"   - Perspectivas alternativas no consideradas\n"
+            f"   - Riesgos no mencionados\n"
+            f"   - Sesgos de confirmación\n"
+            f"   - Qué falta para que sea ejecutable\n"
+            f"2. **Refina**: Incorpora la crítica en una versión mejorada.\n\n"
+            f"## Formato de Salida\n"
+            f"Responde con JSON con esta estructura EXACTA:\n"
+            f'{{\n'
+            f'  "critique": "tu analisis Devil_s Advocate...",\n'
+            f'  "strategy": "versión refinada de la estrategia...",\n'
+            f'  "okrs": [{{"objective": "...", "key_results": ["..."]}}],\n'
+            f'  "risks": [{{"risk": "...", "probability": "alta|media|baja", "impact": "alto|medio|bajo", "mitigation": "..."}}],\n'
+            f'  "confidence": "alta|media|baja"\n'
+            f'}}\n'
+            f'Usa \\n para saltos de línea dentro de strings.'
+        )
+        combined = _llm_or_executor_call("metis", combined_prompt, step_type="analysis")
+        output_path.write_text(combined, encoding="utf-8")
 
-        parsed = _extract_json_from_output(raw)
+        parsed = _extract_json_from_output(combined)
+        raw_strategy = parsed.get("strategy", "") if isinstance(parsed, dict) else combined
         okrs = parsed.get("okrs", []) if isinstance(parsed, dict) else []
         risks = parsed.get("risks", []) if isinstance(parsed, dict) else []
         confidence = parsed.get("confidence", "media") if isinstance(parsed, dict) else "media"
+        critique = parsed.get("critique", "") if isinstance(parsed, dict) else ""
+        final_output = raw_strategy if raw_strategy else combined
 
-        # ── Devil's Advocate self-critique ──
-        _notify_step(state, "Metis Devil's Advocate", "in_progress")
-        critique_prompt = (
-            f"Eres un Devil's Advocate. Cuestiona críticamente esta estrategia.\n\n"
-            f"## Estrategia\n{raw[:2000]}\n\n"
-            f"Identifica:\n"
-            f"1. Supuestos débiles o no verificados\n"
-            f"2. Perspectivas alternativas no consideradas\n"
-            f"3. Riesgos no mencionados\n"
-            f"4. Sesgos de confirmación\n"
-            f"5. Qué falta para que esta estrategia sea ejecutable\n\n"
-            f"Sé específico y constructivo."
-        )
-        critique = _llm_or_executor_call("metis", critique_prompt, step_type="review")
         critique_path = RAW_DIR / f"{slug}-critique.md"
         critique_path.write_text(critique, encoding="utf-8")
-
-        # Refinar estrategia basado en crítica
-        refine_prompt = (
-            f"Refina la siguiente estrategia incorporando esta crítica.\n\n"
-            f"## Estrategia Original\n{raw[:2000]}\n\n"
-            f"## Crítica\n{critique[:1500]}\n\n"
-            f"Produce una versión refinada siguiendo el mismo formato JSON:\n"
-            f'{{"strategy": "...", "okrs": [...], "risks": [...], "confidence": "..."}}\n'
-        )
-        refined = _llm_or_executor_call("metis", refine_prompt, step_type="review")
         refined_path = RAW_DIR / f"{slug}-strategy-refined.md"
-        refined_path.write_text(refined, encoding="utf-8")
-
-        parsed_refined = _extract_json_from_output(refined)
-        okrs = parsed_refined.get("okrs", []) if isinstance(parsed_refined, dict) else okrs
-        risks = parsed_refined.get("risks", []) if isinstance(parsed_refined, dict) else risks
-        confidence = parsed_refined.get("confidence", confidence) if isinstance(parsed_refined, dict) else confidence
-        final_output = refined if parsed_refined else raw
+        refined_path.write_text(final_output, encoding="utf-8")
 
         # ── Extract knowledge gaps from Devil's Advocate critique ──
         gaps_identified = []
@@ -473,7 +492,7 @@ def metis_node(state: dict) -> dict:
         for pat in gap_patterns:
             matches = re.findall(pat, critique_lower)
             gaps_identified.extend(m.strip() for m in matches if len(m.strip()) > 10)
-        gaps_identified = list(set(gaps_identified))[:5]  # dedup, max 5
+        gaps_identified = list(set(gaps_identified))[:5]
 
         # ── Decompose OKRs into initiatives ──
         initiatives = []
