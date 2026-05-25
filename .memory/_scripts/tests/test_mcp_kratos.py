@@ -73,6 +73,8 @@ def test_ce_skill_search_no_query():
 
 
 def test_ce_skill_search_returns():
+    from lib.skill_library import _init_skill_db
+    _init_skill_db()
     from lib.mcp_kratos_memory import _handle_ce_skill_search
     result = _handle_ce_skill_search({"query": "error", "top_k": 3})
     assert "skills" in result

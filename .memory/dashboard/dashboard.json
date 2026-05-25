@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 01:39:14",
+  "timestamp": "2026-05-25 02:41:15",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 1522,
-    "avg_duration_min": 131.0,
+    "total_messages": 1774,
+    "avg_duration_min": 138.8,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 256,
+    "total_md": 258,
     "by_directory": {
       "wiki": 132,
       "schema": 22,
       "raw": 26,
-      "_scripts": 129,
+      "_scripts": 147,
       "_pipeline": 3
     },
-    "total_scripts": 129
+    "total_scripts": 147
   },
   "health": {
     "git_clean": false,
@@ -34,7 +34,7 @@
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 437
+    "total_deduped": 440
   },
   "synapse": {
     "concepts": 91,
@@ -42,11 +42,11 @@
   },
   "activity": {
     "recent_commits": [
+      "7a0c3eb session: mnemosyne - curation-cycle",
+      "5bba511 session: mnemosyne - curation-cycle",
       "80f518d session: mnemosyne - curation-cycle",
       "e0ff6d4 session: mnemosyne - curation-cycle",
-      "2b8b38c session: mnemosyne - curation-cycle",
-      "6f1c58b session: mnemosyne - curation-cycle",
-      "177f910 session: mnemosyne - curation-cycle"
+      "2b8b38c session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -81,7 +81,7 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 123,
+    "total_calls": 134,
     "total_prompt_tokens": 15867,
     "total_completion_tokens": 10270,
     "total_cache_hit_tokens": 352,
@@ -90,7 +90,7 @@
     "total_cost_usd": 11.9624,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 3,
+        "calls": 14,
         "prompt_tokens": 3867,
         "cost_usd": 8.6024
       },
@@ -129,6 +129,12 @@
         "cost_usd": 7.3344,
         "prompt_tokens": 367,
         "completion_tokens": 2270
+      },
+      "kratos": {
+        "calls": 11,
+        "cost_usd": 0.0,
+        "prompt_tokens": 0,
+        "completion_tokens": 0
       }
     },
     "cache_hit_rate": 2.2,
@@ -155,10 +161,16 @@
       "cost_usd": 7.3344,
       "prompt_tokens": 367,
       "completion_tokens": 2270
+    },
+    "kratos": {
+      "calls": 11,
+      "cost_usd": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0
     }
   },
   "token_usage": {
-    "total_calls": 123,
+    "total_calls": 134,
     "total_prompt_tokens": 15867,
     "total_completion_tokens": 10270,
     "total_cache_hit_tokens": 352,
@@ -167,7 +179,7 @@
     "total_cost_usd": 11.9624,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 3,
+        "calls": 14,
         "prompt_tokens": 3867,
         "cost_usd": 8.6024
       },
@@ -206,24 +218,30 @@
         "cost_usd": 7.3344,
         "prompt_tokens": 367,
         "completion_tokens": 2270
+      },
+      "kratos": {
+        "calls": 11,
+        "cost_usd": 0.0,
+        "prompt_tokens": 0,
+        "completion_tokens": 0
       }
     },
     "cache_hit_rate": 2.2
   },
   "quality": {
-    "score": 89.2,
+    "score": 89.0,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 13.8,
+    "embeddings": 13.7,
     "confidence_matrix": 23.1,
-    "completeness": 89.2
+    "completeness": 89.0
   },
   "lifecycle": {
     "tiers": {
       "new": 132
     },
     "total": 132,
-    "avg_confidence": 0.993,
+    "avg_confidence": 0.992,
     "flagged": 132
   },
   "contradictions": {

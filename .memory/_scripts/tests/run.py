@@ -59,6 +59,10 @@ MODULES = [
     "test_quality_gate",
     "test_reflexion",
     "test_sleep_cycle",
+    "test_mcp_kratos",
+    "test_skill_library",
+    "test_memex_scope",
+    "test_parallel_worker",
     "test_crew_integration",
 ]
 

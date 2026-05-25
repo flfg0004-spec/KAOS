@@ -60,23 +60,25 @@ class MemExScope:
     def _save(self):
         """Persist scope to disk."""
         SCOPE_DIR.mkdir(parents=True, exist_ok=True)
-        # Extract serializable subset
         serializable = {}
         source_lines = []
-        for key, val in self.namespace.items():
-            if callable(val) and hasattr(val, '__code__'):
-                try:
-                    import inspect
-                    source_lines.append(inspect.getsource(val))
-                    serializable[key] = f"<function {key}>"
-                except Exception:
-                    serializable[key] = f"<function {key}>"
-            elif isinstance(val, (str, int, float, bool, list, dict, tuple, type(None))):
-                serializable[key] = val
-            elif isinstance(val, type):
-                serializable[key] = f"<class {val.__name__}>"
-            else:
-                serializable[key] = str(type(val).__name__)
+        for key, val in list(self.namespace.items()):
+            try:
+                if callable(val) and hasattr(val, '__code__'):
+                    try:
+                        import inspect
+                        source_lines.append(inspect.getsource(val))
+                    except Exception:
+                        pass
+                    serializable[key] = f"<function>"
+                elif isinstance(val, (str, int, float, bool, list, dict, tuple, type(None))):
+                    serializable[key] = val
+                elif isinstance(val, type):
+                    serializable[key] = f"<class>"
+                else:
+                    serializable[key] = str(type(val).__name__)
+            except Exception:
+                serializable[key] = f"<{type(val).__name__}>"
         
         SCOPE_FILE.write_text(json.dumps({
             "session_id": self.session_id,
@@ -84,7 +86,7 @@ class MemExScope:
             "source_code": "\n".join(source_lines),
             "iteration": self.iteration,
             "history": self.history[-100:],
-        }, indent=2, ensure_ascii=False), encoding="utf-8")
+        }, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     
     def execute(self, code: str) -> dict:
         """Execute Python code in the persistent scope.
