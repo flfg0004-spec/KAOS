@@ -1,55 +1,90 @@
 """Kratos Bash Hook — wraps CodeExperience capture around subprocess execution.
 
 Usage:
-    from kratos_hook import run_and_capture, init_code_memory_hook
+    from kratos_hook import CodeMemoryCapture, init_code_memory_hook
     
     # Auto-capture all subprocess errors globally:
     init_code_memory_hook()
     
+    # Or as context manager (recommended):
+    with CodeMemoryCapture():
+        result = subprocess.run(["py", "-3", "script.py"], capture_output=True)
+    
     # Or per-command:
     result = run_and_capture(["py", "-3", "script.py"], cwd="/project")
-    # If error: automatically stored in CodeExperience
-    # Returns: subprocess.CompletedProcess
 """
-import subprocess, sys, os, builtins
+import subprocess, sys, os, builtins, logging, threading
 from pathlib import Path
+
+logger = logging.getLogger("kratos_hook")
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS.parent))
 
 from lib.code_memory import capture_from_bash, status as ce_status
 
-# Store original for unhooking
 _original_run = subprocess.run
+_hook_lock = threading.Lock()
+
+
+class CodeMemoryCapture:
+    """Context manager that captures subprocess errors into CodeExperience.
+    
+    Usage:
+        with CodeMemoryCapture():
+            subprocess.run(["py", "script.py"], capture_output=True)
+        
+        # Out of context: subprocess.run behaves normally
+    """
+    
+    def __enter__(self):
+        subprocess.run = _hooked_run
+        builtins._code_memory_hook_active = True
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        subprocess.run = _original_run
+        builtins._code_memory_hook_active = False
+        if exc_type is not None:
+            logger.warning("CodeMemoryCapture caught exception: %s: %s", exc_type.__name__, exc_val)
+
 
 def init_code_memory_hook():
     """Patch subprocess.run globally to auto-capture errors into CodeExperience.
     
-    After calling this, every subprocess.run() call that produces stderr
-    will be recorded in CodeExperience for Kratos learning.
+    Uses threading.Lock for safety. Prefer CodeMemoryCapture context manager
+    for scoped capture.
     """
     subprocess.run = _hooked_run
     builtins._code_memory_hook_active = True
+    logger.info("CodeMemory hook activated (global monkey-patch)")
+
 
 def _hooked_run(*args, **kwargs):
-    result = _original_run(*args, **kwargs)
+    with _hook_lock:
+        result = _original_run(*args, **kwargs)
     try:
         if result.returncode != 0 and result.stderr and len(result.stderr) > 5:
             cmd_str = str(kwargs.get("args", args[0] if args else ""))
-            capture_from_bash(result.returncode, result.stderr[:500], cmd_str[:500])
-    except Exception:
-        pass  # Don't break execution for capture failures
+            cap = capture_from_bash(result.returncode, result.stderr[:500], cmd_str[:500])
+            if cap.get("status") == "created":
+                logger.debug("Captured error into CodeExperience: %s", cap.get("hash", ""))
+    except Exception as e:
+        logger.warning("CodeExperience capture failed (non-blocking): %s", e)
     return result
+
 
 def unhook():
     """Restore original subprocess.run."""
     subprocess.run = _original_run
     builtins._code_memory_hook_active = False
+    logger.info("CodeMemory hook deactivated")
+
 
 def capture_agent_output(text: str) -> int:
     """Parse agent output text and capture code errors into CodeExperience.
     
-    Scans for Python Traceback patterns, error blocks, and code snippets
+    Scans for Python/Rust/JS/Go error patterns, tracebacks, and code blocks
     with exceptions. Feeds them into CodeExperience for Kratos learning.
     
     Args:
@@ -60,29 +95,46 @@ def capture_agent_output(text: str) -> int:
     """
     import re
     count = 0
-    # Pattern 1: Python Tracebacks (multiline)
-    for m in re.finditer(r'(Traceback.*?)(?=\n\n|\Z|```)', text, re.DOTALL):
-        err = m.group(1).strip()
-        if len(err) > 20:
-            from lib.code_memory import capture_from_bash
-            try:
-                capture_from_bash(exit_code=1, stderr=err[:500], cmd="agent_output", cwd="python")
-                count += 1
-            except Exception:
-                pass
-    # Pattern 2: Inline errors in code blocks (```python ... ```)
-    for block in re.finditer(r'```python\n(.*?)```', text, re.DOTALL):
+    
+    patterns = [
+        # Python Tracebacks
+        (r'(Traceback.*?)(?=\n\n|\Z|```)', "python"),
+        # Rust panics  
+        (r"(thread '.*?' panicked at '.*?')", "rust"),
+        # Rust compiler errors
+        (r"(error\[E\d+\]: .*?)(?=\n\n|\Z)", "rust"),
+        # JS/TS errors
+        (r"(Uncaught (Type|Reference|Syntax)Error: .*?)(?=\n|\r)", "javascript"),
+        # Go errors
+        (r"(panic: .*?)(?=\n|\r)", "go"),
+        (r"(cannot .*? as type .*?)(?=\n|\r)", "go"),
+    ]
+    
+    for pattern, lang in patterns:
+        for m in re.finditer(pattern, text, re.DOTALL if "Traceback" in pattern else 0):
+            err = m.group(1).strip()
+            if len(err) > 20:
+                from lib.code_memory import capture_from_bash
+                try:
+                    capture_from_bash(exit_code=1, stderr=err[:500], cmd="agent_output", cwd=lang)
+                    count += 1
+                except Exception as e:
+                    logger.warning("Failed to capture agent output: %s", e)
+    
+    # Pattern: error blocks in code fences (any language)
+    for block in re.finditer(r'```(?:\w+)?\n(.*?)```', text, re.DOTALL):
         code = block.group(1)
-        err_match = re.search(r'(Error|Exception|Traceback|Fail)\b.*', code, re.IGNORECASE)
+        err_match = re.search(r'(Error|Exception|Traceback|panic|Fail)\b.*', code, re.IGNORECASE)
         if err_match:
             from lib.code_memory import capture_from_bash
             try:
                 capture_from_bash(exit_code=1, stderr=err_match.group()[:500],
                                  cmd=code[:200], cwd="python")
                 count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to capture code block error: %s", e)
     return count
+
 
 def run_and_capture(cmd: list, cwd: str = None, shell: bool = False,
                     capture_error: bool = True, timeout: int = 300) -> subprocess.CompletedProcess:
@@ -127,26 +179,12 @@ def run_and_capture(cmd: list, cwd: str = None, shell: bool = False,
     
     return result
 
-def wrap_bash():
-    """Replace subprocess.run in the calling context with run_and_capture."""
-    import builtins
-    original_run = subprocess.run
-    
-    def hooked_run(*args, **kwargs):
-        result = original_run(*args, **kwargs)
-        if kwargs.get("capture_output") and result.returncode != 0 and result.stderr:
-            cmd_str = str(kwargs.get("args", args[0] if args else ""))
-            capture_from_bash(result.returncode, result.stderr[:500], cmd_str[:500])
-        return result
-    
-    return hooked_run
 
 if __name__ == "__main__":
-    # Test: run a command that will fail
-    result = run_and_capture(["py", "-3", "-c", "x = None; print(x['key'])"])
+    result = run_and_capture(["py", "-3", "-c", "x = None; print(x['key'])"] if sys.platform == "win32" else
+                             ["python3", "-c", "x = None; print(x['key'])"])
     print(f"Exit code: {result.returncode}")
-    print(f"Stderr: {result.stderr[:100]}...")
-    print(f"Captured to CodeExperience: {'stderr' in str(result.stderr)[:50]}")
+    print(f"Stderr: {str(result.stderr)[:100]}...")
     
     from lib.code_memory import status
     import json

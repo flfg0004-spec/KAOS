@@ -266,6 +266,25 @@ def _generate_suggestions(scores: dict, outputs: dict) -> dict[str, list[str]]:
     return suggestions
 
 
+def _kratos_feedback_loop(kratos_output: str, critic_score: float):
+    """Feed Kratos output quality back into CodeExperience bandit."""
+    try:
+        from lib.code_memory import search, feedback, capture_from_bash
+        # Find relevant experiences for this output
+        experiences = search(kratos_output[:200], top_k=3)
+        for exp in experiences:
+            # If critic score > 60, it's a success; else a failure
+            success = critic_score >= 60
+            fb = feedback(exp["hash"], success=success)
+            if fb.get("status") == "updated":
+                import logging
+                logger = logging.getLogger("critic")
+                logger.debug("Feedback loop: %s → %s (score=%d, success=%s)",
+                            exp["hash"], fb.get("new_confidence"), critic_score, success)
+    except Exception:
+        pass
+
+
 def critic_node(state: KAOSState) -> dict:
     _notify("Critic Quality", "in_progress", state)
     iteration = state.get("iteration", 0)
@@ -319,6 +338,12 @@ def critic_node(state: KAOSState) -> dict:
         suggestions = _generate_suggestions(scores, outputs)
     
     _notify("Critic Quality", "completed", state)
+    
+    # Feedback loop: Kratos output quality → CodeExperience bandit
+    kratos_out = state.get("kratos_output", "")
+    if kratos_out:
+        _kratos_feedback_loop(kratos_out, avg_score if isinstance(avg_score, (int, float)) else 0)
+    
     return {
         **state,
         "critic_score": avg_score if isinstance(avg_score, int) else int(avg_score),

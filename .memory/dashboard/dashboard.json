@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 00:46:07",
+  "timestamp": "2026-05-25 01:23:32",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 1409,
-    "avg_duration_min": 128.2,
+    "total_messages": 1496,
+    "avg_duration_min": 131.1,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 253,
+    "total_md": 255,
     "by_directory": {
       "wiki": 132,
       "schema": 22,
       "raw": 25,
-      "_scripts": 123,
+      "_scripts": 126,
       "_pipeline": 3
     },
-    "total_scripts": 123
+    "total_scripts": 126
   },
   "health": {
     "git_clean": false,
@@ -34,35 +34,35 @@
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 431
+    "total_deduped": 434
   },
   "synapse": {
-    "concepts": 91,
-    "wikilinks": 377
+    "concepts": 0,
+    "wikilinks": 0
   },
   "activity": {
     "recent_commits": [
+      "2b8b38c session: mnemosyne - curation-cycle",
+      "6f1c58b session: mnemosyne - curation-cycle",
       "177f910 session: mnemosyne - curation-cycle",
       "841d688 session: mnemosyne - curation-cycle",
-      "daefce1 feat: cross-validation como nodo DAG, dashboard tracking, 12 nodos, profile-aware routing",
-      "92b1468 session: mnemosyne - curation-cycle",
-      "f4be2de session: test_agent - Integration test cycle"
+      "daefce1 feat: cross-validation como nodo DAG, dashboard tracking, 12 nodos, profile-aware routing"
     ],
     "recent_logs": [
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
-      ],
-      [
-        "2026-05-25",
-        "session",
-        "mnemosyne session completed"
-      ],
-      [
-        "2026-05-25",
-        "session",
         "test_agent session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
       ],
       [
         "2026-05-25",
@@ -81,18 +81,18 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 122,
-    "total_prompt_tokens": 15500,
-    "total_completion_tokens": 8000,
-    "total_cache_hit_tokens": 0,
+    "total_calls": 123,
+    "total_prompt_tokens": 15867,
+    "total_completion_tokens": 10270,
+    "total_cache_hit_tokens": 352,
     "total_cache_miss_tokens": 12000,
     "total_reasoning_tokens": 0,
-    "total_cost_usd": 4.628,
+    "total_cost_usd": 11.9624,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 2,
-        "prompt_tokens": 3500,
-        "cost_usd": 1.268
+        "calls": 3,
+        "prompt_tokens": 3867,
+        "cost_usd": 8.6024
       },
       "2026-05-24": {
         "calls": 35,
@@ -123,9 +123,15 @@
         "cost_usd": 1.044,
         "prompt_tokens": 2000,
         "completion_tokens": 1200
+      },
+      "metis": {
+        "calls": 1,
+        "cost_usd": 7.3344,
+        "prompt_tokens": 367,
+        "completion_tokens": 2270
       }
     },
-    "cache_hit_rate": 0.0,
+    "cache_hit_rate": 2.2,
     "unknown": {
       "calls": 120,
       "cost_usd": 3.3600000000000025,
@@ -143,21 +149,27 @@
       "cost_usd": 1.044,
       "prompt_tokens": 2000,
       "completion_tokens": 1200
+    },
+    "metis": {
+      "calls": 1,
+      "cost_usd": 7.3344,
+      "prompt_tokens": 367,
+      "completion_tokens": 2270
     }
   },
   "token_usage": {
-    "total_calls": 122,
-    "total_prompt_tokens": 15500,
-    "total_completion_tokens": 8000,
-    "total_cache_hit_tokens": 0,
+    "total_calls": 123,
+    "total_prompt_tokens": 15867,
+    "total_completion_tokens": 10270,
+    "total_cache_hit_tokens": 352,
     "total_cache_miss_tokens": 12000,
     "total_reasoning_tokens": 0,
-    "total_cost_usd": 4.628,
+    "total_cost_usd": 11.9624,
     "daily_breakdown": {
       "2026-05-25": {
-        "calls": 2,
-        "prompt_tokens": 3500,
-        "cost_usd": 1.268
+        "calls": 3,
+        "prompt_tokens": 3867,
+        "cost_usd": 8.6024
       },
       "2026-05-24": {
         "calls": 35,
@@ -188,17 +200,23 @@
         "cost_usd": 1.044,
         "prompt_tokens": 2000,
         "completion_tokens": 1200
+      },
+      "metis": {
+        "calls": 1,
+        "cost_usd": 7.3344,
+        "prompt_tokens": 367,
+        "completion_tokens": 2270
       }
     },
-    "cache_hit_rate": 0.0
+    "cache_hit_rate": 2.2
   },
   "quality": {
-    "score": 89.7,
+    "score": 88.6,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 13.9,
+    "embeddings": 13.8,
     "confidence_matrix": 23.0,
-    "completeness": 89.7
+    "completeness": 88.6
   },
   "lifecycle": {
     "tiers": {

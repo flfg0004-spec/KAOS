@@ -125,6 +125,14 @@ def init():
             VALUES (new.id, new.error_message, new.stack_trace, new.explanation);
         END;
     """)
+    # Bandit persistence table (for LinUCB state across restarts)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS bandit_state (
+            arm_id TEXT PRIMARY KEY,
+            a_matrix TEXT NOT NULL,
+            b_vector TEXT NOT NULL
+        )
+    """)
     conn.commit()
     conn.close()
     return f"CodeExperience DB initialized at {DB}"

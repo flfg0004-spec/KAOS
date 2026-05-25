@@ -188,3 +188,53 @@ def test_critic_node_no_llm():
     result = critic_node(state)
     assert "critic_score" in result
     assert result["iteration"] == 1
+
+
+def test_kratos_prompt_includes_prgii():
+    """Kratos prompt should include PRGII methodology sections."""
+    from lib.agent_executor import kratos_node
+    import os
+    os.environ["LLM_DIRECT_ENABLED"] = "false"
+    
+    state = {"topic": "implementar API REST en Python", "profile": "desarrollo"}
+    result = kratos_node(state)
+    prompt = result.get("kratos_prompt", "")
+    assert "PRGII" in prompt or "Metodología" in prompt
+    assert "PLAN" in prompt
+    assert "GENERATE" in prompt
+    assert "TEST" in prompt
+    assert "DOCUMENT" in prompt
+
+
+def test_kratos_node_retrieves_code_experience():
+    """Kratos should attempt retrieval from CodeExperience."""
+    from lib.agent_executor import kratos_node
+    import os
+    os.environ["LLM_DIRECT_ENABLED"] = "false"
+    
+    state = {"topic": "fix TypeError in Python", "profile": "desarrollo"}
+    result = kratos_node(state)
+    prompt = result.get("kratos_prompt", "")
+    # Should reference CodeExperience or experiences
+    assert "CodeExperience" in prompt or "Experiencias" in prompt or "experiencias" in prompt
+
+
+def test_kratos_decision_complete():
+    from lib.agent_executor import _is_complete_code
+    assert _is_complete_code("""```python\ndef hello():\n    print('hi')\n```\n\n## Usage\nCall it.""")
+
+
+def test_kratos_decision_needs_curation():
+    from lib.agent_executor import _is_complete_code
+    assert not _is_complete_code("Short")
+    assert not _is_complete_code("")
+
+
+def test_kratos_detect_code_language():
+    from lib.agent_executor import _detect_code_language
+    assert _detect_code_language("build a Python API") == "python"
+    assert _detect_code_language("Rust CLI tool") == "rust"
+    assert _detect_code_language("JavaScript frontend") == "javascript"
+    assert _detect_code_language("Go microservice") == "go"
+    assert _detect_code_language("TypeScript React app") == "typescript"
+    assert _detect_code_language("philosophy essay") == "unknown"

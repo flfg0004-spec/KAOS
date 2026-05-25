@@ -5,7 +5,13 @@ LinUCB (Linear Upper Confidence Bound) for optimal
 exploration vs exploitation trade-off.
 """
 import numpy as np
+import json
+import sqlite3
 from typing import Dict, List, Optional
+from pathlib import Path
+
+DB = (Path(__file__).resolve().parent.parent.parent / ".memory" / "cache" / "code_experiences.db")
+
 
 class LinUCBBandit:
     """Contextual bandit for code solution selection.
@@ -14,6 +20,8 @@ class LinUCBBandit:
     Each 'context' is a feature vector describing the current error.
     
     Alpha controls exploration (higher = more exploration).
+    
+    State persists to SQLite via save()/load() — survives restarts.
     """
     
     def __init__(self, alpha: float = 0.2, n_features: int = 6):
@@ -60,8 +68,55 @@ class LinUCBBandit:
         
         return best_arm
     
+    def save(self, db_path: str = ""):
+        """Persist bandit state to SQLite.
+        
+        Args:
+            db_path: Path to SQLite DB (defaults to code_experiences.db)
+        """
+        path = Path(db_path) if db_path else DB
+        try:
+            conn = sqlite3.connect(str(path))
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS bandit_state (
+                    arm_id TEXT PRIMARY KEY,
+                    a_matrix TEXT NOT NULL,
+                    b_vector TEXT NOT NULL
+                )
+            """)
+            for arm in self.A:
+                a_json = json.dumps(self.A[arm].tolist())
+                b_json = json.dumps(self.b[arm].tolist())
+                conn.execute(
+                    "INSERT OR REPLACE INTO bandit_state (arm_id, a_matrix, b_vector) VALUES (?, ?, ?)",
+                    (arm, a_json, b_json)
+                )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def load(self, db_path: str = ""):
+        """Restore bandit state from SQLite.
+        
+        Args:
+            db_path: Path to SQLite DB (defaults to code_experiences.db)
+        """
+        path = Path(db_path) if db_path else DB
+        try:
+            conn = sqlite3.connect(str(path))
+            rows = conn.execute("SELECT arm_id, a_matrix, b_vector FROM bandit_state").fetchall()
+            for arm, a_json, b_json in rows:
+                self.A[arm] = np.array(json.loads(a_json))
+                self.b[arm] = np.array(json.loads(b_json))
+            conn.close()
+        except Exception:
+            pass
+
     def update(self, arm: str, features: np.ndarray, reward: float):
         """Update arm parameters with observed reward.
+        
+        Auto-persists to SQLite after update.
         
         Args:
             arm: Arm ID that was selected
@@ -72,6 +127,7 @@ class LinUCBBandit:
         x = features.reshape(-1, 1)
         self.A[arm] += x @ x.T
         self.b[arm] += reward * x
+        self.save()  # Persist after each update
     
     def get_confidence(self, arm: str) -> float:
         """Get current estimated confidence (theta norm) for an arm."""
@@ -113,6 +169,7 @@ def get_bandit() -> LinUCBBandit:
     global _bandit
     if _bandit is None:
         _bandit = LinUCBBandit(alpha=0.2, n_features=6)
+        _bandit.load()  # Restore persisted state
     return _bandit
 
 def reset_bandit():

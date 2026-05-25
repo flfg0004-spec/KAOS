@@ -53,6 +53,9 @@ MODULES = [
     "test_report_engine",
     "test_strategy",
     "test_metis",
+    "test_code_memory",
+    "test_bandit",
+    "test_ast_match",
 ]
 
 SLOW_MODULES = {

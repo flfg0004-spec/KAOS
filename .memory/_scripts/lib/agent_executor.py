@@ -14,6 +14,7 @@ from lib.config import LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES
 from lib.llm import agent_llm_call
 from lib.rag_injector import inject_context
 from lib.hermes_bridge import pipeline_notify
+from lib.code_memory import search as ce_search
 
 _RAG_CACHE: dict[str, str] = {}  # topic → RAG context
 
@@ -450,6 +451,45 @@ def metis_node(state: dict) -> dict:
         "metis_prompt": prompt,
     }
 
+def _detect_code_language(topic: str) -> str:
+    """Detect programming language from topic text."""
+    tl = topic.lower()
+    if any(w in tl for w in [".py", "python"]):
+        return "python"
+    if any(w in tl for w in [".rs", "rust"]):
+        return "rust"
+    if any(w in tl for w in [".js", ".jsx", "javascript", "node"]):
+        return "javascript"
+    if any(w in tl for w in [".ts", ".tsx", "typescript"]):
+        return "typescript"
+    if any(w in tl for w in [".go", "golang", "go "]):  
+        return "go"
+    if any(w in tl for w in [".java", "java"]):
+        return "java"
+    return "unknown"
+
+
+_CODECOMPLETE_KEYWORDS = [
+    "def ", "class ", "function", "import ", "fn ", "pub ",
+    "```", "#include", "package ", "module ",
+    "impl ", "trait ", "enum ", "struct ",
+]
+
+
+def _is_complete_code(text: str) -> bool:
+    """Heuristic to determine if Kratos output contains real code.
+    
+    Checks for: code blocks, function/class definitions, imports,
+    and minimum structural length. More robust than len(raw) > 500.
+    """
+    if not text or len(text) < 200:
+        return False
+    has_code_block = "```" in text
+    has_definition = any(kw in text for kw in _CODECOMPLETE_KEYWORDS)
+    has_structure = bool(re.search(r'(?m)^#{1,3}\s', text))  # has markdown sections
+    return has_code_block and (has_definition or has_structure)
+
+
 def kratos_node(state: dict) -> dict:
     topic = state.get("topic", "")
     slug = _slugify(topic)
@@ -460,16 +500,63 @@ def kratos_node(state: dict) -> dict:
     
     strategy_summary = strategy.get("strategy_summary", topic)
     
+    # ── PRGII Step 1: Retrieve from CodeExperience ──
+    experiences_section = ""
+    detected_lang = _detect_code_language(topic)
+    try:
+        experiences = ce_search(
+            query=topic,
+            code_snippet="",
+            language=detected_lang
+        )
+        if experiences:
+            exp_lines = []
+            for e in experiences[:5]:
+                exp_lines.append(
+                    f"- [{e['language']}] `{e['error'][:80]}` "
+                    f"(conf:{e['confidence']:.2f}, score:{e['score']:.2f})"
+                )
+            experiences_section = (
+                "## Experiencias Relevantes de CodeExperience\n"
+                + "\n".join(exp_lines)
+                + "\n\n*Estos patrones de error pueden evitarse durante la implementación.*\n"
+            )
+    except Exception:
+        experiences_section = ""
+    
+    # ── PRGII Step 2: Build comprehensive prompt ──
     prompt = (
-        f"# Pipeline: Implementación\n\n"
+        f"# Pipeline: Implementación — PRGII\n\n"
         f"## Tarea\n{topic}\n\n"
-        f"## Contexto Estratégico\n{strategy_summary}\n\n"
-        f"## Especificación Técnica\n\n"
-        f"Implementa el código necesario según la estrategia definida.\n"
-        f"1. Revisa el contexto de código existente\n"
-        f"2. Escribe o modifica archivos\n"
-        f"3. Incluye tests\n"
-        f"4. Documenta cambios\n"
+        f"## Contexto Estratégico (de Metis)\n{strategy_summary}\n\n"
+        f"{experiences_section}"
+        f"## Contexto de Investigación (de Aletheia)\n"
+        f"{str(code_context)[:1500] if code_context else 'Sin contexto de código específico.'}\n\n"
+        f"## Metodología PRGII\n\n"
+        f"### 1. PLAN\n"
+        f"- Descompón la tarea en subtareas de implementación\n"
+        f"- Identifica archivos a crear/modificar\n"
+        f"- Evalúa dependencias y riesgos técnicos\n\n"
+        f"### 2. RETRIEVE (automático)\n"
+        f"- Revisa experiencias previas de errores similares (arriba)\n"
+        f"- Aplica lecciones aprendidas para evitar patrones de error conocidos\n\n"
+        f"### 3. GENERATE\n"
+        f"- Implementa siguiendo clean code y mejores prácticas\n"
+        f"- Usa type hints y documentación inline\n"
+        f"- Maneja edge cases: null, vacío, límites, errores\n"
+        f"- Sigue los principios SOLID y DRY\n\n"
+        f"### 4. TEST\n"
+        f"- Escribe tests unitarios (usan pytest)\n"
+        f"- Incluye: casos normales, boundary, y error\n"
+        f"- Verifica asserts significativos\n\n"
+        f"### 5. DOCUMENT\n"
+        f"- Documenta funciones/clases con docstrings\n"
+        f"- Especifica parámetros, retorno, excepciones\n\n"
+        f"## Formato de Salida\n"
+        f"- Código en bloques ```lenguaje\n"
+        f"- Tests en bloque separado ```python\n"
+        f"- Explicación de decisiones técnicas fuera de bloques\n"
+        f"- Resumen de archivos modificados/creados al final\n"
     )
     
     output_path = RAW_DIR / f"{slug}-code.md"
@@ -482,12 +569,25 @@ def kratos_node(state: dict) -> dict:
         ctx = _load_context()
         ctx["agents"].append("kratos")
         ctx["context_summary"]["kratos"] = {"started_at": datetime.now().isoformat()}
-        ctx["cross_agent"]["kratos_decision"] = "complete" if len(raw) > 500 else "needs_curation"
+        
+        # Improved completeness check
+        decision = "complete" if _is_complete_code(raw) else "needs_curation"
+        ctx["cross_agent"]["kratos_decision"] = decision
+        
         _save_context(ctx)
         _notify_step(state, "Kratos Implementation", "completed")
+        
+        # ── Ingest experiences if code has errors ──
+        try:
+            if "error" in raw.lower() or "traceback" in raw.lower():
+                from lib.kratos_hook import capture_agent_output
+                capture_agent_output(raw)
+        except Exception:
+            pass
+        
         return {
             **state, "kratos_output": raw, "kratos_prompt": prompt,
-            "kratos_decision": ctx["cross_agent"]["kratos_decision"],
+            "kratos_decision": decision,
         }
     
     ctx["agents"].append("kratos")
