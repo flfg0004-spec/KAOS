@@ -116,6 +116,35 @@ def route_after_aletheia(state: KAOSState) -> str:
         return "mnemosyne_gap_check"
     return "kosmos"
 
+def _cross_validator_node(state: KAOSState) -> dict:
+    """Cross-validate output with Gemini Flash (solo perfil produccion)."""
+    profile = state.get("profile", "desarrollo")
+    if profile != "produccion":
+        return {**state, "cross_val_score": 100, "cross_val_passed": True}
+
+    output = state.get("metis_output", "") or state.get("aletheia_output", "")
+    if not output:
+        return {**state, "cross_val_score": 0, "cross_val_passed": False}
+
+    try:
+        from lib.cross_validator import validate_content
+        result = validate_content(output, profile=profile)
+        state["cross_val_score"] = result.get("avg_score", 0)
+        state["cross_val_passed"] = result.get("avg_score", 0) >= 60
+        state["cross_val_report"] = result
+    except Exception:
+        state["cross_val_score"] = 0
+        state["cross_val_passed"] = False
+    return state
+
+
+def route_after_cross_val(state: KAOSState) -> str:
+    """Route after cross-validation: kratos if passed, mnemosyne if failed."""
+    if state.get("cross_val_passed", True):
+        return "kratos"
+    return "mnemosyne"
+
+
 def route_after_kratos(state: KAOSState) -> str:
     """Deep routing with HITL approval for code changes."""
     decision = state.get("kratos_decision", "needs_curation")
@@ -318,9 +347,6 @@ def route_after_critic(state: KAOSState) -> str:
     if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
         return "refine"
     return "advance"
-    if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
-        return "refine"
-    return "advance"
 
 def build_graph(with_parallel: bool = False):
     """Build LangGraph DAG.
@@ -347,6 +373,7 @@ def build_graph(with_parallel: bool = False):
     builder.add_node("kosmos_evaluator", _evaluator_node)
     builder.add_node("parallel_validate", _parallel_validate_node)
     builder.add_node("mnemosyne_gap_check", _gap_check_node)
+    builder.add_node("cross_validator", _cross_validator_node)
     
     builder.set_entry_point("planner")
     
@@ -359,18 +386,20 @@ def build_graph(with_parallel: bool = False):
     builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     
+    # After metis: cross-validation for production, then route to kratos/mnemosyne
+    builder.add_edge("metis", "cross_validator")
+    builder.add_conditional_edges(
+        "cross_validator",
+        route_after_cross_val,
+        {"kratos": "kratos", "mnemosyne": "mnemosyne"}
+    )
+    
     if with_parallel:
-        # Parallel fan-out from metis to kratos + validation
+        # Also start parallel validation alongside cross_validator
         builder.add_conditional_edges(
             "metis",
             route_parallel_fanout,
             ["kratos", "parallel_validate"],
-        )
-    else:
-        builder.add_conditional_edges(
-            "metis",
-            route_after_strategy,
-            {"kratos": "kratos", "mnemosyne": "mnemosyne"}
         )
     
     # Deep routing: Kratos evaluates if its output is complete

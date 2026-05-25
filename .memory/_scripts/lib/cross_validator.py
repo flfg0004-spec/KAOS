@@ -11,6 +11,57 @@ from datetime import datetime
 BASE = Path(__file__).resolve().parent.parent.parent
 
 
+def validate_content(text: str, profile: str = "desarrollo") -> dict:
+    """Validate a text content using Gemini Flash. Returns structured scores.
+
+    Args:
+        text: Content to validate (up to 3000 chars)
+        profile: Evaluation profile
+
+    Returns:
+        dict with scores, avg_score, discrepancies, recommendation
+    """
+    prompt = (
+        "Eres un crítico de calidad. Evalúa este output de un agente IA.\n\n"
+        f"## Output a evaluar\n\n{text[:3000]}\n\n"
+        "## Criterios\n"
+        "- Veracidad: ¿los datos parecen correctos?\n"
+        "- Completitud: ¿cubre el tema adecuadamente?\n"
+        "- Coherencia: ¿es internamente consistente?\n"
+        "- Utilidad: ¿es accionable?\n\n"
+        "## Formato de respuesta\n"
+        "```json\n"
+        '{"veracidad": <0-100>, "completitud": <0-100>, '
+        '"coherencia": <0-100>, "utilidad": <0-100>, '
+        '"discrepancias": ["..."], "recomendacion": "..."}\n'
+        "```\n"
+    )
+    try:
+        from lib.agy_client import call_agy
+        result = call_agy(prompt, tier="flash", timeout=120)
+        flash_text = result.get("text", "")
+        json_start = flash_text.find("```json")
+        json_end = flash_text.rfind("```")
+        if json_start >= 0:
+            json_str = flash_text[json_start + 7:json_end].strip()
+            scores = json.loads(json_str)
+        else:
+            scores = {"veracidad": 0, "completitud": 0, "coherencia": 0, "utilidad": 0}
+        avg_score = sum(scores.get(k, 0) for k in ("veracidad", "completitud", "coherencia", "utilidad")) / 4
+
+        if profile == "produccion" and avg_score < 60 and scores.get("discrepancias"):
+            opus_result = call_agy(
+                f"Arbitra este conflicto. Output:\n{text[:2000]}\nCritica:\n{flash_text[:1000]}",
+                tier="opus", timeout=180,
+            )
+            scores["arbitraje_opus"] = opus_result.get("text", "")[:500]
+
+        scores["avg_score"] = avg_score
+        return scores
+    except Exception as e:
+        return {"error": str(e), "avg_score": 0}
+
+
 def run(output_path: str = "", profile: str = "desarrollo") -> str:
     """Run cross-validation on an output file using Gemini Flash.
 

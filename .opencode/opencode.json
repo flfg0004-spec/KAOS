@@ -70,6 +70,12 @@
         "knowledge-graph_*": true,
         "obsidian_*": true,
         "mcp-embed_*": true,
+        "dsol_*": true,
+        "gaps_*": true,
+        "contradictions_*": true,
+        "lifecycle_*": true,
+        "quality_*": true,
+        "crossref_*": true,
         "agy-bridge_agy_status": true,
         "agy-bridge_agy_ask_flash": true
       }
@@ -206,6 +212,12 @@
     "vault_*": false,
     "sequential-thinking_*": false,
     "exa-search_*": false,
+    "dsol_*": false,
+    "gaps_*": false,
+    "contradictions_*": false,
+    "lifecycle_*": false,
+    "quality_*": false,
+    "crossref_*": false,
     "agy-bridge_*": false
   },
   "mcp": {
@@ -353,6 +365,12 @@
       "description": "Invoca a Metis para análisis estratégico",
       "template": "@metis crea una estrategia para: {{input}}",
       "agent": "metis",
+      "subtask": true
+    },
+    "curate": {
+      "description": "Ejecuta ciclo completo de curaduría Mnemosyne (14 fases)",
+      "template": "Ejecuta py -3 .memory/_scripts/run_curation.py y luego py -3 .memory/_scripts/vault.py curation report, reporta el resumen de curaduría",
+      "agent": "mnemosyne",
       "subtask": true
     }
   }

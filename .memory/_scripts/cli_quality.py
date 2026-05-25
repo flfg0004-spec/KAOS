@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from lib import quality, dashboard as dash, speed, viz, wikilinks, docker_health, cross_validator
+from lib import gap_query, crossref, report_engine
 from lib.agy_client import gpt55_status, call_gpt55
 from lib.telegram import send as telegram_send
 
@@ -92,8 +93,10 @@ def register(sub, kaos_root):
                 anchor = s.get("anchor_text", "")
                 anchor_str = f" anchor='{anchor}'" if anchor else ""
                 print(f"  {s['from']} <-> {s['to']} (score: {s['score']}, method: {s['method']}){rel_str}{anchor_str}")
+        elif args.action == "crossref":
+            print(crossref.report())
         else:
-            print("Unknown action. Use: report, graph, suggest")
+            print("Unknown action. Use: report, graph, suggest, crossref")
 
     # Register parsers
     p = sub.add_parser("quality", help="Calculate dynamic quality score (F7)")
@@ -166,10 +169,23 @@ def register(sub, kaos_root):
     p.set_defaults(func=cmd_notify)
 
     p = sub.add_parser("wikilinks", help="Wikilink analysis")
-    p.add_argument("action", choices=["report", "graph", "suggest"])
+    p.add_argument("action", choices=["report", "graph", "suggest", "crossref"])
     p.add_argument("--suggest", action="store_true")
     p.add_argument("--mode", choices=["embedding", "llm", "hybrid"], default="hybrid",
                    help="Suggestion mode (default: hybrid)")
     p.add_argument("--min-confidence", type=float, default=0.75,
                    help="Minimum similarity threshold (0-1)")
     p.set_defaults(func=cmd_wikilinks)
+
+    def cmd_curation(args):
+        if args.action == "report":
+            print(report_engine.generate_curation_report())
+        elif args.action == "json":
+            import json as _json
+            print(_json.dumps(report_engine.to_json(), indent=2, ensure_ascii=False))
+        else:
+            print("Unknown action. Use: report, json")
+
+    p = sub.add_parser("curation", help="Curation report — Phase 14")
+    p.add_argument("action", choices=["report", "json"], default="report", nargs="?")
+    p.set_defaults(func=cmd_curation)

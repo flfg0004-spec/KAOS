@@ -136,6 +136,29 @@ def register(sub, kaos_root):
                     print(f"    {g['reason']}")
                 if g.get("suggestion"):
                     print(f"    → {g['suggestion']}")
+        elif args.action == "query":
+            if not args.topic:
+                print("ERROR: --topic required for 'query'")
+                return
+            from lib.gap_query import query_gaps
+            r = query_gaps(args.topic)
+            print(f"# Gap Query: {r['topic']}")
+            print(f"*Generated: {r['generated_at']}*\n")
+            print(f"**Existing concepts:** {r['total_existing']}")
+            for c in r['existing_concepts'][:10]:
+                print(f"  - {c['name']} (score: {c['score']}, path: {c['path']})")
+            print(f"\n**Gaps detected:** {len(r['gaps_detected'])}")
+            for g in r['gaps_detected'][:10]:
+                print(f"  - {g.get('type', 'gap')}: {g.get('missing', g.get('node', g.get('id', '?')))}")
+            print(f"\n**Orphan pages:** {len(r['orphan_pages'])}")
+            for o in r['orphan_pages'][:10]:
+                print(f"  - {o['name']} ({o['path']})")
+            print(f"\n**Decayed topics:** {len(r['decayed_topics'])}")
+            for d in r['decayed_topics'][:5]:
+                print(f"  - {d.get('path', '?')} (conf: {d.get('confidence', '?')})")
+            print(f"\n**Confidence gaps:** {len(r['confidence_gaps'])}")
+            for c in r['confidence_gaps'][:5]:
+                print(f"  - {c.get('file', '?')}: {c.get('issue', '?')}")
 
     def cmd_lifecycle(args):
         if args.action == "status":
@@ -235,8 +258,9 @@ def register(sub, kaos_root):
     p.add_argument("--min-confidence", type=float, default=0.90, help="Minimum confidence threshold")
     p.set_defaults(func=cmd_dedup)
 
-    p = sub.add_parser("gaps", help="Knowledge gap detection")
-    p.add_argument("action", choices=["report", "suggest"])
+    p = sub.add_parser("gaps", help="Knowledge gap detection + Phase 0 gap query")
+    p.add_argument("action", choices=["report", "suggest", "query"])
+    p.add_argument("--topic", default="", help="Topic for gap query (required for 'query')")
     p.add_argument("--min-confidence", type=float, default=0.2, help="Minimum confidence threshold")
     p.set_defaults(func=cmd_gaps)
 

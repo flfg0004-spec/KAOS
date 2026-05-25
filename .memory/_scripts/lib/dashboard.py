@@ -149,6 +149,17 @@ def _ring_gauge(value: float, max_val: float, label: str, color: str = "#38bdf8"
 </div>"""
 
 
+def _pipeline_executions() -> list:
+    """Read recent DAG executions from timeseries."""
+    exec_log = KAOS_ROOT / ".vault" / "quality" / "timeseries" / "dag-executions.json"
+    if exec_log.exists():
+        try:
+            return json.loads(exec_log.read_text()).get("executions", [])[-10:]
+        except Exception:
+            pass
+    return []
+
+
 def collect_data() -> dict:
     import re
 
@@ -284,12 +295,21 @@ def collect_data() -> dict:
         "quality": _calc_quality_v2(),
         "lifecycle": _lifecycle_data(),
         "contradictions": _contradictions_data(),
-        "agents": {
-            "total": 4,
-            "active": ["aletheia", "kosmos", "metis", "mnemosyne"],
-            "mcp_issues": 0,
-        },
-    }
+    "agents": {
+        "total": 4,
+        "active": [
+            "aletheia",
+            "kosmos",
+            "metis",
+            "mnemosyne"
+        ],
+        "mcp_issues": 0
+    },
+    "pipeline_executions": _pipeline_executions()
+}
+
+
+_HTML_TEMPLATE = _HTML_TEMPLATE
 
 
 def render_html(data: dict) -> str:

@@ -97,6 +97,19 @@ def save_context(agent: str, data: dict) -> None:
         kratos_decision = data.get("kratos_decision", "needs_curation")
         ctx["cross_agent"]["kratos_decision"] = kratos_decision
     
+    # Mnemosyne → Aletheia feedback loop (post-curation)
+    if agent == "mnemosyne":
+        if "curation_report" in data:
+            ctx["cross_agent"]["mnemosyne_to_aletheia"] = {
+                "quality_score": data["curation_report"].get("quality_score", 0),
+                "issues_found": data["curation_report"].get("issues_found", 0),
+                "wikilinks_added": data["curation_report"].get("wikilinks_added", 0),
+                "gaps_detected": data["curation_report"].get("gaps_detected", 0),
+                "contradictions_found": data["curation_report"].get("aletheia_feedback", {}).get("contradictions_found", 0),
+                "confidence_validated": data["curation_report"].get("aletheia_feedback", {}).get("confidence_validated", False),
+                "generated_at": datetime.now().isoformat(),
+            }
+    
     # Flash exploration context (sistema DUAL)
     if agent == "flash_exploration" and "exploration" in data:
         if "cross_agent" not in ctx:
@@ -128,7 +141,7 @@ def get_cross_context(target_agent: str) -> dict:
     """Get cross-agent context intended for a specific agent.
     
     Args:
-        target_agent: "kratos" or "mnemosyne"
+        target_agent: "kratos", "mnemosyne", or "aletheia"
     
     Returns:
         dict with context from previous agents, or empty dict
@@ -145,6 +158,11 @@ def get_cross_context(target_agent: str) -> dict:
             "aletheia_research_context": ca.get("aletheia_to_mnemosyne", {}),
             "kratos_curation_context": ca.get("kratos_to_mnemosyne", {}),
             "kratos_decision": ca.get("kratos_decision", "needs_curation"),
+        }
+    elif target_agent == "aletheia":
+        return {
+            "mnemosyne_curation": ca.get("mnemosyne_to_aletheia", {}),
+            "mnemosyne_gaps": ca.get("query_gaps", {}),
         }
     return {}
 
