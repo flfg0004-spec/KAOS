@@ -53,6 +53,8 @@ class KAOSState(TypedDict):
     critic_score: float = 0
     critic_feedback: Optional[str] = None
     iteration: int = 0
+    reflexion_iteration: int = 0
+    reflexion_score: float = 0
     error: Optional[str] = None
     retries: int = 0
     hitl_approved: Optional[bool] = None
@@ -165,10 +167,10 @@ def route_after_kratos(state: KAOSState) -> str:
                 return "mnemosyne"
     
     if decision == "complete":
-        return "mnemosyne"
+        return "reflexion"
     elif decision == "error":
-        return "mnemosyne"
-    return "mnemosyne"
+        return "reflexion"
+    return "reflexion"
 
 def route_parallel_split(state: KAOSState) -> str:
     """Split: research+código en paralelo o secuencial."""
@@ -223,6 +225,8 @@ def route_parallel_fanout(state: KAOSState) -> list[Send]:
 
 MAX_ITERATIONS = 2
 CRITIC_THRESHOLD = 40
+MAX_REFLEXION_ITERATIONS = 3
+REFLEXION_QUALITY_THRESHOLD = 7.0  # composite score /10
 NODE_TIMEOUT = 300  # seconds per node
 
 def _score_output(text: str) -> dict:
@@ -354,6 +358,98 @@ def critic_node(state: KAOSState) -> dict:
     }
 
 
+def reflexion_node(state: KAOSState) -> dict:
+    """Reflexion loop: evaluate Kratos output quality and regenerate if poor.
+    
+    Uses quality_gate 7-dimension scoring. Maximum 3 iterations.
+    Gemini 3.5 Flash's low cost makes multiple iterations practical.
+    """
+    _notify("Kratos Reflexion", "in_progress", state)
+    kratos_out = state.get("kratos_output", "")
+    reflexion_iter = state.get("reflexion_iteration", 0)
+    
+    if not kratos_out or len(kratos_out) < 100:
+        _notify("Kratos Reflexion", "completed", state)
+        return {**state, "reflexion_iteration": reflexion_iter, "reflexion_score": 0}
+    
+    try:
+        from lib.quality_gate import evaluate
+        score = evaluate(kratos_out, language=_detect_language(kratos_out))
+        composite = score.get("composite", 0)
+        gate_issues = [f"{g}: {d['detail']}" for g, d in score.get("gates", {}).items() if not d.get("passed", True)]
+    except Exception:
+        composite = 5.0
+        gate_issues = []
+    
+    if composite >= REFLEXION_QUALITY_THRESHOLD or reflexion_iter >= MAX_REFLEXION_ITERATIONS:
+        _notify("Kratos Reflexion", "completed", state)
+        return {
+            **state,
+            "reflexion_iteration": reflexion_iter + 1,
+            "reflexion_score": composite,
+            "kratos_decision": "complete" if composite >= REFLEXION_QUALITY_THRESHOLD else "needs_curation",
+        }
+    
+    # Regenerate with feedback
+    topic = state.get("topic", "")
+    iteration = reflexion_iter + 1
+    reflexion_prompt = (
+        f"# Pipeline: Implementación — Reflexion #{iteration}\n\n"
+        f"## Tarea Original\n{topic}\n\n"
+        f"## Código Anterior\n```\n{kratos_out[:1500]}\n```\n\n"
+        f"## Issues Detectados (Quality Score: {composite}/10)\n"
+        + "\n".join(f"- {issue}" for issue in gate_issues[:5])
+        + "\n\n## Instrucciones\n"
+        f"1. Corrige cada issue listado arriba\n"
+        f"2. Mejora la calidad del código\n"
+        f"3. Mantén la funcionalidad original\n"
+        f"4. Responde SOLO con el código mejorado en bloques ```\n"
+    )
+    
+    try:
+        from lib.llm import agent_llm_call
+        improved = agent_llm_call("kratos", reflexion_prompt, model_override="go-gemini-flash")
+        if improved and len(improved) > 100:
+            kratos_out = improved
+    except Exception:
+        pass
+    
+    _notify("Kratos Reflexion", "completed", state)
+    return {
+        **state,
+        "kratos_output": kratos_out,
+        "reflexion_iteration": iteration,
+        "reflexion_score": composite,
+    }
+
+
+def _detect_language(text: str) -> str:
+    """Detect primary language from code blocks in text."""
+    import re
+    blocks = re.findall(r"```(\w+)", text)
+    if not blocks:
+        return "python"
+    lang_map = {"py": "python", "js": "javascript", "ts": "typescript", "rs": "rust"}
+    return lang_map.get(blocks[0], blocks[0])
+
+
+def route_after_reflexion(state: KAOSState) -> str:
+    """Route: refine (back to kratos) or advance (to mnemosyne)."""
+    score = state.get("reflexion_score", 0)
+    iteration = state.get("reflexion_iteration", 0)
+    kratos_decision = state.get("kratos_decision", "")
+    
+    if kratos_decision == "complete":
+        return "advance"
+    if kratos_decision == "needs_curation" and iteration >= MAX_REFLEXION_ITERATIONS:
+        return "advance"
+    if score >= REFLEXION_QUALITY_THRESHOLD:
+        return "advance"
+    if iteration >= MAX_REFLEXION_ITERATIONS:
+        return "advance"
+    return "refine"
+
+
 def route_after_critic(state: KAOSState) -> str:
     """Route: refine if quality low + iterations remain, else advance.
     
@@ -396,6 +492,7 @@ def build_graph(with_parallel: bool = False):
     builder.add_node("kosmos", kosmos_node)
     builder.add_node("metis", metis_node)
     builder.add_node("kratos", kratos_node)
+    builder.add_node("reflexion", reflexion_node)
     builder.add_node("mnemosyne", mnemosyne_node)
     builder.add_node("critic", critic_node)
     builder.add_node("kosmos_evaluator", _evaluator_node)
@@ -435,11 +532,16 @@ def build_graph(with_parallel: bool = False):
             ["kratos", "parallel_validate"],
         )
     
-    # Deep routing: Kratos evaluates if its output is complete
+    # Deep routing: Kratos → Reflexion → (refine → kratos) or (advance → mnemosyne)
     builder.add_conditional_edges(
         "kratos",
         route_after_kratos,
-        {"mnemosyne": "mnemosyne"}
+        {"reflexion": "reflexion", "mnemosyne": "mnemosyne"}
+    )
+    builder.add_conditional_edges(
+        "reflexion",
+        route_after_reflexion,
+        {"refine": "kratos", "advance": "mnemosyne"}
     )
 
     if with_parallel:

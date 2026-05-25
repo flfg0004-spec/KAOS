@@ -1,14 +1,32 @@
-"""Code Experience Memory — FTS5 + AST + vector store for Kratos."""
+"""Code Experience Memory — FTS5 + sqlite-vec + AST hybrid with RRF merge."""
 import sqlite3, hashlib, json, re
 from pathlib import Path
 
-DB = (Path(__file__).resolve().parent.parent.parent / ".memory" / "cache" / "code_experiences.db")
+DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")
+VEC_DIM = 384
 
 _ERROR_KEYWORDS = {"error", "exception", "traceback", "failed", "failure",
                    "cannot", "unable", "denied", "not found", "syntax",
                    "typeerror", "valueerror", "keyerror", "attributeerror",
                    "importerror", "modulenotfound", "indexerror", "runtimeerror",
                    "panic", "unwrap", "expect", "assert"}
+
+_EMBED_MODEL = None
+
+def _get_embedding(text: str) -> list[float]:
+    """Get embedding vector for text using vectorstore's model."""
+    global _EMBED_MODEL
+    try:
+        if _EMBED_MODEL is None:
+            from lib.vectorstore import _import_model
+            _EMBED_MODEL = _import_model()
+        if _EMBED_MODEL is None:
+            return [0.0] * VEC_DIM
+        embeddings = list(_EMBED_MODEL.embed([text[:512]]))
+        return embeddings[0].tolist() if hasattr(embeddings[0], 'tolist') else list(embeddings[0])
+    except Exception:
+        return [0.0] * VEC_DIM
+
 
 def _import_ast():
     try:
@@ -32,6 +50,12 @@ def _detect_language(cwd: str = "") -> str:
         return "go"
     if any(ext in cwd_lower for ext in [".java", "java"]):
         return "java"
+    if any(ext in cwd_lower for ext in [".c", ".h", "c-language"]):
+        return "c"
+    if any(ext in cwd_lower for ext in [".cpp", ".cc", ".cxx", ".hpp", "c++", "cpp"]):
+        return "cpp"
+    if any(ext in cwd_lower for ext in [".rb", "ruby"]):
+        return "ruby"
     return "unknown"
 
 def capture_from_bash(exit_code: int, stderr: str, cmd: str = "", cwd: str = "") -> dict:
@@ -125,7 +149,7 @@ def init():
             VALUES (new.id, new.error_message, new.stack_trace, new.explanation);
         END;
     """)
-    # Bandit persistence table (for LinUCB state across restarts)
+    # Bandit persistence table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS bandit_state (
             arm_id TEXT PRIMARY KEY,
@@ -133,6 +157,21 @@ def init():
             b_vector TEXT NOT NULL
         )
     """)
+    # Vector search table (sqlite-vec)
+    try:
+        import sqlite_vec
+        vec_conn = sqlite3.connect(str(DB))
+        sqlite_vec.load(vec_conn)
+        vec_conn.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS code_exp_vec
+            USING vec0(
+                error_embedding float[%d] distance_metric=cosine
+            )
+        """ % VEC_DIM)
+        vec_conn.commit()
+        vec_conn.close()
+    except Exception:
+        pass
     conn.commit()
     conn.close()
     return f"CodeExperience DB initialized at {DB}"
@@ -163,15 +202,51 @@ def store(error_message: str, language: str = "unknown",
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (error_hash, error_message[:500], stack_trace[:2000], language,
               framework, solution_diff, explanation[:1000], ast_sig))
+        
+        # Store embedding for vector search
+        try:
+            from lib.code_memory import _get_embedding, VEC_DIM, DB as _DB
+            import sqlite_vec
+            vec_conn = sqlite3.connect(str(_DB))
+            sqlite_vec.load(vec_conn)
+            vec_embedding = _get_embedding(error_message[:500])
+            vec_conn.execute(
+                "INSERT INTO code_exp_vec(rowid, error_embedding) VALUES (?, ?)",
+                (conn.total_changes, json.dumps(vec_embedding))
+            )
+            vec_conn.commit()
+            vec_conn.close()
+        except Exception:
+            pass
+        
         conn.commit()
         return {"status": "created", "hash": error_hash, "ast_sig": ast_sig}
     finally:
         conn.close()
 
+def _rrf_merge(lists: list[list[dict]], k: int = 60, top_k: int = 5) -> list[dict]:
+    """Reciprocal Rank Fusion: merge multiple ranked lists."""
+    scores = {}
+    for ranked_list in lists:
+        for rank, item in enumerate(ranked_list):
+            item_id = item["id"]
+            if item_id not in scores:
+                scores[item_id] = {"item": item, "rrf": 0.0}
+            scores[item_id]["rrf"] += 1.0 / (k + rank + 1)
+    
+    merged = sorted(scores.values(), key=lambda x: x["rrf"], reverse=True)
+    for entry in merged:
+        entry["item"]["rrf_score"] = round(entry["rrf"], 3)
+    return [m["item"] for m in merged[:top_k]]
+
+
 def search(query: str, top_k: int = 5,
            code_snippet: str = "", language: str = "") -> list:
     conn = sqlite3.connect(str(DB))
     try:
+        results = []
+        
+        # ── Source 1: FTS5 (keyword) — weight 0.4 ──
         fts_results = conn.execute("""
             SELECT c.id, c.error_hash, c.error_message, c.language, c.confidence,
                    c.retrieval_count, c.resolution_rate, c.solution_diff, c.ast_signature
@@ -180,8 +255,8 @@ def search(query: str, top_k: int = 5,
             ORDER BY rank
             LIMIT ?
         """, (query, top_k * 2)).fetchall()
-
-        results = []
+        
+        fts_list = []
         for r in fts_results:
             score = 0.4
             score += r[4] * 0.2
@@ -191,16 +266,74 @@ def search(query: str, top_k: int = 5,
                 query_sig = ast_mod.ast_signature(code_snippet, language)
                 if query_sig and query_sig == r[8]:
                     score += 0.3
-            results.append({
+            fts_list.append({
                 "id": r[0], "hash": r[1], "error": r[2][:100],
                 "language": r[3], "confidence": r[4],
                 "retrievals": r[5], "rate": r[6],
                 "solution": r[7][:200] if r[7] else "",
                 "score": round(score, 2)
             })
-
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return results[:top_k]
+        
+        # ── Source 2: Vector search (semantic) — weight 0.3 ──
+        vec_list = []
+        try:
+            vec_embedding = _get_embedding(query[:512])
+            import sqlite_vec
+            vec_conn = sqlite3.connect(str(DB))
+            sqlite_vec.load(vec_conn)
+            vec_rows = vec_conn.execute("""
+                SELECT v.rowid, v.distance, c.error_hash, c.error_message, 
+                       c.language, c.confidence, c.retrieval_count, 
+                       c.resolution_rate, c.solution_diff
+                FROM code_exp_vec v JOIN code_experiences c ON v.rowid = c.id
+                WHERE v.error_embedding MATCH ? AND c.confidence > 0.2
+                ORDER BY v.distance
+                LIMIT ?
+            """, (json.dumps(vec_embedding), top_k * 2)).fetchall()
+            vec_conn.close()
+            
+            for vr in vec_rows:
+                vec_score = 0.3 * (1.0 - min(vr[1], 1.0))
+                vec_list.append({
+                    "id": vr[0], "hash": vr[2], "error": vr[3][:100],
+                    "language": vr[4], "confidence": vr[5],
+                    "retrievals": vr[6], "rate": vr[7],
+                    "solution": vr[8][:200] if vr[8] else "",
+                    "score": round(vec_score, 2)
+                })
+        except Exception:
+            pass
+        
+        # ── Source 3: AST signature match — weight 0.3 ──
+        ast_list = []
+        ast_mod = _import_ast()
+        if ast_mod and code_snippet and language:
+            query_sig = ast_mod.ast_signature(code_snippet, language)
+            if query_sig:
+                ast_rows = conn.execute("""
+                    SELECT id, error_hash, error_message, language, confidence,
+                           retrieval_count, resolution_rate, solution_diff, ast_signature
+                    FROM code_experiences
+                    WHERE ast_signature = ? AND confidence > 0.2 AND ast_signature != ''
+                    ORDER BY confidence DESC
+                    LIMIT ?
+                """, (query_sig, top_k * 2)).fetchall()
+                for r in ast_rows:
+                    ast_list.append({
+                        "id": r[0], "hash": r[1], "error": r[2][:100],
+                        "language": r[3], "confidence": r[4],
+                        "retrievals": r[5], "rate": r[6],
+                        "solution": r[7][:200] if r[7] else "",
+                        "score": round(0.3, 2)
+                    })
+        
+        # ── RRF Merge ──
+        all_lists = [l for l in [fts_list, vec_list, ast_list] if l]
+        if not all_lists:
+            return []
+        
+        merged = _rrf_merge(all_lists, k=60, top_k=top_k)
+        return merged
     finally:
         conn.close()
 

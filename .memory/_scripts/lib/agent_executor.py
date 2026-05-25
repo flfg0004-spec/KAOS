@@ -10,8 +10,8 @@ import json, re, os, subprocess, tempfile
 from datetime import datetime
 from pathlib import Path
 
-from lib.config import LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT
-from lib.llm import agent_llm_call
+from lib.config import LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT, HYBRID_PRO_ENABLED
+from lib.llm import agent_llm_call, AGENT_MODELS
 from lib.rag_injector import inject_context
 from lib.hermes_bridge import pipeline_notify
 from lib.code_memory import search as ce_search
@@ -96,12 +96,8 @@ def _detect_complexity(topic: str) -> str:
     return max(weights, key=weights.get)
 
 
-def _executor_call(prompt: str, agent_name: str) -> str:
-    """Invoke opencode CLI subprocess as the agent executor.
-
-    Writes prompt to tempfile (avoids Windows CLI arg limit of 8191 chars),
-    runs `opencode -p`, captures stdout. Falls back to LLM on error or timeout.
-    """
+def _executor_call(prompt: str, agent_name: str, model_override: str = "") -> str:
+    """Invoke opencode CLI subprocess as the agent executor."""
     try:
         if len(prompt) > 7000:
             with tempfile.NamedTemporaryFile(
@@ -123,13 +119,19 @@ def _executor_call(prompt: str, agent_name: str) -> str:
             return output
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-    return agent_llm_call(agent_name, prompt)
+    return agent_llm_call(agent_name, prompt, model_override=model_override)
 
-def _llm_or_executor_call(agent_name: str, prompt: str) -> str:
+def _llm_or_executor_call(agent_name: str, prompt: str, model_override: str = "") -> str:
+    """Route: executor → LLM, with optional model override."""
+    if EXECUTOR_ENABLED:
+        return _executor_call(prompt, agent_name, model_override)
+    return agent_llm_call(agent_name, prompt, model_override=model_override)
+
+def _llm_or_executor_call(agent_name: str, prompt: str, step_type: str = None) -> str:
     """Route: executor → LLM, according to feature flags."""
     if EXECUTOR_ENABLED:
         return _executor_call(prompt, agent_name)
-    return agent_llm_call(agent_name, prompt)
+    return agent_llm_call(agent_name, prompt, step_type=step_type)
 
 def _build_rag_context(topic: str) -> str:
     if not RAG_ENABLED:
@@ -397,7 +399,7 @@ def metis_node(state: dict) -> dict:
 
     if LLM_DIRECT_ENABLED:
         _notify_step(state, "Metis Strategy", "in_progress")
-        raw = _llm_or_executor_call("metis", prompt)
+        raw = _llm_or_executor_call("metis", prompt, step_type="analysis")
         output_path.write_text(raw, encoding="utf-8")
 
         parsed = _extract_json_from_output(raw)
@@ -490,6 +492,18 @@ def _is_complete_code(text: str) -> bool:
     return has_code_block and (has_definition or has_structure)
 
 
+def _resolve_kratos_model(state: dict) -> str:
+    """Return model key: go-gemini-flash default, go-pro if hybrid enabled + alta complexity."""
+    if not HYBRID_PRO_ENABLED:
+        return "go-gemini-flash"
+    plan = state.get("plan", {})
+    complexity = plan.get("complexity", "simple") if plan else "simple"
+    profile = state.get("profile", "desarrollo")
+    if complexity == "alta" or profile == "produccion":
+        return "go-pro"
+    return "go-gemini-flash"
+
+
 def kratos_node(state: dict) -> dict:
     topic = state.get("topic", "")
     slug = _slugify(topic)
@@ -499,6 +513,7 @@ def kratos_node(state: dict) -> dict:
     code_context = ctx.get("cross_agent", {}).get("aletheia_to_kratos", {})
     
     strategy_summary = strategy.get("strategy_summary", topic)
+    model_key = _resolve_kratos_model(state)
     
     # ── PRGII Step 1: Retrieve from CodeExperience ──
     experiences_section = ""
@@ -506,27 +521,29 @@ def kratos_node(state: dict) -> dict:
     try:
         experiences = ce_search(
             query=topic,
+            top_k=10,
             code_snippet="",
             language=detected_lang
         )
         if experiences:
             exp_lines = []
-            for e in experiences[:5]:
+            for e in experiences:
                 exp_lines.append(
                     f"- [{e['language']}] `{e['error'][:80]}` "
-                    f"(conf:{e['confidence']:.2f}, score:{e['score']:.2f})"
+                    f"(conf:{e['confidence']:.2f}, score:{e.get('rrf_score', e['score']):.2f})"
                 )
             experiences_section = (
                 "## Experiencias Relevantes de CodeExperience\n"
+                + "Tienes 1M de contexto — se incluyen todas las experiencias relevantes:\n"
                 + "\n".join(exp_lines)
-                + "\n\n*Estos patrones de error pueden evitarse durante la implementación.*\n"
+                + "\n\n*Estos patrones de error deben evitarse durante la implementación.*\n"
             )
     except Exception:
         experiences_section = ""
     
     # ── PRGII Step 2: Build comprehensive prompt ──
     prompt = (
-        f"# Pipeline: Implementación — PRGII\n\n"
+        f"# Pipeline: Implementación — PRGII (1M Contexto)\n\n"
         f"## Tarea\n{topic}\n\n"
         f"## Contexto Estratégico (de Metis)\n{strategy_summary}\n\n"
         f"{experiences_section}"
@@ -564,7 +581,7 @@ def kratos_node(state: dict) -> dict:
 
     if LLM_DIRECT_ENABLED:
         _notify_step(state, "Kratos Implementation", "in_progress")
-        raw = _llm_or_executor_call("kratos", prompt)
+        raw = _llm_or_executor_call("kratos", prompt, model_override=model_key)
         output_path.write_text(raw, encoding="utf-8")
         ctx = _load_context()
         ctx["agents"].append("kratos")

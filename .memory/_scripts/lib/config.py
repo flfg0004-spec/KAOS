@@ -43,6 +43,8 @@ RAG_TOP_K: Final[int] = max(1, int(os.environ.get("RAG_TOP_K", "5")))
 HERMES_ENABLED: Final[bool] = os.environ.get("HERMES_ENABLED", "true").lower() == "true"
 HERMES_CHANNEL: Final[str] = os.environ.get("HERMES_CHANNEL", "kaos-ci")
 MOME_THRESHOLD: Final[int] = int(os.environ.get("MOME_THRESHOLD", "10000"))
+HYBRID_PRO_ENABLED: Final[bool] = os.environ.get("HYBRID_PRO_ENABLED", "false").lower() == "true"
+PRO_COMPLEXITY_THRESHOLD: Final[str] = os.environ.get("PRO_COMPLEXITY_THRESHOLD", "alta")
 
 CACHE_MAX_ENTRIES: Final[int] = 30
 CACHE_DEFAULT_TTL: Final[int] = 3600  # seconds

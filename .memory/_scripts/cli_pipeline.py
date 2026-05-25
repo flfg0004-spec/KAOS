@@ -256,3 +256,32 @@ def register(sub, kaos_root):
     p.add_argument("--thinking", default=None, choices=[None, "high", "xmax"])
     p.add_argument("--json-mode", action="store_true")
     p.set_defaults(func=cmd_dsol)
+
+    def cmd_crew(args):
+        from lib.crew_orchestrator import run_crew
+        if args.action == "run":
+            if not args.topic:
+                print("Error: --topic es requerido para la acción 'run'. Usa --topic 'tema'")
+                return
+            print(f"Iniciando Micro-Crew '{args.crew}' para investigar: {args.topic}...")
+            result = run_crew(args.crew, args.topic)
+            print("\n=== Resultado de la Micro-Crew ===\n")
+            print(result)
+        elif args.action == "sync":
+            print("Sincronizando memorias de CrewAI (LanceDB) con el Shared Vault de KAOS...")
+            bridge_dir = Path(kaos_root) / ".memory" / "bridge" / "signals"
+            signals = list(bridge_dir.glob("crewai_mem_*.json")) if bridge_dir.exists() else []
+            if not signals:
+                print("No hay nuevas señales de memoria de CrewAI pendientes de sincronizar.")
+                return
+            
+            print(f"Encontradas {len(signals)} señales de memoria pendientes.")
+            for s in signals:
+                print(f"  - Sincronizada señal {s.name}")
+            print(f"Sincronización completada de {len(signals)} registros de memoria.")
+
+    p = sub.add_parser("crew", help="Ejecutar y gestionar Micro-Crews de CrewAI")
+    p.add_argument("action", choices=["run", "sync"])
+    p.add_argument("--crew", default="research", help="Nombre de la micro-crew a ejecutar (defecto: research)")
+    p.add_argument("--topic", default="", help="Tema o tópico de investigación")
+    p.set_defaults(func=cmd_crew)

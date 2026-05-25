@@ -33,10 +33,21 @@ AGENT_MODELS = {
     "aletheia": "go-qwen",
     "kosmos": "go-pro",
     "metis": "go-glm",
-    "kratos": "deepseek-flash",
+    "kratos": "go-gemini-flash",
     "mnemosyne": "go-gemini-flash",
     "critic": "go-flash",
     "planner": "go-flash",
+}
+
+METIS_TEMPERATURES = {
+    "analysis": 0.2,      # FODA, diagnóstico, estructuración
+    "generation": 0.4,    # OKRs, roadmaps, iniciativas
+    "review": 0.2,        # Revisión, crítica, refinamiento
+    "routing": 0.1,       # Decisión de siguiente paso
+}
+
+DEFAULT_STEP_TEMPERATURES = {
+    "metis": METIS_TEMPERATURES,
 }
 
 
@@ -103,10 +114,23 @@ def llm_call(prompt: str, system: str = "", model: str = "go-flash",
     return content
 
 
-def agent_llm_call(agent: str, prompt: str, temperature: float = 0.2) -> str:
-    """Agent-aware LLM call with token tracking via TokenTracker."""
-    model_key = AGENT_MODELS.get(agent, "go-flash")
+def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type: str = None, model_override: str = "") -> str:
+    """Agent-aware LLM call with token tracking via TokenTracker.
+    
+    Args:
+        agent: Agent name
+        prompt: Prompt to send
+        temperature: Override temperature. If None, uses agent default or step_type.
+        step_type: For metis: "analysis", "generation", "review", or "routing"
+        model_override: If set, use this model instead of AGENT_MODELS[agent]
+    """
+    model_key = model_override if model_override else AGENT_MODELS.get(agent, "go-flash")
     system = SYSTEM_PROMPTS.get(agent, "")
+    if temperature is None and agent == "metis" and step_type:
+        step_temps = METIS_TEMPERATURES
+        temperature = step_temps.get(step_type, 0.2)
+    if temperature is None:
+        temperature = 0.2
     content, usage = _llm_call_impl(prompt=prompt, system=system, model=model_key, temperature=temperature)
 
     try:

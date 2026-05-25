@@ -158,6 +158,8 @@
         "mcp-obsidian-cli_*": true,
         "obsidian_*": true,
         "vault_*": true,
+        "strategy-mcp_*": true,
+        "strategy-extras_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true,
@@ -222,6 +224,8 @@
     "lifecycle_*": false,
     "quality_*": false,
     "crossref_*": false,
+    "strategy-mcp_*": false,
+    "strategy-extras_*": false,
     "agy-bridge_*": false
   },
   "mcp": {
@@ -340,6 +344,16 @@
       "command": ["py", "-3", ".memory/_scripts/mcp_agy_bridge.py"],
       "enabled": true,
       "timeout": 300
+    },
+    "strategy-mcp": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_strategy.py"],
+      "enabled": true
+    },
+    "strategy-extras": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_strategy_extras.py"],
+      "enabled": true
     }
   },
   "compaction": {

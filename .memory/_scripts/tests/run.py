@@ -56,6 +56,10 @@ MODULES = [
     "test_code_memory",
     "test_bandit",
     "test_ast_match",
+    "test_quality_gate",
+    "test_reflexion",
+    "test_sleep_cycle",
+    "test_crew_integration",
 ]
 
 SLOW_MODULES = {

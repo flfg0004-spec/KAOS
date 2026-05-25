@@ -1,4 +1,4 @@
-"""Tests for LinUCB contextual bandit — selection, update, persistence."""
+"""Tests for RSCB-MC contextual bandit — selection, update, persistence."""
 
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -14,12 +14,11 @@ def _clean_bandit_db():
 
 
 def test_select_arm_returns_best():
-    from lib.bandit import LinUCBBandit
-    bandit = LinUCBBandit(alpha=0.1, n_features=3)
+    from lib.bandit import RSCBMCBandit
+    bandit = RSCBMCBandit(alpha=0.1, risk_lambda=0.05, n_features=3)
     features = np.array([0.5, 0.3, 0.2])
     arms = ["arm_a", "arm_b"]
     
-    # Pre-train: arm_a gets rewards, arm_b doesn't
     for _ in range(10):
         bandit.update("arm_a", features, 1.0)
         bandit.update("arm_b", features, 0.0)
@@ -29,8 +28,8 @@ def test_select_arm_returns_best():
 
 
 def test_update_changes_confidence():
-    from lib.bandit import LinUCBBandit
-    bandit = LinUCBBandit(alpha=0.2, n_features=4)
+    from lib.bandit import RSCBMCBandit
+    bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.1, n_features=4)
     features = np.array([0.8, 0.4, 1.0, 0.0])
     
     init_conf = bandit.get_confidence("test_arm")
@@ -40,15 +39,15 @@ def test_update_changes_confidence():
 
 
 def test_select_arm_returns_none_if_no_arms():
-    from lib.bandit import LinUCBBandit
-    bandit = LinUCBBandit()
+    from lib.bandit import RSCBMCBandit
+    bandit = RSCBMCBandit()
     features = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
     assert bandit.select_arm(features, []) is None
 
 
 def test_select_arm_returns_valid_arm():
-    from lib.bandit import LinUCBBandit
-    bandit = LinUCBBandit()
+    from lib.bandit import RSCBMCBandit
+    bandit = RSCBMCBandit()
     features = np.array([0.8, 0.2, 1.0, 0.0, 0.1, 0.0])
     arm = bandit.select_arm(features, ["hash_x"])
     assert arm == "hash_x"
@@ -66,46 +65,46 @@ def test_extract_features():
     }
     features = extract_features(error_data)
     assert len(features) == 6
-    assert features[0] == 0.8  # python
-    assert features[2] == 1.0  # has stack_trace
-    assert features[5] == 1.0  # has solution
+    assert features[0] == 0.8
+    assert features[2] == 1.0
+    assert features[5] == 1.0
 
 
 def test_extract_features_defaults():
     from lib.bandit import extract_features
     features = extract_features({"language": "unknown"})
     assert len(features) == 6
-    assert features[0] == 0.2  # unknown lang
+    assert features[0] == 0.2
 
 
 def test_persistence_save_load():
-    from lib.bandit import LinUCBBandit, DB
+    from lib.bandit import RSCBMCBandit, DB
     _clean_bandit_db()
     
-    bandit = LinUCBBandit(alpha=0.2, n_features=3)
+    bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=3)
     features = np.array([0.5, 0.3, 0.2])
     bandit.update("persist_arm", features, 1.0)
     saved_conf = bandit.get_confidence("persist_arm")
     bandit.save(str(DB))
     
-    new_bandit = LinUCBBandit(alpha=0.2, n_features=3)
+    new_bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=3)
     new_bandit.load(str(DB))
     loaded_conf = new_bandit.get_confidence("persist_arm")
-    assert abs(loaded_conf - saved_conf) < 0.001, f"Confidence mismatch: {saved_conf} vs {loaded_conf}"
+    assert abs(loaded_conf - saved_conf) < 0.001
 
 
 def test_persistence_multiple_arms():
-    from lib.bandit import LinUCBBandit, DB
+    from lib.bandit import RSCBMCBandit, DB
     _clean_bandit_db()
     
-    bandit = LinUCBBandit(alpha=0.2, n_features=2)
+    bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=2)
     f1 = np.array([0.8, 0.2])
     f2 = np.array([0.3, 0.7])
     bandit.update("arm1", f1, 1.0)
     bandit.update("arm2", f2, 0.5)
     bandit.save(str(DB))
     
-    loaded = LinUCBBandit(alpha=0.2, n_features=2)
+    loaded = RSCBMCBandit(alpha=0.2, risk_lambda=0.05, n_features=2)
     loaded.load(str(DB))
     assert loaded.get_confidence("arm1") > 0
     assert loaded.get_confidence("arm2") > 0
@@ -117,4 +116,43 @@ def test_reset():
     assert b1 is not None
     reset_bandit()
     b2 = get_bandit()
-    assert b2 is not b1  # Different instance after reset
+    assert b2 is not b1
+
+
+def test_risk_penalty_prefers_stable_arms():
+    """RSCB-MC should prefer arms with lower variance."""
+    from lib.bandit import RSCBMCBandit
+    bandit = RSCBMCBandit(alpha=0.1, risk_lambda=0.5, n_features=3)
+    features = np.array([0.5, 0.3, 0.2])
+    
+    # Stable arm: always 0.8
+    for _ in range(20):
+        bandit.update("stable", features, 0.8)
+    
+    # Unstable arm: alternates 1.0 and 0.0 (high variance)
+    for i in range(20):
+        bandit.update("unstable", features, 1.0 if i % 2 == 0 else 0.0)
+    
+    # With high risk_lambda, stable should be preferred despite lower mean
+    selected = bandit.select_arm(features, ["stable", "unstable"])
+    assert selected == "stable", f"Expected stable (low variance), got {selected}"
+
+
+def test_welford_variance():
+    """Verify Welford's online algorithm produces correct variance."""
+    from lib.bandit import RSCBMCBandit
+    import numpy as np
+    
+    bandit = RSCBMCBandit(n_features=2)
+    features = np.array([0.5, 0.5])
+    
+    values = [1.0, 0.0, 1.0, 0.0, 1.0]
+    for v in values:
+        bandit.update("test_welford", features, v)
+    
+    n = bandit.counts["test_welford"]
+    mean = bandit.means["test_welford"]
+    var = bandit.variances["test_welford"]
+    
+    expected_var = np.var(values, ddof=1)
+    assert abs(var - expected_var) < 0.01, f"Welford variance {var:.4f} != numpy ddof=1 {expected_var:.4f}"

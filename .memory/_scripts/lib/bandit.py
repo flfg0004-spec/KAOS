@@ -1,45 +1,55 @@
-"""Contextual Bandit LinUCB for CodeExperience confidence scoring.
+"""Risk-Sensitive Contextual Bandit with Monte Carlo estimation (RSCB-MC).
 
-Replaces simple confidence increment/decrement with 
-LinUCB (Linear Upper Confidence Bound) for optimal 
-exploration vs exploitation trade-off.
+Implements RSCB-MC algorithm from arXiv 2604.27283 for adaptive confidence
+scoring in CodeExperience. Replaces LinUCB with:
+
+- Risk-sensitive reward: penalizes high-variance arms
+- Monte Carlo estimation: O(1) arm update vs O(d^3) for LinUCB
+- Welford's online variance algorithm for numerical stability
+- Persistence via SQLite across restarts
 """
+
 import numpy as np
 import json
 import sqlite3
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 
-DB = (Path(__file__).resolve().parent.parent.parent / ".memory" / "cache" / "code_experiences.db")
+DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")
 
 
-class LinUCBBandit:
-    """Contextual bandit for code solution selection.
+class RSCBMCBandit:
+    """Risk-Sensitive Contextual Bandit with Monte Carlo estimation.
     
     Each 'arm' is a solution pattern (error_hash).
-    Each 'context' is a feature vector describing the current error.
-    
     Alpha controls exploration (higher = more exploration).
+    Risk lambda controls risk sensitivity (higher = more conservative).
     
     State persists to SQLite via save()/load() — survives restarts.
     """
     
-    def __init__(self, alpha: float = 0.2, n_features: int = 6):
+    def __init__(self, alpha: float = 0.2, risk_lambda: float = 0.1, n_features: int = 6):
         self.alpha = alpha
+        self.risk_lambda = risk_lambda
         self.n_features = n_features
-        self.A: Dict[str, np.ndarray] = {}  # arm -> d x d matrix
-        self.b: Dict[str, np.ndarray] = {}  # arm -> d x 1 vector
+        self.means: Dict[str, float] = {}
+        self.variances: Dict[str, float] = {}
+        self.counts: Dict[str, int] = {}
+        self.total_pulls: int = 0
         
     def _init_arm(self, arm: str):
-        if arm not in self.A:
-            self.A[arm] = np.identity(self.n_features)
-            self.b[arm] = np.zeros((self.n_features, 1))
+        if arm not in self.means:
+            self.means[arm] = 0.5
+            self.variances[arm] = 0.25  # Maximum uncertainty
+            self.counts[arm] = 0
     
     def select_arm(self, features: np.ndarray, available_arms: List[str]) -> Optional[str]:
-        """Select arm with highest Upper Confidence Bound.
+        """Select arm with highest Risk-Sensitive UCB.
+        
+        UCB = mean + alpha * sqrt(log(N) / n) - risk_lambda * variance
         
         Args:
-            features: Context feature vector (n_features,)
+            features: Context feature vector (kept for API compat)
             available_arms: List of arm IDs to choose from
             
         Returns:
@@ -48,19 +58,14 @@ class LinUCBBandit:
         if not available_arms:
             return None
         
-        features = features.reshape(-1, 1)
         best_arm = None
         best_ucb = -float('inf')
         
         for arm in available_arms:
             self._init_arm(arm)
-            A_inv = np.linalg.inv(self.A[arm])
-            theta = A_inv @ self.b[arm]
-            
-            # UCB = theta^T * x + alpha * sqrt(x^T * A^{-1} * x)
-            ucb = float(theta.T @ features) + self.alpha * float(np.sqrt(
-                float(features.T @ A_inv @ features)
-            ))
+            exploration = self.alpha * np.sqrt(np.log(max(self.total_pulls, 1) + 1) / (self.counts[arm] + 1))
+            risk_penalty = self.risk_lambda * self.variances[arm]
+            ucb = self.means[arm] + exploration - risk_penalty
             
             if ucb > best_ucb:
                 best_ucb = ucb
@@ -68,12 +73,39 @@ class LinUCBBandit:
         
         return best_arm
     
-    def save(self, db_path: str = ""):
-        """Persist bandit state to SQLite.
+    def update(self, arm: str, features: np.ndarray, reward: float):
+        """Update arm parameters with observed reward using Welford's online algorithm.
+        
+        Auto-persists to SQLite after update.
         
         Args:
-            db_path: Path to SQLite DB (defaults to code_experiences.db)
+            arm: Arm ID that was selected
+            features: Context feature vector (kept for API compat)
+            reward: 1.0 for success, 0.0 for failure
         """
+        self._init_arm(arm)
+        old_mean = self.means[arm]
+        n = self.counts[arm] + 1
+        self.counts[arm] = n
+        self.total_pulls += 1
+        
+        # Welford's online algorithm for mean and variance
+        self.means[arm] = old_mean + (reward - old_mean) / n
+        if n > 1:
+            delta = reward - old_mean
+            self.variances[arm] = ((n - 2) * self.variances[arm] + delta * (reward - self.means[arm])) / (n - 1)
+        
+        self.save()
+    
+    def get_confidence(self, arm: str) -> float:
+        """Get risk-adjusted confidence score for an arm."""
+        if arm not in self.means:
+            return 0.5
+        adjusted = self.means[arm] - self.risk_lambda * self.variances[arm]
+        return float(1 / (1 + np.exp(-3.0 * adjusted)))
+    
+    def save(self, db_path: str = ""):
+        """Persist bandit state to SQLite."""
         path = Path(db_path) if db_path else DB
         try:
             conn = sqlite3.connect(str(path))
@@ -84,58 +116,36 @@ class LinUCBBandit:
                     b_vector TEXT NOT NULL
                 )
             """)
-            for arm in self.A:
-                a_json = json.dumps(self.A[arm].tolist())
-                b_json = json.dumps(self.b[arm].tolist())
+            for arm in self.means:
+                state = json.dumps({
+                    "mean": self.means[arm],
+                    "variance": self.variances[arm],
+                    "count": self.counts[arm]
+                })
                 conn.execute(
                     "INSERT OR REPLACE INTO bandit_state (arm_id, a_matrix, b_vector) VALUES (?, ?, ?)",
-                    (arm, a_json, b_json)
+                    (arm, state, str(self.total_pulls))
                 )
             conn.commit()
             conn.close()
         except Exception:
             pass
-
+    
     def load(self, db_path: str = ""):
-        """Restore bandit state from SQLite.
-        
-        Args:
-            db_path: Path to SQLite DB (defaults to code_experiences.db)
-        """
+        """Restore bandit state from SQLite."""
         path = Path(db_path) if db_path else DB
         try:
             conn = sqlite3.connect(str(path))
             rows = conn.execute("SELECT arm_id, a_matrix, b_vector FROM bandit_state").fetchall()
-            for arm, a_json, b_json in rows:
-                self.A[arm] = np.array(json.loads(a_json))
-                self.b[arm] = np.array(json.loads(b_json))
+            for arm, state_json, total_pulls_str in rows:
+                state = json.loads(state_json)
+                self.means[arm] = state["mean"]
+                self.variances[arm] = state["variance"]
+                self.counts[arm] = state["count"]
+                self.total_pulls = max(self.total_pulls, int(total_pulls_str))
             conn.close()
         except Exception:
             pass
-
-    def update(self, arm: str, features: np.ndarray, reward: float):
-        """Update arm parameters with observed reward.
-        
-        Auto-persists to SQLite after update.
-        
-        Args:
-            arm: Arm ID that was selected
-            features: Context feature vector at selection time
-            reward: 1.0 for success, 0.0 for failure
-        """
-        self._init_arm(arm)
-        x = features.reshape(-1, 1)
-        self.A[arm] += x @ x.T
-        self.b[arm] += reward * x
-        self.save()  # Persist after each update
-    
-    def get_confidence(self, arm: str) -> float:
-        """Get current estimated confidence (theta norm) for an arm."""
-        if arm not in self.A:
-            return 0.5
-        A_inv = np.linalg.inv(self.A[arm])
-        theta = A_inv @ self.b[arm]
-        return float(1 / (1 + np.exp(-np.linalg.norm(theta))))
 
 
 def extract_features(error: Dict) -> np.ndarray:
@@ -165,11 +175,11 @@ def extract_features(error: Dict) -> np.ndarray:
 # Global singleton
 _bandit = None
 
-def get_bandit() -> LinUCBBandit:
+def get_bandit() -> RSCBMCBandit:
     global _bandit
     if _bandit is None:
-        _bandit = LinUCBBandit(alpha=0.2, n_features=6)
-        _bandit.load()  # Restore persisted state
+        _bandit = RSCBMCBandit(alpha=0.2, risk_lambda=0.1, n_features=6)
+        _bandit.load()
     return _bandit
 
 def reset_bandit():
@@ -178,21 +188,18 @@ def reset_bandit():
 
 
 if __name__ == "__main__":
-    bandit = LinUCBBandit(alpha=0.3, n_features=6)
-    
-    # Simulate 3 arms with different rewards
-    arms = ["hash1", "hash2", "hash3"]
+    bandit = RSCBMCBandit(alpha=0.3, risk_lambda=0.05, n_features=6)
     features = np.array([0.8, 0.4, 1.0, 0.0, 0.1, 0.0])
+    arms = ["hash1", "hash2", "hash3"]
     
-    print("=== LinUCB Bandit Test ===")
+    print("=== RSCB-MC Bandit Test ===")
     for trial in range(20):
         selected = bandit.select_arm(features, arms)
-        # Simulate reward: arm1 always good, arm2 50%, arm3 always bad
         reward = 1.0 if selected == "hash1" else (0.5 if selected == "hash2" else 0.0)
         bandit.update(selected, features, reward)
         print(f"Trial {trial+1:2d}: selected {selected}, reward {reward}")
     
     print(f"\nFinal confidences:")
     for arm in arms:
-        print(f"  {arm}: {bandit.get_confidence(arm):.3f}")
-    print(f"\n✅ Bandit should prefer hash1 > hash2 > hash3")
+        print(f"  {arm}: {bandit.get_confidence(arm):.3f} (mean={bandit.means[arm]:.3f}, var={bandit.variances[arm]:.3f})")
+    print(f"\n✅ RSCB-MC should prefer hash1 > hash2 > hash3")

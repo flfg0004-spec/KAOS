@@ -221,7 +221,23 @@ def test_kratos_node_retrieves_code_experience():
 
 def test_kratos_decision_complete():
     from lib.agent_executor import _is_complete_code
-    assert _is_complete_code("""```python\ndef hello():\n    print('hi')\n```\n\n## Usage\nCall it.""")
+    long_code = (
+        "```python\n"
+        "def hello(name: str) -> str:\n"
+        '    return f\"Hello, {name}!\"\n'
+        "\n"
+        "def main():\n"
+        '    print(hello("World"))\n'
+        "\n"
+        "if __name__ == \"__main__\":\n"
+        "    main()\n"
+        "```\n\n"
+        "## Usage\n"
+        "Call `main()` to run the example.\n"
+        "## Notes\n"
+        "This is a complete implementation.\n"
+    )
+    assert _is_complete_code(long_code), "Long code with blocks + sections should be complete"
 
 
 def test_kratos_decision_needs_curation():

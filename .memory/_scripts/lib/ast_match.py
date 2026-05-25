@@ -28,6 +28,42 @@ def _load_language(lang: str):
         elif lang == "go":
             import tree_sitter_go
             _GRAMMAR_CACHE[lang] = tree_sitter_go.language()
+        elif lang == "jsx":
+            try:
+                import tree_sitter_javascript
+                _GRAMMAR_CACHE[lang] = tree_sitter_javascript.language()
+            except Exception:
+                return None
+        elif lang == "tsx":
+            try:
+                import tree_sitter_typescript
+                _GRAMMAR_CACHE[lang] = tree_sitter_typescript.language_tsx()
+            except Exception:
+                return None
+        elif lang == "java":
+            try:
+                import tree_sitter_java
+                _GRAMMAR_CACHE[lang] = tree_sitter_java.language()
+            except Exception:
+                return None
+        elif lang == "c":
+            try:
+                import tree_sitter_c
+                _GRAMMAR_CACHE[lang] = tree_sitter_c.language()
+            except Exception:
+                return None
+        elif lang == "cpp":
+            try:
+                import tree_sitter_cpp
+                _GRAMMAR_CACHE[lang] = tree_sitter_cpp.language()
+            except Exception:
+                return None
+        elif lang == "ruby":
+            try:
+                import tree_sitter_ruby
+                _GRAMMAR_CACHE[lang] = tree_sitter_ruby.language()
+            except Exception:
+                return None
         else:
             return None
         return _GRAMMAR_CACHE[lang]
@@ -117,7 +153,7 @@ def _token_fallback(code: str) -> str:
 def supported_languages() -> list:
     """Return list of languages with available grammars."""
     langs = []
-    for l in ["python", "rust", "javascript", "typescript", "go"]:
+    for l in ["python", "rust", "javascript", "typescript", "jsx", "tsx", "go", "java", "c", "cpp", "ruby"]:
         if _load_language(l):
             langs.append(l)
     return langs

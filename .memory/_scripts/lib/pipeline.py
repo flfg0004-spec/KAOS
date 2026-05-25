@@ -218,6 +218,11 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
         init_code_memory_hook()
     except Exception:
         pass
+    try:
+        from lib.sleep_cycle import prune_and_consolidate
+        prune_and_consolidate()
+    except Exception:
+        pass
 
     # Track flash→production link
     if flash_ctx:
