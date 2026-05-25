@@ -18,7 +18,21 @@ def git_status() -> tuple[bool, str]:
     )
     output = result.stdout.strip()
     if output:
-        return False, f"## WARNING: Uncommitted Changes\n\n```\n{output}\n```\n"
+        # Filter out runtime/cache files that should not trigger health failure
+        ignore_patterns = [
+            ".memory/cache/", "_pipeline/", ".vault/",
+            "dashboard/", ".locks/",
+        ]
+        lines = [l for l in output.split("\n") if l.strip()]
+        filtered = []
+        for line in lines:
+            path_part = line.strip().split()[-1] if len(line.strip().split()) > 1 else ""
+            if any(pat in path_part for pat in ignore_patterns):
+                continue
+            filtered.append(line)
+        if not filtered:
+            return True, "## OK: Git clean (only runtime/cache changes)\n\n"
+        return False, f"## WARNING: Uncommitted Changes\n\n```\n" + "\n".join(filtered) + "\n```\n"
     return True, "## OK: Git clean\n\n"
 
 

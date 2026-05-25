@@ -147,6 +147,130 @@ def _strategy_score() -> tuple[float, dict]:
     return min(score, 5.0), details
 
 
+def _calculate_agent_subdimensions() -> dict[str, float]:
+    """Sub-dimensiones especificas por agente para quality score expandido.
+    
+    Kratos: Tool Call Accuracy — % de tool calls exitosas
+    Aletheia: Citation Quality — % de afirmaciones con wikilink/URL
+    Kosmos: ADR Completeness — ADRs con secciones completas
+    Metis: OKR Alignment — existencia de OKRs recientes
+    Mnemosyne: Wikilink Coverage — cobertura de wikilinks en conceptos
+    """
+    scores = {}
+    verification_file = TIMESERIES_DIR / "verification-scores.json"
+    if verification_file.exists():
+        try:
+            data = json.loads(verification_file.read_text(encoding="utf-8"))
+            all_scores = data.get("scores", [])
+            from collections import defaultdict
+            by_agent = defaultdict(list)
+            for s in all_scores:
+                a = s.get("agent", "unknown")
+                by_agent[a].append(s.get("composite", 0))
+            for agent, vals in by_agent.items():
+                scores[agent] = sum(vals) / len(vals) if vals else 0
+        except Exception:
+            pass
+
+    # Si no hay datos de verification_hook, usar heuristicas
+    if "kratos" not in scores:
+        scores["kratos"] = _kratos_tool_accuracy()
+    if "aletheia" not in scores:
+        scores["aletheia"] = _aletheia_citation_quality()
+    if "kosmos" not in scores:
+        scores["kosmos"] = _kosmos_adr_completeness()
+    if "metis" not in scores:
+        scores["metis"] = _metis_okr_alignment()
+    if "mnemosyne" not in scores:
+        scores["mnemosyne"] = _mnemosyne_wikilink_coverage()
+
+    return scores
+
+
+def _kratos_tool_accuracy() -> float:
+    """Mide % de tool calls exitosas en CodeExperience DB."""
+    try:
+        db_path = KAOS_ROOT / ".memory" / "cache" / "code_experiences.db"
+        if db_path.exists():
+            import sqlite3
+            conn = sqlite3.connect(str(db_path))
+            total = conn.execute("SELECT COUNT(*) FROM code_experiences WHERE confidence >= 0").fetchone()[0]
+            resolved = conn.execute("SELECT COUNT(*) FROM code_experiences WHERE resolution_rate > 0.5").fetchone()[0]
+            conn.close()
+            if total > 0:
+                return round(resolved / total * 100, 1)
+    except Exception:
+        pass
+    return 70.0  # default heuristico
+
+
+def _aletheia_citation_quality() -> float:
+    """Mide % de archivos raw/ que contienen wikilinks o URLs."""
+    raw_dir = KAOS_ROOT / ".memory" / "raw"
+    if not raw_dir.exists():
+        return 70.0
+    files = list(raw_dir.glob("*.md"))
+    if not files:
+        return 70.0
+    with_citations = 0
+    for f in files:
+        content = f.read_text(encoding="utf-8", errors="replace")
+        if "[[" in content or "http" in content:
+            with_citations += 1
+    return round(with_citations / len(files) * 100, 1)
+
+
+def _kosmos_adr_completeness() -> float:
+    """Mide % de ADRs con secciones completas."""
+    schema_dir = KAOS_ROOT / ".memory" / "schema"
+    adrs = list(schema_dir.glob("adr-*.md"))
+    if not adrs:
+        return 70.0
+    complete = 0
+    for adr in adrs:
+        content = adr.read_text(encoding="utf-8", errors="replace")
+        has_context = "## Contexto" in content or "## Context" in content
+        has_decision = "## Decision" in content or "## Decisión" in content
+        has_consequences = "## Consecuencias" in content or "## Consequences" in content
+        if has_context and has_decision and has_consequences:
+            complete += 1
+    return round(complete / len(adrs) * 100, 1)
+
+
+def _metis_okr_alignment() -> float:
+    """Mide existencia de documentos estrategicos recientes."""
+    raw_dir = KAOS_ROOT / ".memory" / "raw"
+    score = 0
+    if raw_dir.exists():
+        strategy_files = list(raw_dir.glob("*estrateg*")) + list(raw_dir.glob("*okr*"))
+        if strategy_files:
+            score += 50
+            cutoff = datetime.now() - timedelta(days=30)
+            recent = any(
+                datetime.fromtimestamp(f.stat().st_mtime) >= cutoff
+                for f in strategy_files
+            )
+            if recent:
+                score += 50
+    return float(score)
+
+
+def _mnemosyne_wikilink_coverage() -> float:
+    """Mide cobertura de wikilinks en conceptos."""
+    concepts_dir = KAOS_ROOT / ".memory" / "wiki" / "concepts"
+    if not concepts_dir.exists():
+        return 70.0
+    files = list(concepts_dir.glob("*.md"))
+    if not files:
+        return 70.0
+    with_links = 0
+    for f in files:
+        content = f.read_text(encoding="utf-8", errors="replace")
+        if "[[" in content:
+            with_links += 1
+    return round(with_links / len(files) * 100, 1)
+
+
 def calculate() -> dict:
     with_m, total_inv = _investigations_with_matrix()
     embedded, total_md = _embedded_pages()
@@ -166,7 +290,11 @@ def calculate() -> dict:
     conn_score = connectivity * 10
     fresh_score = freshness * 10
 
-    total = round(conf_score + embed_score + test_score + lint_score + wiki_score + conn_score + fresh_score + strategy_score, 1)
+    # ── Agent Sub-dimensions (FASE 0: Agent Evaluation) ──────
+    agent_scores = _calculate_agent_subdimensions()
+    agent_score_total = sum(agent_scores.values()) / max(len(agent_scores), 1)
+
+    total = round(conf_score + embed_score + test_score + lint_score + wiki_score + conn_score + fresh_score + strategy_score + agent_score_total, 1)
 
     strategy_analytics = {}
     try:
@@ -186,6 +314,7 @@ def calculate() -> dict:
             "connectivity": {"score": round(conn_score, 1), "avg_pr": connectivity},
             "freshness": {"score": round(fresh_score, 1), "pct_fresh": round(freshness, 3)},
             "strategy": {"score": round(strategy_score, 1), "details": strategy_details, "analytics": strategy_analytics},
+            "agent_scores": {k: round(v, 1) for k, v in agent_scores.items()},
         },
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }

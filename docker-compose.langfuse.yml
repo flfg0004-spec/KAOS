@@ -13,7 +13,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
 
   db:
     image: postgres:16-alpine
@@ -28,7 +28,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -37,7 +37,7 @@ services:
     volumes:
       - ./owui/otel-config.yaml:/etc/otel/config.yaml
     command: ["--config", "/etc/otel/config.yaml"]
-    restart: unless-stopped
+    restart: always
 
 volumes:
   langfuse-pg-data:

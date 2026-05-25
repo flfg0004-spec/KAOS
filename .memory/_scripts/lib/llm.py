@@ -65,11 +65,11 @@ SYSTEM_PROMPTS = {
 }
 
 AGENT_MODELS = {
-    "aletheia": "go-qwen",
-    "kosmos": "go-pro",
-    "metis": "go-glm",
-    "kratos": "go-gemini-flash",
-    "mnemosyne": "go-gemini-flash",
+    "aletheia": "go-pro",
+    "kosmos": "go-flash",
+    "metis": "go-kimi-latest",
+    "kratos": "go-flash",
+    "mnemosyne": "go-flash",
     "critic": "go-flash",
     "planner": "go-flash",
 }
@@ -193,7 +193,7 @@ def llm_call(prompt: str, system: str = "", model: str = "go-flash",
     return content
 
 
-def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type: str = None, model_override: str = "") -> str:
+def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type: str = None, model_override: str = "", task_type: str = None) -> str:
     """Agent-aware LLM call with token tracking via TokenTracker.
     
     Args:
@@ -202,8 +202,14 @@ def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type
         temperature: Override temperature. If None, uses agent default or step_type.
         step_type: For metis: "analysis", "generation", "review", or "routing"
         model_override: If set, use this model instead of AGENT_MODELS[agent]
+        task_type: If set, router resolves model via DSOL (overrides AGENT_MODELS)
     """
-    model_key = model_override if model_override else AGENT_MODELS.get(agent, "go-flash")
+    if task_type:
+        from lib.dsol import resolve_model
+        resolved = resolve_model(task_type=task_type, agent=agent, model_override=model_override or None)
+        model_key = resolved["model"]
+    else:
+        model_key = model_override if model_override else AGENT_MODELS.get(agent, "go-flash")
     system = SYSTEM_PROMPTS.get(agent, "")
     if temperature is None and agent == "metis" and step_type:
         step_temps = METIS_TEMPERATURES
@@ -222,7 +228,7 @@ def agent_llm_call(agent: str, prompt: str, temperature: float = None, step_type
             cache_hit=usage.get("cached_tokens", 0),
             reasoning=usage.get("reasoning_tokens", 0),
             model=usage.get("model", model_key),
-            task=f"agent_{agent}",
+            task=task_type or f"agent_{agent}",
         )
     except Exception:
         pass

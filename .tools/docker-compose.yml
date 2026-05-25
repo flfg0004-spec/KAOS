@@ -13,7 +13,7 @@ services:
     environment:
       - SEARXNG_BASE_URL=http://127.0.0.1:8888
       - SEARXNG_SECRET_KEY=kaos-searxng-secret-2026
-    restart: unless-stopped
+    restart: always
 
   crawl4ai:
     image: unclecode/crawl4ai:latest
@@ -25,7 +25,7 @@ services:
     environment:
       - CRAWL4AI_API_TOKEN=kaos-crawl4ai-token
       - MAX_CONCURRENT_TASKS=10
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:11235/health"]
       interval: 30s
@@ -47,7 +47,7 @@ services:
       - NEXTAUTH_URL=http://127.0.0.1:3000
       - TELEMETRY_ENABLED=false
       - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=false
-    restart: unless-stopped
+    restart: always
 
   langfuse-db:
     image: postgres:16-alpine
@@ -58,7 +58,7 @@ services:
       - POSTGRES_DB=langfuse
     volumes:
       - langfuse-db-data:/var/lib/postgresql/data
-    restart: unless-stopped
+    restart: always
 
 volumes:
   searxng-data:

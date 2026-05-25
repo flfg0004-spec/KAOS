@@ -1,3 +1,20 @@
+---
+type: guide
+title: Sistema DUAL — Gemini Flash + DeepSeek
+aliases:
+- dual-system
+- dual
+tags:
+- guide
+- dual
+- gemini
+- deepseek
+created: '2026-05-19'
+modified: '2026-05-25'
+confidence: alta
+status: published
+---
+
 [[index]] [[checkpoint]] [[vault]] [[adr]] [[gestion-conocimiento]]
 
 # Sistema DUAL: Gemini Flash + DeepSeek

@@ -50,3 +50,18 @@ PRO_COMPLEXITY_THRESHOLD: Final[str] = os.environ.get("PRO_COMPLEXITY_THRESHOLD"
 
 CACHE_MAX_ENTRIES: Final[int] = 30
 CACHE_DEFAULT_TTL: Final[int] = 3600  # seconds
+
+# Multi-Model Router config
+ROUTER_DEFAULT_MODEL: Final[str] = os.environ.get("ROUTER_DEFAULT_MODEL", "go-flash")
+ROUTER_CIRCUIT_BREAKER_ENABLED: Final[bool] = os.environ.get(
+    "ROUTER_CIRCUIT_BREAKER_ENABLED", "true"
+).lower() == "true"
+ROUTER_CIRCUIT_RESET_TIMEOUT: Final[int] = int(
+    os.environ.get("ROUTER_CIRCUIT_RESET_TIMEOUT", "300")
+)
+ROUTER_FAILURE_THRESHOLD: Final[int] = int(
+    os.environ.get("ROUTER_FAILURE_THRESHOLD", "3")
+)
+ROUTER_HALF_OPEN_MAX: Final[int] = int(
+    os.environ.get("ROUTER_HALF_OPEN_MAX", "1")
+)

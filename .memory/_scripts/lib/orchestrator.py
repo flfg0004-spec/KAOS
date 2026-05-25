@@ -1,11 +1,12 @@
 """LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE + Langfuse."""
-import os, re, json, sqlite3, logging
+import os, re, json, sqlite3, logging, uuid
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Send
 from typing import TypedDict, Optional
 
 from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
+from lib.file_lock import acquire_lock
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
 from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node, bcg_evaluator_node
 from lib.hermes_bridge import pipeline_notify
@@ -133,6 +134,10 @@ class KAOSState(TypedDict):
 def interrupt_human(prompt: str, context: dict = None) -> bool:
     """Human-in-the-Loop: pause pipeline and wait for approval.
     
+    Uses FCoP 3.0 advisory file locking (acquire_lock) to prevent
+    race conditions on hitl.json. Uses UUID session_id to detect
+    stale reads across polling threads.
+    
     Writes a request to hitl.json. External process (Hermes/TUI) reads it
     and writes response. Pipeline polls until response or timeout.
     
@@ -145,15 +150,20 @@ def interrupt_human(prompt: str, context: dict = None) -> bool:
     """
     import time, datetime
     
-    request = {
-        "id": datetime.datetime.now().strftime("HITL-%Y%m%d-%H%M%S"),
-        "prompt": prompt,
-        "context": context or {},
-        "status": "pending",
-        "created_at": datetime.datetime.now().isoformat(),
-        "response": None
-    }
-    HITL_PATH.write_text(json.dumps(request, indent=2))
+    # Write request with UUID so readers can detect stale reads
+    session_id = str(uuid.uuid4())[:8]
+    with acquire_lock("hitl", "orchestrator"):
+        request = {
+            "id": datetime.datetime.now().strftime("HITL-%Y%m%d-%H%M%S"),
+            "session_id": session_id,
+            "prompt": prompt,
+            "context": context or {},
+            "status": "waiting",
+            "created_at": datetime.datetime.now().isoformat(),
+            "response": None,
+            "started_at": time.time(),
+        }
+        HITL_PATH.write_text(json.dumps(request, indent=2))
     
     # Poll for response (up to HITL_TIMEOUT_MINUTES)
     start = time.time()
@@ -161,17 +171,19 @@ def interrupt_human(prompt: str, context: dict = None) -> bool:
         time.sleep(5)
         if HITL_PATH.exists():
             try:
-                data = json.loads(HITL_PATH.read_text())
-                if data.get("status") == "responded":
+                with acquire_lock("hitl", "orchestrator"):
+                    data = json.loads(HITL_PATH.read_text())
+                # Verify session_id matches to confirm response is not stale
+                if data.get("session_id") == session_id and data.get("status") == "responded":
                     approved = data.get("response") == "approved"
-                    # Reset for next use
-                    HITL_PATH.write_text(json.dumps({"status": "idle"}))
+                    # DO NOT write "idle" — next poll sees matching session_id + responded status
                     return approved
             except Exception:
                 pass
     
     # Timeout: auto-reject for safety
-    HITL_PATH.write_text(json.dumps({"status": "timeout", "response": "denied"}))
+    with acquire_lock("hitl", "orchestrator"):
+        HITL_PATH.write_text(json.dumps({"status": "timeout", "response": "denied"}))
     return False
 
 def route_after_strategy(state: KAOSState) -> str:
@@ -185,24 +197,22 @@ def route_after_strategy(state: KAOSState) -> str:
     return "mnemosyne"
 
 def get_dsol_config(agent_name: str, topic: str) -> dict:
-    """Resuelve configuracion DSOL para un agente: model, budget, thinking.
-    
-    Contract ADR-010: LangGraph decide QUE agente, DSOL decide COMO.
-    Si topic tiene keywords de alta complejidad, usa Pro. Sino Flash.
-    """
-    complexity_keywords = {
-        "alta": ["distribuido", "escalable", "seguridad", "cripto", "machine learning",
-                 "deep learning", "arquitectura", "optimizacion", "concurrencia"],
-        "media": ["api", "rest", "base de datos", "autenticacion", "testing"],
-    }
-    tl = topic.lower()
-    for word in complexity_keywords["alta"]:
-        if word in tl:
-            return {"model": "pro", "thinking": "high", "budget": "pro"}
-    for word in complexity_keywords["media"]:
-        if word in tl:
-            return {"model": "flash", "thinking": None, "budget": "flash"}
-    return {"model": "flash", "thinking": None, "budget": "flash"}
+    """REAL DSOL integration per ADR-010: resolves model via dsol.resolve_model()."""
+    try:
+        from lib.dsol import resolve_model, AGENT_DEFAULT_TASK
+        task_type = AGENT_DEFAULT_TASK.get(agent_name, "general")
+        result = resolve_model(task_type=task_type, agent=agent_name)
+        return {
+            "model": result.get("model", "gemini-3.5-flash"),
+            "thinking": result.get("thinking", False),
+            "budget": result.get("tier", "flash"),
+        }
+    except Exception:
+        return {
+            "model": "gemini-3.5-flash",
+            "thinking": False,
+            "budget": "flash",
+        }
 
 def route_after_bcg(state: KAOSState) -> str:
     """Route after BCG evaluation: gaps → Aletheia (re-research) else normal routing.
@@ -629,8 +639,7 @@ def build_graph(with_parallel: bool = True):
         route_after_aletheia,
         {"mnemosyne_gap_check": "mnemosyne_gap_check", "kosmos": "kosmos"}
     )
-    # Gap re-research: Aletheia → Kosmos (re-architecture with new info)
-    builder.add_edge("aletheia", "kosmos")
+    # Mnemosyne gap check → Kosmos (re-architecture with new info)
     builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     

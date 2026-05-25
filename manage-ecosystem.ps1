@@ -4,6 +4,7 @@
 # ==============================================================================
 
 $SCRIPTPATH = Join-Path $PSScriptRoot "wsl-docker-manager.ps1"
+$KEEPALIVE_FILE = Join-Path $PSScriptRoot ".ecosystem-keepalive.pid"
 
 function Test-Endpoint {
     param (
@@ -79,10 +80,27 @@ function Start-Ecosystem {
         Write-Host "`n[ALERTA] Algunos servicios están tardando más en responder. Las imágenes pueden estarse descargando de los registros de Docker." -ForegroundColor Yellow
         Write-Host "Puedes verificar el progreso de las descargas y contenedores ejecutando: .\manage-ecosystem.ps1 status" -ForegroundColor Gray
     }
+
+    # Iniciar keepalive para mantener WSL2 activo en background
+    $keepAlive = Start-Process -NoNewWindow -PassThru -FilePath wsl.exe -ArgumentList "-d Ubuntu -u root sleep infinity"
+    $keepAlive.Id | Out-File -FilePath $KEEPALIVE_FILE -Encoding ascii -Force
+    Write-Host "[OK] Keepalive WSL2 activo (PID: $($keepAlive.Id)) - VM se mantendrá encendida" -ForegroundColor Green
 }
 
 function Stop-Ecosystem {
     Write-Host "`n=== Deteniendo todas las pilas de Docker Compose ===" -ForegroundColor Cyan
+    
+    # Matar keepalive primero
+    if (Test-Path -LiteralPath $KEEPALIVE_FILE) {
+        $pid = Get-Content -LiteralPath $KEEPALIVE_FILE -Raw
+        $pid = $pid.Trim()
+        if ($pid -match '^\d+$') {
+            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            Write-Host "[OK] Keepalive WSL2 detenido (PID: $pid)" -ForegroundColor Green
+        }
+        Remove-Item -LiteralPath $KEEPALIVE_FILE -Force -ErrorAction SilentlyContinue
+    }
+    
     Write-Host "Apagando Open WebUI & MCPO..." -ForegroundColor White
     wsl.exe -d Ubuntu docker compose -f docker-compose.owui.yml down
     

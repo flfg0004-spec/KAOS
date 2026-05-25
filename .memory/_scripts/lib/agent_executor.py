@@ -142,17 +142,28 @@ def _executor_call(prompt: str, agent_name: str, model_override: str = "") -> st
         pass
     return agent_llm_call(agent_name, prompt, model_override=model_override)
 
-def _llm_or_executor_call(agent_name: str, prompt: str, model_override: str = "") -> str:
-    """Route: executor → LLM, with optional model override."""
+def _llm_or_executor_call(agent_name: str, prompt: str, model_override: str = "", step_type: str = None) -> str:
+    """Route: executor → LLM, with optional model override and step type."""
     if EXECUTOR_ENABLED:
         return _executor_call(prompt, agent_name, model_override)
-    return agent_llm_call(agent_name, prompt, model_override=model_override)
+    kwargs = {}
+    if model_override:
+        kwargs["model_override"] = model_override
+    if step_type:
+        kwargs["step_type"] = step_type
+    return _call_with_langfuse(agent_name, prompt, **kwargs)
 
-def _llm_or_executor_call(agent_name: str, prompt: str, step_type: str = None) -> str:
-    """Route: executor → LLM, according to feature flags."""
-    if EXECUTOR_ENABLED:
-        return _executor_call(prompt, agent_name)
-    return agent_llm_call(agent_name, prompt, step_type=step_type)
+
+def _call_with_langfuse(agent_name: str, prompt: str, trace_id: str = "", **kwargs):
+    """Execute LLM call with Langfuse tracing."""
+    try:
+        handler = getattr(__import__('lib.orchestrator', fromlist=['_LANGFUSE_HANDLER']), '_LANGFUSE_HANDLER', None)
+        if handler:
+            return agent_llm_call(agent_name, prompt, langfuse_handler=handler, **kwargs)
+    except Exception:
+        pass
+    return agent_llm_call(agent_name, prompt, **kwargs)
+
 
 @lru_cache(maxsize=50)
 def _cached_rag(topic: str) -> str:

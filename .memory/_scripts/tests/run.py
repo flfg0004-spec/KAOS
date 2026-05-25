@@ -77,6 +77,7 @@ MODULES = [
     "test_telegram_real",
     "test_verification",
     "test_fase3",
+    "test_fase0",
 ]
 
 SLOW_MODULES = {

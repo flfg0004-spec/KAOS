@@ -57,3 +57,88 @@ def test_dsol_estimate_cache_ratio():
     result = estimate_cache_ratio(prompt)
     assert "cacheable_ratio" in result
     assert result["cacheable_ratio"] > 0
+
+
+# ── Multi-Model Router Tests ────────────────────────────────
+
+def test_router_constants():
+    from lib.dsol import TASK_MODEL_MAP, MODEL_TIERS, AGENT_DEFAULT_TASK, MODEL_FALLBACK_CHAIN
+    assert "research" in TASK_MODEL_MAP
+    assert "strategy" in TASK_MODEL_MAP
+    assert "lint" in TASK_MODEL_MAP
+    assert "verify" in TASK_MODEL_MAP
+    assert MODEL_TIERS["flash"]["target_pct"] == 85
+    assert MODEL_TIERS["pro"]["target_pct"] == 10
+    assert MODEL_TIERS["kimi"]["target_pct"] == 5
+    assert AGENT_DEFAULT_TASK["aletheia"] == "research"
+    assert AGENT_DEFAULT_TASK["metis"] == "strategy"
+    assert AGENT_DEFAULT_TASK["kratos"] == "code_gen"
+    assert "go-flash" in MODEL_FALLBACK_CHAIN
+    assert "go-pro" in MODEL_FALLBACK_CHAIN
+    assert "go-kimi-latest" in MODEL_FALLBACK_CHAIN
+
+
+def test_router_resolve_model_by_task_type():
+    from lib.dsol import resolve_model
+    result = resolve_model(task_type="research")
+    assert result["model"] == "go-pro"
+    assert result["thinking"] == "high"
+    assert result["tier"] == "pro"
+
+    result2 = resolve_model(task_type="lint")
+    assert result2["model"] == "go-flash"
+
+    result3 = resolve_model(task_type="strategy")
+    assert result3["model"] == "go-kimi-latest"
+
+
+def test_router_resolve_model_by_agent_fallback():
+    from lib.dsol import resolve_model
+    result = resolve_model(agent="aletheia")
+    assert result["model"] == "go-pro"
+
+    result2 = resolve_model(agent="metis")
+    assert result2["model"] == "go-kimi-latest"
+
+
+def test_router_resolve_model_explicit_override():
+    from lib.dsol import resolve_model
+    result = resolve_model(task_type="general", model_override="go-kimi-latest")
+    assert result["model"] == "go-kimi-latest"
+
+
+def test_router_circuit_breaker_states():
+    from lib.dsol import CircuitBreaker
+    cb = CircuitBreaker(failure_threshold=2, reset_timeout=600, half_open_max=1)
+    assert cb.is_available("test-model")
+
+    cb.record_success("test-model")
+    assert cb.is_available("test-model")
+
+    cb.record_failure("test-model")
+    assert cb.is_available("test-model")
+
+    cb.record_failure("test-model")
+    assert not cb.is_available("test-model")
+    assert cb.get_status()["test-model"]["state"] == "open"
+
+
+def test_router_budgets_includes_kimi():
+    from lib.dsol import BUDGETS
+    assert "kimi" in BUDGETS
+    assert BUDGETS["kimi"]["min"] <= BUDGETS["kimi"]["optimal"]
+
+
+def test_router_all_task_types_have_valid_model():
+    from lib.dsol import TASK_MODEL_MAP
+    valid_models = {"go-flash", "go-pro", "go-kimi-latest"}
+    for task, rule in TASK_MODEL_MAP.items():
+        assert rule["model"] in valid_models, f"{task}: invalid model {rule['model']}"
+        assert rule["tier"] in {"flash", "pro", "kimi"}, f"{task}: invalid tier"
+
+
+def test_router_token_tracker_model_breakdown():
+    from lib.dsol import TokenTracker
+    tracker = TokenTracker()
+    breakdown = tracker.get_model_breakdown()
+    assert isinstance(breakdown, dict)
