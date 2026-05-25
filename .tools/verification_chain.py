@@ -62,10 +62,31 @@ def run_verification_chain(outputs, profile="desarrollo"):
 
 if __name__ == "__main__":
     profile = sys.argv[1] if len(sys.argv) > 1 else "desarrollo"
-    dummy_outputs = {
-        "aletheia": {"veracidad": 82, "coherencia": 76},
-        "kosmos": {"completitud": 80, "utilidad": 78},
-        "metis": {"veracidad": 85, "reproducibilidad": 72},
-    }
-    results = run_verification_chain(dummy_outputs, profile)
+    
+    # Try to read real pipeline context
+    context_path = BASE / ".memory" / "_pipeline" / "context.json"
+    outputs = {}
+    if context_path.exists():
+        try:
+            ctx = json.loads(context_path.read_text(encoding="utf-8"))
+            ctx_summary = ctx.get("context_summary", {})
+            for agent_key, agent_data in ctx_summary.items():
+                if isinstance(agent_data, dict):
+                    key_findings = agent_data.get("key_findings", {})
+                    if isinstance(key_findings, dict):
+                        outputs[agent_key] = key_findings
+                    else:
+                        outputs[agent_key] = {"veracidad": 75, "coherencia": 70}
+        except Exception:
+            pass
+    
+    # Fallback to dummy data if context is empty
+    if not outputs:
+        outputs = {
+            "aletheia": {"veracidad": 82, "coherencia": 76},
+            "kosmos": {"completitud": 80, "utilidad": 78},
+            "metis": {"veracidad": 85, "reproducibilidad": 72},
+        }
+    
+    results = run_verification_chain(outputs, profile)
     print(json.dumps(results, indent=2, ensure_ascii=False))

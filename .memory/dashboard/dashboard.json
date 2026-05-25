@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 00:18:44",
+  "timestamp": "2026-05-25 00:46:07",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 1259,
-    "avg_duration_min": 131.8,
+    "total_messages": 1409,
+    "avg_duration_min": 128.2,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 252,
+    "total_md": 253,
     "by_directory": {
       "wiki": 132,
       "schema": 22,
       "raw": 25,
-      "_scripts": 111,
+      "_scripts": 123,
       "_pipeline": 3
     },
-    "total_scripts": 111
+    "total_scripts": 123
   },
   "health": {
     "git_clean": false,
@@ -30,11 +30,11 @@
   },
   "pipeline": {
     "status": "aletheia-ready",
-    "profile": "standard"
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 425
+    "total_deduped": 431
   },
   "synapse": {
     "concepts": 91,
@@ -42,18 +42,13 @@
   },
   "activity": {
     "recent_commits": [
+      "177f910 session: mnemosyne - curation-cycle",
+      "841d688 session: mnemosyne - curation-cycle",
+      "daefce1 feat: cross-validation como nodo DAG, dashboard tracking, 12 nodos, profile-aware routing",
       "92b1468 session: mnemosyne - curation-cycle",
-      "f4be2de session: test_agent - Integration test cycle",
-      "243be8d session: mnemosyne - curation-cycle",
-      "fe7bdcb session: mnemosyne - curation-cycle",
-      "fa2625e fix: LangGraph DAG - HITL opcional, checkpointer fix, LangSmith disabled, DAG verification OK"
+      "f4be2de session: test_agent - Integration test cycle"
     ],
     "recent_logs": [
-      [
-        "2026-05-25",
-        "session",
-        "mnemosyne session completed"
-      ],
       [
         "2026-05-25",
         "session",
@@ -73,6 +68,11 @@
         "2026-05-25",
         "session",
         "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
       ]
     ]
   },
@@ -81,14 +81,19 @@
     "broken": 0
   },
   "deepseek": {
-    "total_calls": 120,
-    "total_prompt_tokens": 12000,
-    "total_completion_tokens": 6000,
+    "total_calls": 122,
+    "total_prompt_tokens": 15500,
+    "total_completion_tokens": 8000,
     "total_cache_hit_tokens": 0,
     "total_cache_miss_tokens": 12000,
     "total_reasoning_tokens": 0,
-    "total_cost_usd": 3.36,
+    "total_cost_usd": 4.628,
     "daily_breakdown": {
+      "2026-05-25": {
+        "calls": 2,
+        "prompt_tokens": 3500,
+        "cost_usd": 1.268
+      },
       "2026-05-24": {
         "calls": 35,
         "prompt_tokens": 3500,
@@ -106,6 +111,18 @@
         "cost_usd": 3.3600000000000025,
         "prompt_tokens": 12000,
         "completion_tokens": 6000
+      },
+      "aletheia": {
+        "calls": 1,
+        "cost_usd": 0.224,
+        "prompt_tokens": 1500,
+        "completion_tokens": 800
+      },
+      "kosmos": {
+        "calls": 1,
+        "cost_usd": 1.044,
+        "prompt_tokens": 2000,
+        "completion_tokens": 1200
       }
     },
     "cache_hit_rate": 0.0,
@@ -114,17 +131,34 @@
       "cost_usd": 3.3600000000000025,
       "prompt_tokens": 12000,
       "completion_tokens": 6000
+    },
+    "aletheia": {
+      "calls": 1,
+      "cost_usd": 0.224,
+      "prompt_tokens": 1500,
+      "completion_tokens": 800
+    },
+    "kosmos": {
+      "calls": 1,
+      "cost_usd": 1.044,
+      "prompt_tokens": 2000,
+      "completion_tokens": 1200
     }
   },
   "token_usage": {
-    "total_calls": 120,
-    "total_prompt_tokens": 12000,
-    "total_completion_tokens": 6000,
+    "total_calls": 122,
+    "total_prompt_tokens": 15500,
+    "total_completion_tokens": 8000,
     "total_cache_hit_tokens": 0,
     "total_cache_miss_tokens": 12000,
     "total_reasoning_tokens": 0,
-    "total_cost_usd": 3.36,
+    "total_cost_usd": 4.628,
     "daily_breakdown": {
+      "2026-05-25": {
+        "calls": 2,
+        "prompt_tokens": 3500,
+        "cost_usd": 1.268
+      },
       "2026-05-24": {
         "calls": 35,
         "prompt_tokens": 3500,
@@ -142,17 +176,29 @@
         "cost_usd": 3.3600000000000025,
         "prompt_tokens": 12000,
         "completion_tokens": 6000
+      },
+      "aletheia": {
+        "calls": 1,
+        "cost_usd": 0.224,
+        "prompt_tokens": 1500,
+        "completion_tokens": 800
+      },
+      "kosmos": {
+        "calls": 1,
+        "cost_usd": 1.044,
+        "prompt_tokens": 2000,
+        "completion_tokens": 1200
       }
     },
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 74.8,
+    "score": 89.7,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 14.0,
+    "embeddings": 13.9,
     "confidence_matrix": 23.0,
-    "completeness": 74.8
+    "completeness": 89.7
   },
   "lifecycle": {
     "tiers": {
@@ -176,5 +222,6 @@
       "mnemosyne"
     ],
     "mcp_issues": 0
-  }
+  },
+  "pipeline_executions": []
 }

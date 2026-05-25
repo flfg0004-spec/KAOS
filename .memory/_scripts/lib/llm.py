@@ -32,7 +32,7 @@ SYSTEM_PROMPTS = {
 AGENT_MODELS = {
     "aletheia": "go-qwen",
     "kosmos": "go-pro",
-    "metis": "go-flash",
+    "metis": "go-glm",
     "kratos": "deepseek-flash",
     "mnemosyne": "go-gemini-flash",
     "critic": "go-flash",

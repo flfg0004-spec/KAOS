@@ -152,12 +152,16 @@
         "excalidraw_*": true,
         "paperjsx_*": true,
         "exa-search_*": true,
+        "sequential-thinking_*": true,
+        "dsol_*": true,
+        "speed_*": true,
         "mcp-obsidian-cli_*": true,
         "obsidian_*": true,
         "vault_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true,
-        "agy-bridge_agy_ask_opus": true
+        "agy-bridge_agy_ask_opus": true,
+        "agy-bridge_agy_ask_gpt55": true
       }
     },
     "kratos": {
@@ -362,8 +366,8 @@
       "subtask": true
     },
     "strategy": {
-      "description": "Invoca a Metis para análisis estratégico",
-      "template": "@metis crea una estrategia para: {{input}}",
+      "description": "Invoca a Metis para análisis estratégico con perfil",
+      "template": "@metis desarrolla una estrategia para: {{input}} usando perfil {{profile}}",
       "agent": "metis",
       "subtask": true
     },

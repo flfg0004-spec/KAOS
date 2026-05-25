@@ -334,20 +334,61 @@ def kosmos_node(state: dict) -> dict:
         "kosmos_prompt": prompt,
     }
 
+def _extract_json_from_output(text: str) -> dict:
+    """Try to extract JSON object from agent output."""
+    import json as _json
+    # Try direct parse first
+    try:
+        return _json.loads(text)
+    except Exception:
+        pass
+    # Try between ```json markers
+    m = __import__("re").search(r'```(?:json)?\s*\n?(.*?)```', text, __import__("re").DOTALL)
+    if m:
+        try:
+            return _json.loads(m.group(1).strip())
+        except Exception:
+            pass
+    return {}
+
+
 def metis_node(state: dict) -> dict:
     topic = state.get("topic", "")
     slug = _slugify(topic)
+    aletheia_out = state.get("aletheia_output", "") or ""
+    kosmos_out = state.get("kosmos_output", "") or ""
     
     prompt = (
         f"# Pipeline: Estrategia\n\n"
         f"## Tema\n{topic}\n\n"
-        f"Sintetiza la investigación y el análisis arquitectónico "
-        f"en un plan estratégico accionable.\n\n"
-        f"Produce:\n"
-        f"1. Resumen estratégico\n"
-        f"2. OKRs y roadmap\n"
-        f"3. Recomendaciones priorizadas\n"
-        f"4. Riesgos y mitigaciones\n"
+        f"## Contexto de Investigación\n"
+        f"{aletheia_out[:2000]}\n\n"
+        f"## Contexto Arquitectónico\n"
+        f"{kosmos_out[:2000]}\n\n"
+        f"## Metodología\n\n"
+        f"### 1. Diagnóstico Estratégico (FODA)\n"
+        f"- Fortalezas, Oportunidades, Debilidades, Amenazas\n"
+        f"- Basado en la investigación y el análisis arquitectónico\n\n"
+        f"### 2. Formulación de Objetivos y OKRs\n"
+        f"- 2-3 objetivos estratégicos con baseline y target numérico\n"
+        f"- Key Results medibles por objetivo\n\n"
+        f"### 3. Roadmap 3 Horizontes\n"
+        f"- H1 (táctico, 0-3 meses): acciones inmediatas\n"
+        f"- H2 (estratégico, 3-6 meses): capacidades a desarrollar\n"
+        f"- H3 (visión, 6-12 meses): transformación\n\n"
+        f"### 4. Evaluación de Riesgos\n"
+        f"- Matriz: probabilidad x impacto\n"
+        f"- Mitigaciones explícitas por cada riesgo\n\n"
+        f"### 5. Recomendaciones Priorizadas\n"
+        f"- Impacto vs esfuerzo\n"
+        f"- Quick wins identificados\n\n"
+        f"## Formato de Salida\n"
+        f"Responde SOLO con JSON:\n"
+        f'{{"strategy": "...", '
+        f'"okrs": [{{"objective": "...", "key_results": ["..."]}}], '
+        f'"risks": [{{"risk": "...", "probability": "alta|media|baja", '
+        f'"impact": "alto|medio|bajo", "mitigation": "..."}}], '
+        f'"confidence": "alta|media|baja"}}\n'
     )
     
     output_path = RAW_DIR / f"{slug}-strategy.md"
@@ -357,10 +398,28 @@ def metis_node(state: dict) -> dict:
         _notify_step(state, "Metis Strategy", "in_progress")
         raw = _llm_or_executor_call("metis", prompt)
         output_path.write_text(raw, encoding="utf-8")
+
+        parsed = _extract_json_from_output(raw)
+        okrs = parsed.get("okrs", []) if isinstance(parsed, dict) else []
+        risks = parsed.get("risks", []) if isinstance(parsed, dict) else []
+        confidence = parsed.get("confidence", "media") if isinstance(parsed, dict) else "media"
+
         ctx = _load_context()
         ctx["agents"].append("metis")
         ctx["context_summary"]["metis"] = {"started_at": datetime.now().isoformat()}
-        ctx["cross_agent"]["metis_to_kratos"] = {"strategy_summary": raw[:500], "priority": "high"}
+        ctx["cross_agent"]["metis_to_kratos"] = {
+            "strategy_summary": raw[:500],
+            "okrs": okrs,
+            "risks": risks,
+            "confidence": confidence,
+            "priority": "high",
+        }
+        ctx["cross_agent"]["metis_to_aletheia"] = {
+            "strategy_summary": raw[:500],
+            "confidence": confidence,
+            "gaps_identified": [],
+            "generated_at": datetime.now().isoformat(),
+        }
         _save_context(ctx)
         _notify_step(state, "Metis Strategy", "completed")
         return {**state, "metis_output": raw, "metis_prompt": prompt}
@@ -372,7 +431,16 @@ def metis_node(state: dict) -> dict:
     }
     ctx["cross_agent"]["metis_to_kratos"] = {
         "strategy_summary": topic,
+        "okrs": [],
+        "risks": [],
+        "confidence": "media",
         "priority": "high",
+    }
+    ctx["cross_agent"]["metis_to_aletheia"] = {
+        "strategy_summary": topic,
+        "confidence": "media",
+        "gaps_identified": [],
+        "generated_at": datetime.now().isoformat(),
     }
     _save_context(ctx)
     

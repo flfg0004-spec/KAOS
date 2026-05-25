@@ -104,7 +104,10 @@ def interrupt_human(prompt: str, context: dict = None) -> bool:
     return False
 
 def route_after_strategy(state: KAOSState) -> str:
-    """Route to Kratos if plan includes code subtasks."""
+    """Route: cross_validator for production, kratos for code, mnemosyne otherwise."""
+    profile = state.get("profile", "desarrollo")
+    if profile == "produccion":
+        return "cross_validator"
     has_code = state.get("has_code_subtasks", False) or _has_code_keywords(state.get("topic", ""))
     if has_code:
         return "kratos"
@@ -386,8 +389,13 @@ def build_graph(with_parallel: bool = False):
     builder.add_edge("mnemosyne_gap_check", "kosmos")
     builder.add_edge("kosmos", "metis")
     
-    # After metis: cross-validation for production, then route to kratos/mnemosyne
-    builder.add_edge("metis", "cross_validator")
+    # After metis: route based on code keywords and profile
+    builder.add_conditional_edges(
+        "metis",
+        route_after_strategy,
+        {"kratos": "kratos", "mnemosyne": "mnemosyne", "cross_validator": "cross_validator"}
+    )
+    # Cross-validation for production profile only
     builder.add_conditional_edges(
         "cross_validator",
         route_after_cross_val,

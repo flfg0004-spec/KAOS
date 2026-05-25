@@ -90,12 +90,6 @@ def save_context(agent: str, data: dict) -> None:
             ctx["cross_agent"]["aletheia_to_mnemosyne"] = data["research_context"]
     if agent == "metis" and "strategy_summary" in data:
         ctx["cross_agent"]["metis_to_kratos"] = data["strategy_summary"]
-    if agent == "kratos":
-        if "curation_context" in data:
-            ctx["cross_agent"]["kratos_to_mnemosyne"] = data["curation_context"]
-        # Kratos decision for deep routing
-        kratos_decision = data.get("kratos_decision", "needs_curation")
-        ctx["cross_agent"]["kratos_decision"] = kratos_decision
     
     # Mnemosyne → Aletheia feedback loop (post-curation)
     if agent == "mnemosyne":
@@ -163,6 +157,7 @@ def get_cross_context(target_agent: str) -> dict:
         return {
             "mnemosyne_curation": ca.get("mnemosyne_to_aletheia", {}),
             "mnemosyne_gaps": ca.get("query_gaps", {}),
+            "metis_strategy": ca.get("metis_to_aletheia", {}),
         }
     return {}
 

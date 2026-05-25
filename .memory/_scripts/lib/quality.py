@@ -113,6 +113,39 @@ def _freshness_score() -> float:
     return fresh / max(total, 1)
 
 
+def _strategy_score() -> tuple[float, dict]:
+    """Score for Metis strategy coverage (0-5pts).
+    
+    Based on: module availability, strategy documents in raw/, recent output.
+    """
+    score = 0.0
+    details = {"module_ok": False, "strategy_docs": 0, "has_recent": False}
+
+    try:
+        import importlib
+        importlib.import_module("lib.strategy")
+        details["module_ok"] = True
+        score += 1.0
+    except Exception:
+        pass
+
+    raw_dir = KAOS_ROOT / ".memory" / "raw"
+    if raw_dir.exists():
+        strategy_files = list(raw_dir.glob("*-strategy.md")) + list(raw_dir.glob("*estrateg*"))
+        details["strategy_docs"] = len(strategy_files)
+        score += min(2.0, len(strategy_files) * 0.5)
+        if strategy_files:
+            recent = any(
+                (datetime.now() - datetime.fromtimestamp(f.stat().st_mtime)).days < 30
+                for f in strategy_files
+            )
+            details["has_recent"] = recent
+            if recent:
+                score += 2.0
+
+    return min(score, 5.0), details
+
+
 def calculate() -> dict:
     with_m, total_inv = _investigations_with_matrix()
     embedded, total_md = _embedded_pages()
@@ -121,17 +154,18 @@ def calculate() -> dict:
     valid_links, broken_links = _wikilinks()
     connectivity = _connectivity_score()
     freshness = _freshness_score()
+    strategy_score, strategy_details = _strategy_score()
 
     conf_score = (with_m / max(total_inv, 1)) * 25
     embed_score = (embedded / max(total_md, 1)) * 15
-    test_score = (tests_pass / max(tests_total, 1)) * 15 if tests_total > 0 else 0
+    test_score = (tests_pass / max(tests_total, 1)) * 10 if tests_total > 0 else 0
     lint_score = max(0, 15 - lint_issues * 1.5)
     total_links = valid_links + broken_links
     wiki_score = (valid_links / max(total_links, 1)) * 10 if total_links > 0 else 10
     conn_score = connectivity * 10
     fresh_score = freshness * 10
 
-    total = round(conf_score + embed_score + test_score + lint_score + wiki_score + conn_score + fresh_score, 1)
+    total = round(conf_score + embed_score + test_score + lint_score + wiki_score + conn_score + fresh_score + strategy_score, 1)
 
     return {
         "score": total,
@@ -143,6 +177,7 @@ def calculate() -> dict:
             "wikilinks": {"valid": valid_links, "broken": broken_links, "score": round(wiki_score, 1)},
             "connectivity": {"score": round(conn_score, 1), "avg_pr": connectivity},
             "freshness": {"score": round(fresh_score, 1), "pct_fresh": round(freshness, 3)},
+            "strategy": {"score": round(strategy_score, 1), "details": strategy_details},
         },
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }

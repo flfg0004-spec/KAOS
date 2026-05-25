@@ -51,6 +51,8 @@ MODULES = [
     "test_crossref",
     "test_gap_query",
     "test_report_engine",
+    "test_strategy",
+    "test_metis",
 ]
 
 SLOW_MODULES = {
