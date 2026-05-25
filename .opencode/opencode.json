@@ -48,7 +48,7 @@
       "description": "Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault",
       "mode": "subagent",
       "color": "#C0C0C0",
-      "steps": 8,
+      "steps": 14,
       "temperature": 0.1,
       "permission": {
         "read": "allow",

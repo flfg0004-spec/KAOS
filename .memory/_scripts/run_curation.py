@@ -111,7 +111,7 @@ print(f"  Graph:\n{r.stdout[:500] if r.stdout else 'ok'}")
 
 # ── Fase 10: Gaps (F5) ──
 phase("F10: Gaps — knowledge gap detection")
-r = run(VAULT_PY, "gaps", "--report")
+r = run(VAULT_PY, "gaps", "report")
 print(f"  Gaps: {r.stdout[:300] if r.stdout else 'ok'}")
 
 # ── Fase 11: Cross-Ref ──
@@ -119,10 +119,15 @@ phase("F11: Cross-Ref — búsqueda semántica con embeddings")
 r = run(PY, str(TXTAI_PY), "semantic_search", "", str(BASE / "wiki/concepts"), "5")
 print(f"  Cross-Ref: {r.stdout[:200] if r.stdout else 'ok'}")
 
-# ── Fase 12: Lifecycle (F6) ──
-phase("F12: Lifecycle — memory lifecycle eval")
-r = run(VAULT_PY, "lifecycle", "--status")
+# ── Fase 12a: Lifecycle (F6) ──
+phase("F12a: Lifecycle — memory lifecycle eval")
+r = run(VAULT_PY, "lifecycle", "status")
 print(f"  Lifecycle: {r.stdout[:300] if r.stdout else 'ok'}")
+
+# ── Fase 12b: Contradictions (F6) ──
+phase("F12b: Contradictions — detección semántica")
+r = run(VAULT_PY, "contradictions", "detect")
+print(f"  Contradictions: {r.stdout[:300] if r.stdout else 'ok'}")
 
 # ── Fase 13: Dashboard (F7) ──
 phase("F13: Dashboard — health dashboard")
@@ -133,7 +138,7 @@ print(f"  Dashboard: {r.stdout[:300] if r.stdout else 'ok'}")
 phase("F14: Report — resumen final")
 summary = (
     f"Curación completa. Issues restantes: {issues}. "
-    f"Fases: Ingest→Tag→Link→Dedup→Quality→Compress→Index→Lint→Graph→Gaps→CrossRef→Lifecycle→Dashboard"
+    f"Fases: Ingest→Tag→Link→Dedup→Quality→Compress→Index→Lint→Graph→Gaps→CrossRef→Lifecycle→Contradictions→Dashboard→Report"
 )
 log(summary)
 print(f"\n✅ {summary}")

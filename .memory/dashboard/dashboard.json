@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-24 22:49:28",
+  "timestamp": "2026-05-24 23:03:44",
   "vault": {
     "total_md": 239,
     "by_directory": {
       "wiki": 132,
       "schema": 21,
       "raw": 23,
-      "_scripts": 90,
+      "_scripts": 94,
       "_pipeline": 3
     },
-    "total_scripts": 90
+    "total_scripts": 94
   },
   "health": {
     "git_clean": true,
@@ -22,12 +22,12 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "complete",
-    "profile": "standard"
+    "status": "aletheia-ready",
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 389
+    "total_deduped": 395
   },
   "synapse": {
     "concepts": 91,
@@ -35,17 +35,17 @@
   },
   "activity": {
     "recent_commits": [
+      "2d05fc3 session: mnemosyne - curation-cycle",
+      "acb1ed7 session: mnemosyne - curation-cycle",
+      "e356f04 feat: Telegram notifications via Bot API - lib/telegram.py, vault.py notify, pipeline alerts, .env config",
       "cbd7144 session: mnemosyne - curation-cycle",
-      "348308d session: mnemosyne - curation-cycle",
-      "40d1019 session: mnemosyne - curation-cycle",
-      "2fd3bb5 feat: GPT-5.5 bridge via ChatGPT Plus - call_gpt55, MCP tools, models command, rate limiting, service script",
-      "b2b72b0 session: mnemosyne - curation-cycle"
+      "348308d session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
-        "2026-05-23",
+        "2026-05-24",
         "session",
-        "test_agent session completed"
+        "mnemosyne session completed"
       ],
       [
         "2026-05-24",
@@ -74,15 +74,30 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 111,
-    "total_cost_usd": 3.108,
+    "total_calls": 112,
+    "total_cost_usd": 3.136,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 99.7,
-    "has_confidence_matrix": 23,
-    "total_investigations": 23,
-    "completeness": 99.7
+    "score": 93.3,
+    "connectivity": 4.2,
+    "freshness": 10.0,
+    "embeddings": 14.7,
+    "confidence_matrix": 25.0,
+    "completeness": 93.3
+  },
+  "lifecycle": {
+    "tiers": {
+      "new": 132
+    },
+    "total": 132,
+    "avg_confidence": 0.993,
+    "flagged": 132
+  },
+  "contradictions": {
+    "total": 0,
+    "contradictions": 0,
+    "complements": 0
   },
   "agents": {
     "total": 4,
