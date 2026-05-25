@@ -17,7 +17,8 @@ def run_pipeline(topic: str, profile: str = "desarrollo",
     graph = build_graph(with_parallel=parallel)
     state = KAOSState(topic=topic, profile=profile)
     start = time.time()
-    result = graph.invoke(state)
+    config = {"configurable": {"thread_id": f"pipeline-{datetime.now().strftime('%Y%m%d-%H%M%S')}"}}
+    result = graph.invoke(state, config=config)
     elapsed = round(time.time() - start, 1)
 
     ev = result.get("evaluation", {})

@@ -123,10 +123,6 @@ def _embedding_similarity(text: str, tag: str) -> float:
 
 def suggest_tags(content: str, title: str = "") -> list[str]:
     """Full 7-step tagging pipeline. Returns list of suggested tags."""
-    import os as _os
-    if _os.environ.get("KAOS_TESTING") == "1":
-        return []
-
     if not content or not content.strip():
         return []
 

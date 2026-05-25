@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-05-24 23:42:05",
+  "timestamp": "2026-05-24 23:48:54",
   "vault": {
-    "total_md": 240,
+    "total_md": 241,
     "by_directory": {
       "wiki": 132,
-      "schema": 21,
+      "schema": 22,
       "raw": 24,
-      "_scripts": 105,
+      "_scripts": 110,
       "_pipeline": 3
     },
-    "total_scripts": 105
+    "total_scripts": 110
   },
   "health": {
     "git_clean": false,
-    "lint_issues": 0,
+    "lint_issues": 1,
     "overall": "warning"
   },
   "cache": {
@@ -23,7 +23,7 @@
   },
   "pipeline": {
     "status": "aletheia-ready",
-    "profile": "deep"
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 3,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "b92d07b session: mnemosyne - curation-cycle",
+      "81f7df8 session: test_agent - Integration test cycle",
+      "4a0f94a feat: Telegram multi-modal ingestion - bot receptor, classifiers, processors (web, YT, image, document, audio), service script",
       "4a6cc19 session: mnemosyne - curation-cycle",
-      "a00807a session: mnemosyne - curation-cycle",
-      "9e3129f session: mnemosyne - curation-cycle",
-      "f1efe1f session: mnemosyne - curation-cycle",
-      "e935341 session: mnemosyne - curation-cycle"
+      "a00807a session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
@@ -65,13 +65,13 @@
       [
         "2026-05-24",
         "session",
-        "mnemosyne session completed"
+        "test_agent session completed"
       ]
     ]
   },
   "wikilinks": {
-    "valid": 470,
-    "broken": 34
+    "valid": 469,
+    "broken": 0
   },
   "deepseek": {
     "total_calls": 120,
@@ -79,12 +79,12 @@
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 92.2,
-    "connectivity": 4.2,
+    "score": 76.5,
+    "connectivity": 4.4,
     "freshness": 10.0,
-    "embeddings": 14.7,
+    "embeddings": 14.6,
     "confidence_matrix": 24.0,
-    "completeness": 92.2
+    "completeness": 76.5
   },
   "lifecycle": {
     "tiers": {

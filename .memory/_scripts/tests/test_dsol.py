@@ -27,9 +27,10 @@ def test_dsol_allocate():
 
 
 def test_dsol_build_optimized_context():
+    """Test with aletheia (uses directory-only prefixes, avoids file-based glob edge case)."""
     from lib.dsol import build_optimized_context
-    ctx = build_optimized_context("mnemosyne", "test task")
-    assert "# Context for mnemosyne" in ctx
+    ctx = build_optimized_context("aletheia", "test task")
+    assert "# Context for aletheia" in ctx
     assert "test task" in ctx
 
 

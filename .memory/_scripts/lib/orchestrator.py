@@ -1,5 +1,5 @@
 """LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out."""
-import os, re, json
+import os, re, json, sqlite3
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Send
@@ -14,14 +14,19 @@ DB_PATH = VAULT_ROOT / "cache" / "langgraph.db"
 HITL_PATH = VAULT_ROOT / "_pipeline" / "hitl.json"
 EVAL_PATH = VAULT_ROOT / "_pipeline" / "evaluation.json"
 
-os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
-os.environ.setdefault("LANGCHAIN_PROJECT", "KAOS")
+# Deshabilitar LangSmith si no hay API key
+if not os.environ.get("LANGCHAIN_API_KEY"):
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 CODE_KEYWORDS = ["code", "codigo", "implement", "program", "function", "class",
                  "bug", "error", "test", "refactor", "debug", "pull request", "pr",
                  "algorithm", "api", "script", "library", "package", "module"]
 
 HITL_TIMEOUT_MINUTES = 60
+
+def _hitl_enabled(profile: str = "desarrollo") -> bool:
+    """HITL solo para perfil produccion. Desarrollo/exploracion usan auto-aprobar."""
+    return profile == "produccion"
 
 def _has_code_keywords(topic: str) -> bool:
     tl = topic.lower()
@@ -115,8 +120,9 @@ def route_after_kratos(state: KAOSState) -> str:
     """Deep routing with HITL approval for code changes."""
     decision = state.get("kratos_decision", "needs_curation")
     
-    # HITL: ask human before applying Kratos changes
-    if decision == "needs_curation" or decision == "complete":
+    # HITL: ask human before applying Kratos changes (solo perfil produccion)
+    profile = state.get("profile", "desarrollo")
+    if _hitl_enabled(profile) and (decision == "needs_curation" or decision == "complete"):
         kratos_output = state.get("kratos_output", "")
         if kratos_output and len(kratos_output) > 50:
             approved = interrupt_human(
@@ -124,7 +130,7 @@ def route_after_kratos(state: KAOSState) -> str:
                 context={"diff_length": len(kratos_output), "topic": state.get("topic", "")}
             )
             if not approved:
-                return "mnemosyne"  # Still curate even if rejected
+                return "mnemosyne"
     
     if decision == "complete":
         return "mnemosyne"
@@ -345,8 +351,9 @@ def build_graph(with_parallel: bool = False):
     builder.add_edge("kosmos_evaluator", END)
     
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with SqliteSaver.from_conn_string(str(DB_PATH)) as checkpointer:
-        return builder.compile(checkpointer=checkpointer)
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    checkpointer = SqliteSaver(conn)
+    return builder.compile(checkpointer=checkpointer)
 
 if __name__ == "__main__":
     g = build_graph(with_parallel=False)

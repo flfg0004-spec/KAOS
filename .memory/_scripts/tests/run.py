@@ -17,8 +17,8 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 TEST_TIMEOUT = 90
-    SLOW_TIMEOUT = 180
-    FAST_ONLY = "--fast" in sys.argv
+SLOW_TIMEOUT = 180
+FAST_ONLY = "--fast" in sys.argv
 if FAST_ONLY:
     sys.argv.remove("--fast")
 

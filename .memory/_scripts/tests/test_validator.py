@@ -10,6 +10,6 @@ def test_validator_module_loads():
 
 def test_validator_basic():
     from lib.cross_validator import run
-    result = run(path="", profile="desarrollo")
+    result = run(output_path="", profile="desarrollo")
     assert result is not None
     assert isinstance(result, str)
