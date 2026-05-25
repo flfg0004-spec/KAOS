@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 22:19:08",
+  "timestamp": "2026-05-24 22:19:15",
   "vault": {
     "total_md": 239,
     "by_directory": {
@@ -22,12 +22,12 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "complete",
-    "profile": "standard"
+    "status": "aletheia-ready",
+    "profile": "deep"
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 383
+    "total_deduped": 386
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "b2b72b0 session: mnemosyne - curation-cycle",
       "8d0228a session: mnemosyne - curation-cycle",
       "77823cb feat: vault.py dual command, pipeline hint, benchmark data, transcript parsing fix",
       "9843725 score: 84/84 tests, BM25 unified, DeepEval real metric, parallel tests, duration tracking, lint 0",
-      "7bd6871 fix: 0 lint, embeddings 234/233, quality 99.1, Flash→Production tracking verified",
-      "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks"
+      "7bd6871 fix: 0 lint, embeddings 234/233, quality 99.1, Flash→Production tracking verified"
     ],
     "recent_logs": [
       [
@@ -63,9 +63,9 @@
         "test_agent session completed"
       ],
       [
-        "2026-05-23",
+        "2026-05-24",
         "session",
-        "test_agent session completed"
+        "mnemosyne session completed"
       ]
     ]
   },
