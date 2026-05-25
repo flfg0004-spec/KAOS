@@ -73,9 +73,11 @@ def _jaccard_similarity(a: str, b: str) -> float:
     return len(set_a & set_b) / len(set_a | set_b)
 
 
-def _embedding_similarity(texts: list[str]) -> list[float]:
+def _embedding_similarity(texts: list[str]) -> list[tuple[str, str, float]]:
     """Compute pairwise embedding similarities via txtai MCP."""
-    import subprocess, sys as _sys
+    import subprocess, sys as _sys, os as _os
+    if _os.environ.get("KAOS_TESTING") == "1":
+        return []
     mcp_txtai = BASE / "_scripts" / "mcp_txtai.py"
     req = json.dumps({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",

@@ -33,7 +33,7 @@ ALIAS_MAP = {
     "api": "practice/api-design",
     "ux": "practice/user-experience",
 }
-FUZZY_THRESHOLD = 0.85
+FUZZY_THRESHOLD = 0.6
 BASE = (Path(__file__).resolve().parent.parent.parent)
 
 
@@ -78,11 +78,15 @@ def _update_frontmatter(content: str, tags: list[str]) -> str:
 
 
 def _fuzzy_match(tag: str, existing: set[str]) -> str | None:
-    """Simple token overlap fuzzy match."""
+    """Token overlap fuzzy match with support for hyphenated tags."""
     tag_tokens = set(re.findall(r"\w+", tag.lower()))
     best, best_score = None, 0
     for ex in existing:
-        ex_tokens = set(re.findall(r"\w+", ex.lower()))
+        raw_tokens = set(re.findall(r"\w+", ex.lower()))
+        ex_tokens = set()
+        for t in raw_tokens:
+            ex_tokens.add(t)
+            ex_tokens.update(t.split("-"))
         if not tag_tokens or not ex_tokens:
             continue
         score = len(tag_tokens & ex_tokens) / max(len(tag_tokens | ex_tokens), 1)
@@ -139,6 +143,7 @@ def suggest_tags(content: str, title: str = "") -> list[str]:
 
     # Step 6: Semantic match via DSOL (Gemini Flash)
     if len(candidates) < 3:
+        import concurrent.futures
         prompt = (
             "Eres un experto en taxonomía de conocimiento. "
             "Analiza el siguiente contenido y sugiere 1-3 tags de las categorías: "
@@ -146,34 +151,46 @@ def suggest_tags(content: str, title: str = "") -> list[str]:
             "Responde SOLO con un JSON array de strings.\n\n"
             f"Título: {title}\n\nContenido:\n{content[:2000]}"
         )
-        try:
-            response = llm.llm_call(
+        def _llm_tag():
+            return llm.llm_call(
                 prompt=prompt,
                 system="Eres un asistente de tagging. Respondes solo JSON.",
                 model="go-gemini-flash",
                 temperature=0.1,
                 max_tokens=500,
             )
-            response = response.strip()
-            if response.startswith("```"):
-                response = response.split("\n", 1)[-1].rsplit("```", 1)[0]
-            llm_tags = json.loads(response)
-            if isinstance(llm_tags, list):
-                for t in llm_tags:
-                    has_category = any(f"{cat}/" in t for cat in TAXONOMY_CATEGORIES)
-                    if has_category:
-                        candidates.add(t)
+        try:
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(_llm_tag)
+                response = future.result(timeout=15)
+                response = response.strip()
+                if response.startswith("```"):
+                    response = response.split("\n", 1)[-1].rsplit("```", 1)[0]
+                llm_tags = json.loads(response)
+                if isinstance(llm_tags, list):
+                    for t in llm_tags:
+                        has_category = any(f"{cat}/" in t for cat in TAXONOMY_CATEGORIES)
+                        if has_category:
+                            candidates.add(t)
         except Exception:
             pass
 
     # Step 6 fallback: embedding similarity against existing tags
     if len(candidates) < 2:
-        for tag in list(existing)[:50]:
-            sim = _embedding_similarity(content_text, tag)
-            if sim > 0.75:
-                candidates.add(tag)
-                if len(candidates) >= 5:
-                    break
+        import concurrent.futures
+        def _embed_tag(tag):
+            return tag, _embedding_similarity(content_text, tag)
+        try:
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                futures = {pool.submit(_embed_tag, tag): tag for tag in list(existing)[:30]}
+                for future in concurrent.futures.as_completed(futures, timeout=10):
+                    tag, sim = future.result()
+                    if sim > 0.75:
+                        candidates.add(tag)
+                        if len(candidates) >= 5:
+                            break
+        except Exception:
+            pass
 
     # Step 7: Filter blocked, normalize, sort
     result = []

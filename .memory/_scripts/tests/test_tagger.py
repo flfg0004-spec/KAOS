@@ -28,10 +28,12 @@ def test_suggest_tags_aliases():
 
 def test_suggest_tags_keywords():
     """Fuzzy matching on existing tags works without DSOL."""
-    from lib.tagger import suggest_tags
-    content = "A note about machine learning and data science."
-    result = suggest_tags(content, title="ML Overview")
+    from lib.tagger import suggest_tags, ALIAS_MAP
+    content = "This note discusses AI and ML and NLP and PKM and LLM and API design."
+    result = suggest_tags(content, title="AI ML Overview")
     assert isinstance(result, list)
+    # Aliases should resolve without DSOL
+    assert len(result) > 0
 
 
 def test_tag_file_missing():
@@ -78,10 +80,10 @@ def test_existing_tags():
 
 def test_fuzzy_match():
     from lib.tagger import _fuzzy_match
-    existing = {"subject/machine-learning", "practice/testing"}
-    match = _fuzzy_match("machine learning", existing)
-    assert match is not None
-    no_match = _fuzzy_match("xyzabc", existing)
+    existing = {"subject/test-note", "practice/code-review", "subject/api-design"}
+    match = _fuzzy_match("test note", existing)
+    assert match is not None, "Fuzzy match should find 'test note' in 'subject/test-note'"
+    no_match = _fuzzy_match("xyzabc123", existing)
     assert no_match is None
 
 

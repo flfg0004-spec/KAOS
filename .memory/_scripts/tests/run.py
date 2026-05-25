@@ -38,6 +38,10 @@ MODULES = [
     "test_context_cycle",
     "test_orchestrator",
     "test_memory_persistence",
+    "test_embed",
+    "test_graph_analysis",
+    "test_crystallize",
+    "test_tagger",
 ]
 
 SLOW_MODULES = {
