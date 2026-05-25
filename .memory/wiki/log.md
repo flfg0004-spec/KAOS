@@ -2,12 +2,6 @@
 ## [2026-05-23] session | test_full_cycle session completed
 - Result: Persistence cycle test
 - Pages affected: _scripts/tests/test_memory_persistence.py
-- Timestamp: 2026-05-23 17:14:49
-
-
-## [2026-05-23] session | test_full_cycle session completed
-- Result: Persistence cycle test
-- Pages affected: _scripts/tests/test_memory_persistence.py
 - Timestamp: 2026-05-23 17:14:50
 
 
@@ -255,4 +249,10 @@
 - Result: curation-cycle
 - Pages affected: 
 - Timestamp: 2026-05-24 23:11:09
+
+
+## [2026-05-24] session | mnemosyne session completed
+- Result: curation-cycle
+- Pages affected: 
+- Timestamp: 2026-05-24 23:16:03
 
