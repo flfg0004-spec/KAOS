@@ -65,8 +65,7 @@ def register(sub, kaos_root):
                 kw = ", ".join(s["keywords"][:5])
                 print(f"  {s['from']} <-> {s['to']} (score: {s['score']}): [{kw}]")
             if args.apply:
-                count = sum(1 for s in suggs[:10] if "Injected" in wikilinks.inject(s["from"], s["to"]) or "already" in wikilinks.inject(s["from"], s["to"]))
-                print(f"Applied {count} wikilinks.")
+                print("Wikilink suggestions shown above. Apply manually by adding [[links]] to pages.")
         elif args.action == "index":
             print(index_mod.regenerate())
         elif args.action == "lint":

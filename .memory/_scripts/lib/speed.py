@@ -64,8 +64,9 @@ def _pipeline_benchmarks() -> dict:
             data = json.loads(durations_file.read_text(encoding="utf-8"))
             for entry in data.get("entries", []):
                 profile = entry.get("profile", "desarrollo")
-                if profile in bench:
-                    bench[profile].append(entry["duration_s"])
+                dur = entry.get("duration_s", 0)
+                if profile in bench and dur > 0:
+                    bench[profile].append(dur)
         except Exception:
             pass
     return bench

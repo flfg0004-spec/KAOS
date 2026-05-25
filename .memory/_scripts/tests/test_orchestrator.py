@@ -128,6 +128,17 @@ def test_mnemosyne_node_no_llm():
     assert "Curation prompt written" in result["mnemosyne_output"]
 
 
+def test_parallel_build_graph():
+    """Verifica que build_graph modo paralelo crea nodos específicos."""
+    from lib.orchestrator import build_graph
+    graph = build_graph(with_parallel=True)
+    assert graph is not None
+    nodes = list(graph.nodes.keys())
+    assert "planner" in nodes
+    assert "aletheia" in nodes
+    assert "parallel_validate" in nodes, "Modo paralelo debe crear nodo parallel_validate"
+
+
 def test_code_memory_hook_can_activate():
     """Verifica que el hook de CodeExperience se puede activar."""
     from lib.kratos_hook import init_code_memory_hook

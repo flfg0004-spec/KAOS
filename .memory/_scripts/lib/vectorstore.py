@@ -355,24 +355,9 @@ def query_vectors(target_path: str, top_k: int = 3) -> list[dict]:
 
 
 def _bm25_search(text: str, top_k: int = 5) -> list[dict]:
-    """Keyword overlap fallback when sentence-transformers is unavailable."""
-    query_tokens = set(text.lower().split())
-    if not query_tokens:
-        return []
-    md_files = _get_md_files()
-    scores = []
-    for f in md_files:
-        content = _read(f)
-        tokens = set(content.lower().split())
-        overlap = len(query_tokens & tokens)
-        if overlap > 0:
-            scores.append({
-                "path": f.relative_to(KAOS_ROOT / ".memory").as_posix(),
-                "snippet": content[:200],
-                "score": overlap / len(query_tokens),
-            })
-    scores.sort(key=lambda x: x["score"], reverse=True)
-    return scores[:top_k]
+    """Keyword overlap fallback — delegates to shared bm25 module."""
+    from lib.bm25 import search as bm25_search
+    return bm25_search(text, top_k=top_k, base_dir=KAOS_ROOT / ".memory")
 
 
 def migrate_from_json() -> str:

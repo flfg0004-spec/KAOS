@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-24 20:30:10",
+  "timestamp": "2026-05-24 21:12:24",
   "vault": {
     "total_md": 234,
     "by_directory": {
       "wiki": 132,
       "schema": 21,
       "raw": 23,
-      "_scripts": 77,
+      "_scripts": 78,
       "_pipeline": 3
     },
-    "total_scripts": 77
+    "total_scripts": 78
   },
   "health": {
     "git_clean": true,
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 356
+    "total_deduped": 380
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "7bd6871 fix: 0 lint, embeddings 234/233, quality 99.1, Flash→Production tracking verified",
       "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks",
       "117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed",
       "efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks",
-      "e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs",
-      "1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection"
+      "e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 99,
-    "total_cost_usd": 2.772,
+    "total_calls": 107,
+    "total_cost_usd": 2.996,
     "cache_hit_rate": 0.0
   },
   "quality": {

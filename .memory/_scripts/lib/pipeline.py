@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 import re
-import os, sys
+import os, sys, time
 
 from lib.config import VAULT_ROOT
 
@@ -304,6 +304,12 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     )
     INPUT_PATH.write_text(input_content, encoding="utf-8")
 
+    # Save started_at for duration tracking
+    try:
+        (VAULT_ROOT / "_pipeline" / "started_at.txt").write_text(str(datetime.now().timestamp()), encoding="utf-8")
+    except Exception:
+        pass
+
     _log_entry(f"Pipeline {pipeline_id} initialized: {topic} [{profile}]")
     
     # LangGraph integration
@@ -438,9 +444,22 @@ def step_done(agent: str) -> str:
                     data = json.loads(durations_file.read_text(encoding="utf-8"))
                 except Exception:
                     pass
+            started_at_path = VAULT_ROOT / "_pipeline" / "started_at.txt"
+            duration_s = 0
+            if started_at_path.exists():
+                try:
+                    started = float(started_at_path.read_text().strip())
+                    duration_s = int((datetime.now().timestamp() - started) * 1000) / 1000
+                except Exception:
+                    pass
+            profile_from_status = "desarrollo"
+            status_text = "\n".join(_read_status())
+            pm = re.search(r"\*\*profile\*\*:\s*(\S+)", status_text)
+            if pm: profile_from_status = pm.group(1)
             data["entries"].append({
                 "timestamp": datetime.now().isoformat(),
-                "duration_s": 0,
+                "duration_s": duration_s,
+                "profile": profile_from_status,
                 "total_cost_usd": stats.get("total_cost_usd", 0),
                 "total_calls": stats.get("total_calls", 0),
             })
