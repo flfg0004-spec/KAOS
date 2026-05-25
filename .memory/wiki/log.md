@@ -2,12 +2,6 @@
 ## [2026-05-23] session | test_full_cycle session completed
 - Result: Persistence cycle test
 - Pages affected: _scripts/tests/test_memory_persistence.py
-- Timestamp: 2026-05-23 17:12:21
-
-
-## [2026-05-23] session | test_full_cycle session completed
-- Result: Persistence cycle test
-- Pages affected: _scripts/tests/test_memory_persistence.py
 - Timestamp: 2026-05-23 17:12:22
 
 
@@ -258,4 +252,9 @@
 
 - 2026-05-24 21:27 | curation | Curaciï¿½n completa. Issues: Lint report generated with 0 issues. | mnemosyne
 
-- 2026-05-24 21:27 | curation | Curación completa. Issues: Lint report generated with 0 issues. | mnemosyne
+- 2026-05-24 21:27 | curation | Curaciï¿½n completa. Issues: Lint report generated with 0 issues. | mnemosyne
+## [2026-05-24] session | mnemosyne session completed
+- Result: curation-cycle
+- Pages affected: 
+- Timestamp: 2026-05-24 22:19:05
+

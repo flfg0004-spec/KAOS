@@ -16,7 +16,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from lib.agy_client import call_agy, bridge_reports
+from lib.agy_client import call_agy, call_gpt55, gpt55_status, bridge_reports
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP(
@@ -86,6 +86,43 @@ def agy_ask_opus(PROMPT: str, timeout: int = 300) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Tool: agy_ask_gpt55 — GPT-5.5 via ChatGPT Plus (estratégico)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool(
+    name="agy_ask_gpt55",
+    description=(
+        "Ask GPT-5.5 via local bridge (ChatGPT Plus subscription). "
+        "Use for: high-stakes strategy, critical decisions, complex analysis. "
+        "Rate limited to ~150 calls per 3 hours. Returns JSON."
+    ),
+)
+def agy_ask_gpt55(PROMPT: str, timeout: int = 180) -> str:
+    result = call_gpt55(PROMPT, thinking=False, timeout=timeout)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+# ---------------------------------------------------------------------------
+# Tool: agy_ask_gpt55_thinking — GPT-5.5 Thinking (máxima calidad)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool(
+    name="agy_ask_gpt55_thinking",
+    description=(
+        "Ask GPT-5.5 Thinking via local bridge (ChatGPT Plus). "
+        "Use ONLY for: the absolute hardest problems. "
+        "Slower and more expensive (in rate limit) than standard GPT-5.5. "
+        "Returns JSON."
+    ),
+)
+def agy_ask_gpt55_thinking(PROMPT: str, timeout: int = 300) -> str:
+    result = call_gpt55(PROMPT, thinking=True, timeout=timeout)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+# ---------------------------------------------------------------------------
 # Tool: agy_status — health check (sin LLM)
 # ---------------------------------------------------------------------------
 
@@ -115,11 +152,14 @@ def agy_status() -> str:
             pass
 
     reports = bridge_reports(5)
+    gpt55 = gpt55_status()
 
     return json.dumps({
         "bridge": "online",
         "agy_version": agy_ver,
         "current_model": current_model,
+        "gpt55_bridge": "online" if gpt55.get("bridge_online") else "offline",
+        "gpt55_rate": gpt55.get("rate_limit_msg", "unknown"),
         "reports_available": len(reports),
         "recent_reports": reports,
         "timestamp": datetime.now().isoformat(),

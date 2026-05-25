@@ -85,6 +85,12 @@ tasks = [
         "trigger": "DAILY",
         "time": "06:30",
     },
+    {
+        "name": "KAOS-GPT55-Bridge",
+        "action": ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(BASE / ".agents/scripts/kitty-bridge-service.ps1"), "start"],
+        "trigger": "DAILY",
+        "time": "05:00",
+    },
 ]
 
 for t in tasks:

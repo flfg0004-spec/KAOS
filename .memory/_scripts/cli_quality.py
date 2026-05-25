@@ -1,10 +1,12 @@
 """CLI commands: quality, dashboard, speed, docker, validate, viz, test, wikilinks."""
 
 import sys
+import json
 import subprocess
 from pathlib import Path
 
 from lib import quality, dashboard as dash, speed, viz, wikilinks, docker_health, cross_validator
+from lib.agy_client import gpt55_status, call_gpt55
 
 
 def register(sub, kaos_root):
@@ -35,6 +37,35 @@ def register(sub, kaos_root):
     def cmd_test(args):
         runner = Path(__file__).resolve().parent / "tests" / "run.py"
         sys.exit(subprocess.run([sys.executable, str(runner)]).returncode)
+
+    def cmd_graph(args):
+        vg = graph_analysis.VaultGraph()
+        if args.action == "report":
+            s = vg.summary()
+            print(f"  Nodes: {s['nodes']}, Edges: {s['edges']}, Density: {s['density']}")
+            print(f"  Avg PageRank: {s['avg_page_rank']}, Communities: {s['communities']}")
+            print(f"  Islands: {s['islands']}, Bridges: {s['bridges']}")
+            print(f"  Info sinks: {s['info_sinks']}, Source orphans: {s['source_orphans']}")
+            print(f"  Link ratio: {s['link_ratio']}")
+        elif args.action == "hubs":
+            for h in vg.hub_scores(top_k=args.top_k):
+                print(f"  {h['node']}: {h['score']} (out: {h['out_degree']})")
+        elif args.action == "bridges":
+            for b in vg.bridge_notes():
+                print(f"  {b['node']}: betweenness={b['betweenness']}, cross={b['cross_out']}/{b['cross_in']}")
+        elif args.action == "clusters":
+            for c in vg.louvain_communities()[:10]:
+                print(f"  Community {c['id']}: {c['size']} members, density={c['density']}")
+                for m in c['members'][:10]:
+                    print(f"    - {m}")
+        elif args.action == "islands":
+            for i in vg.cluster_islands():
+                print(f"  Island: {i['size']} nodes, {i['edges']} edges, density={i['density']}")
+                for m in i['members'][:10]:
+                    print(f"    - {m}")
+        elif args.action == "dot":
+            from lib.wikilinks import graph_dot
+            print(graph_dot())
 
     def cmd_wikilinks(args):
         if args.action == "report":
@@ -72,6 +103,40 @@ def register(sub, kaos_root):
 
     p = sub.add_parser("test", help="Run test suite")
     p.set_defaults(func=cmd_test)
+
+    p = sub.add_parser("graph", help="Topological graph analysis")
+    p.add_argument("action", choices=["report", "hubs", "bridges", "clusters", "islands", "dot"])
+    p.add_argument("--top-k", type=int, default=10)
+    p.set_defaults(func=cmd_graph)
+
+    def cmd_models(args):
+        """Show available models and their status."""
+        models_info = {
+            "flash": {"model": "Gemini 3.5 Flash", "cost": "$0", "limit": "Ilimitado"},
+            "sonnet": {"model": "Claude Sonnet 4.6", "cost": "Pago", "limit": "Ilimitado"},
+            "opus": {"model": "Claude Opus 4.6", "cost": "Pago", "limit": "Ilimitado"},
+            "gpt55": {"model": "GPT-5.5", "cost": "$20/mes (Plus)", "limit": "150/3h"},
+            "gpt55_thinking": {"model": "GPT-5.5 Thinking", "cost": "$20/mes (Plus)", "limit": "3000/sem"},
+        }
+        print("# Modelos Disponibles\n")
+        print(f"{'Tool':<25} {'Modelo':<30} {'Costo':<20} {'Límite'}")
+        print("-" * 90)
+        for tool, info in models_info.items():
+            print(f"agy_ask_{tool:<18} {info['model']:<30} {info['cost']:<20} {info['limit']}")
+
+        print("\n## GPT-5.5 Bridge Status\n")
+        status = gpt55_status()
+        print(f"Bridge online: {status.get('bridge_online', False)}")
+        print(f"Rate limit: {status.get('rate_limit_msg', 'unknown')}")
+        print(f"Calls this window: {status.get('calls_this_window', 0)}/{status.get('max_per_window', 150)}")
+        if not status.get('bridge_online'):
+            print("\nPara activar GPT-5.5:")
+            print("1. pip install kitty-bridge")
+            print("2. kitty auth openai  (abre browser para OAuth)")
+            print("3. kitty bridge --port 8080 --profile plus")
+
+    p = sub.add_parser("models", help="Show available models and status")
+    p.set_defaults(func=cmd_models)
 
     p = sub.add_parser("wikilinks", help="Wikilink analysis")
     p.add_argument("action", choices=["report", "graph", "suggest"])

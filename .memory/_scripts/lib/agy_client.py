@@ -13,7 +13,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-ModelTier = Literal["flash", "sonnet", "opus"]
+ModelTier = Literal["flash", "sonnet", "opus", "gpt55", "gpt55_thinking"]
+
+GPT55_BRIDGE_URL = "http://127.0.0.1:8080/v1/chat/completions"
+_GPT55_CALLS = 0
+_GPT55_RESET = 0.0  # timestamp of last rate limit reset
+_GPT55_MAX = 150  # max calls per 3h window
 
 BRIDGE_DIR = Path(__file__).resolve().parent.parent.parent / "bridge"
 SIGNALS_DIR = BRIDGE_DIR / "signals"
@@ -209,6 +214,98 @@ def call_agy(prompt: str, tier: ModelTier = "flash", timeout: int = 180) -> dict
 
     finally:
         _release_lock()
+
+
+def _gpt55_rate_ok() -> tuple[bool, str]:
+    """Check if we're within GPT-5.5 rate limits (150 calls per 3h window)."""
+    global _GPT55_CALLS, _GPT55_RESET
+    now = time.time()
+    if now - _GPT55_RESET > 10800:
+        _GPT55_CALLS = 0
+        _GPT55_RESET = now
+    remaining = _GPT55_MAX - _GPT55_CALLS
+    if remaining <= 0:
+        return False, f"GPT-5.5 rate limit reached ({_GPT55_MAX}/3h). Use another model."
+    return True, f"GPT-5.5: {remaining}/{_GPT55_MAX} calls remaining"
+
+
+def call_gpt55(prompt: str, thinking: bool = False, timeout: int = 180) -> dict:
+    """Call GPT-5.5 via local kitty-bridge (ChatGPT Plus subscription).
+
+    Args:
+        prompt: The text prompt
+        thinking: Use GPT-5.5 Thinking (slower, deeper reasoning)
+        timeout: Max wait in seconds
+
+    Returns:
+        dict with success, text, error, model keys
+    """
+    ok, msg = _gpt55_rate_ok()
+    if not ok:
+        return {"success": False, "text": "", "error": msg, "model": "gpt-5.5"}
+
+    model = "gpt-5.5-thinking" if thinking else "gpt-5.5"
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 8192,
+    }
+
+    try:
+        import urllib.request
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            GPT55_BRIDGE_URL,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        result = json.loads(resp.read().decode("utf-8"))
+
+        global _GPT55_CALLS
+        _GPT55_CALLS += 1
+
+        text = ""
+        if "choices" in result and result["choices"]:
+            text = result["choices"][0].get("message", {}).get("content", "")
+        elif "response" in result:
+            text = result["response"]
+
+        return {
+            "success": bool(text),
+            "text": text,
+            "error": None if text else "empty response",
+            "model": model,
+        }
+
+    except urllib.request.URLError as e:
+        return {"success": False, "text": "", "error": f"Bridge unreachable: {e.reason}", "model": model}
+    except json.JSONDecodeError:
+        return {"success": False, "text": "", "error": "Bridge returned invalid JSON", "model": model}
+    except Exception as e:
+        return {"success": False, "text": "", "error": str(e), "model": model}
+
+
+def gpt55_status() -> dict:
+    """Return GPT-5.5 bridge status and rate limit info."""
+    ok, msg = _gpt55_rate_ok()
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://127.0.0.1:8080/health", method="GET")
+        resp = urllib.request.urlopen(req, timeout=5)
+        bridge_ok = resp.status == 200
+    except Exception:
+        bridge_ok = False
+
+    return {
+        "bridge_online": bridge_ok,
+        "model": "GPT-5.5 via ChatGPT Plus",
+        "rate_limit_ok": ok,
+        "rate_limit_msg": msg,
+        "calls_this_window": _GPT55_CALLS,
+        "max_per_window": _GPT55_MAX,
+    }
 
 
 def bridge_reports(limit: int = 10) -> list[dict]:

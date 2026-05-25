@@ -40,7 +40,8 @@
         "obsidian_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true,
-        "agy-bridge_agy_ask_opus": true
+        "agy-bridge_agy_ask_opus": true,
+        "agy-bridge_agy_ask_gpt55": true
       }
     },
     "mnemosyne": {
@@ -68,6 +69,7 @@
         "txtai_*": true,
         "knowledge-graph_*": true,
         "obsidian_*": true,
+        "mcp-embed_*": true,
         "agy-bridge_agy_status": true,
         "agy-bridge_agy_ask_flash": true
       }
@@ -114,7 +116,9 @@
         "mcp-obsidian-cli_*": true,
         "obsidian_*": true,
         "agy-bridge_agy_ask_sonnet": true,
-        "agy-bridge_agy_ask_opus": true
+        "agy-bridge_agy_ask_opus": true,
+        "agy-bridge_agy_ask_gpt55": true,
+        "agy-bridge_agy_ask_gpt55_thinking": true
       }
     },
     "metis": {

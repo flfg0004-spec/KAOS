@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 from lib import lint, health, hydrate, extract, index as index_mod, git, pressure, scanner, cleaner, garbage, auditor
+from lib import tagger
+from lib import crystallize
 from lib.config import VAULT_ROOT
 
 
@@ -85,6 +87,40 @@ def register(sub, kaos_root):
                    "auto": garbage.auto}
         print(actions.get(args.action, lambda: "Unknown garbage action")())
 
+    def cmd_tag(args):
+        if args.all:
+            results = tagger.tag_all(dry_run=args.dry_run)
+        elif args.path:
+            results = [tagger.tag_file(args.path, dry_run=args.dry_run)]
+        else:
+            print("Specify --all or --path")
+            return
+        for r in results:
+            added = r.get("added", [])
+            if added:
+                print(f"  {r['path']}: +{added}")
+            else:
+                print(f"  {r['path']}: up-to-date")
+
+    def cmd_dedup(args):
+        if args.crystallize:
+            results = crystallize.run_dedup(dry_run=args.dry_run, min_confidence=args.min_confidence)
+            for r in results:
+                if "error" in r:
+                    print(f"  ERROR: {r['error']}")
+                else:
+                    print(f"  Merged: {r['title']} → {r['merged_path']}")
+                    if r.get("supersedes"):
+                        print(f"  Supersedes: {', '.join(r['supersedes'])}")
+        else:
+            candidates = crystallize.find_candidates()
+            if candidates:
+                print(f"  Found {len(candidates)} candidate pairs:")
+                for c in candidates[:10]:
+                    print(f"    {c['method']} ({c['confidence']}): {Path(c['file_a']).stem} ≈ {Path(c['file_b']).stem}")
+            else:
+                print("  No duplicate candidates found.")
+
     def cmd_audit(args):
         actions = {"pre": lambda: [print(f"  {k}: {v}") for k, v in auditor.pre_snapshot().items()],
                    "report": auditor.report}
@@ -146,6 +182,18 @@ def register(sub, kaos_root):
     p.add_argument("action", choices=["report", "collect", "auto"])
     p.add_argument("--really", action="store_true")
     p.set_defaults(func=cmd_garbage)
+
+    p = sub.add_parser("tag", help="Auto-tag notes with LLM + embeddings")
+    p.add_argument("--all", action="store_true", help="Tag all untagged notes")
+    p.add_argument("--path", default="", help="Tag a specific file")
+    p.add_argument("--dry-run", action="store_true", help="Show suggestions without modifying")
+    p.set_defaults(func=cmd_tag)
+
+    p = sub.add_parser("dedup", help="Detect and fuse duplicate notes")
+    p.add_argument("--crystallize", action="store_true", help="AI merge of duplicates")
+    p.add_argument("--dry-run", action="store_true", help="Show candidates without merging")
+    p.add_argument("--min-confidence", type=float, default=0.90, help="Minimum confidence threshold")
+    p.set_defaults(func=cmd_dedup)
 
     p = sub.add_parser("audit", help="Audit vault health")
     p.add_argument("action", choices=["pre", "report"])

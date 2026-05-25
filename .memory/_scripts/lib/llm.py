@@ -16,6 +16,7 @@ MODELS = {
     "go-kimi":        {"provider": "opencode-go", "model": "kimi-k2.5"},
     "go-kimi-latest": {"provider": "opencode-go", "model": "kimi-k2.6"},
     "go-mimo":        {"provider": "opencode-go", "model": "mimo-v2-pro"},
+    "go-gemini-flash": {"provider": "opencode-go", "model": "gemini-3.5-flash"},
 }
 
 SYSTEM_PROMPTS = {
@@ -33,7 +34,7 @@ AGENT_MODELS = {
     "kosmos": "go-pro",
     "metis": "go-flash",
     "kratos": "deepseek-flash",
-    "mnemosyne": "go-qwen",
+    "mnemosyne": "go-gemini-flash",
     "critic": "go-flash",
     "planner": "go-flash",
 }

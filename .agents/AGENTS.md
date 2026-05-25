@@ -16,14 +16,17 @@ Knowledge Agent Operating System — vault of persistent knowledge powered by ag
 
 ## Skills
 
-| Skill | Model | Cost | Purpose |
-|-------|-------|------|---------|
+| Skill / Tool | Model | Cost | Purpose |
+|------|-------|------|---------|
 | `/strategy` | Claude Opus | Pago | Strategic analysis, critical decisions |
 | `/review` | Gemini Flash | **Free** | Code review, routine analysis |
 | `/validate` | Claude Sonnet | Pago | ADR validation, architecture review |
 | `/health` | Gemini Flash | **Free** | Vault health check |
 | `/quality` | Gemini Flash | **Free** | Quality score |
 | `/export-vault` | — | **Free** | Mermaid viz generation |
+| `/explore` | Gemini Flash | **Free** | Quick exploration + DeepSeek consolidation |
+| `agy_ask_gpt55` | GPT-5.5 | **$20/mes** | High-stakes strategy, critical decisions |
+| `agy_ask_gpt55_thinking` | GPT-5.5 Thinking | **$20/mes** | Absolute hardest problems |
 
 ## MCP Bridge (OpenCode ↔ agy)
 
@@ -31,9 +34,9 @@ OpenCode agents can call agy models via the `agy-bridge` MCP server:
 
 | Agent | Tools available | Use case |
 |-------|----------------|----------|
-| Aletheia | agy_ask_flash, sonnet, opus | Research validation |
-| Kosmos | agy_ask_sonnet, opus | Architecture review |
-| Metis | agy_ask_opus | Strategy analysis |
+| Aletheia | agy_ask_flash, sonnet, opus, gpt55 | Research validation |
+| Kosmos | agy_ask_sonnet, opus, gpt55 | Architecture review |
+| Metis | agy_ask_opus, gpt55, gpt55_thinking | Strategy analysis |
 | Kratos | agy_ask_flash, sonnet | Code review |
 | Mnemosyne | agy_status, agy_ask_flash | Quality checks |
 
