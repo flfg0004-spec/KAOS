@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-24 21:27:30",
+  "timestamp": "2026-05-24 22:19:08",
   "vault": {
     "total_md": 239,
     "by_directory": {
       "wiki": 132,
       "schema": 21,
       "raw": 23,
-      "_scripts": 78,
+      "_scripts": 86,
       "_pipeline": 3
     },
-    "total_scripts": 78
+    "total_scripts": 86
   },
   "health": {
     "git_clean": true,
@@ -22,8 +22,8 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "aletheia-ready",
-    "profile": "deep"
+    "status": "complete",
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 2,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "8d0228a session: mnemosyne - curation-cycle",
+      "77823cb feat: vault.py dual command, pipeline hint, benchmark data, transcript parsing fix",
       "9843725 score: 84/84 tests, BM25 unified, DeepEval real metric, parallel tests, duration tracking, lint 0",
       "7bd6871 fix: 0 lint, embeddings 234/233, quality 99.1, Flash→Production tracking verified",
-      "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks",
-      "117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed",
-      "efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks"
+      "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks"
     ],
     "recent_logs": [
       [
@@ -74,8 +74,8 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 108,
-    "total_cost_usd": 3.024,
+    "total_calls": 109,
+    "total_cost_usd": 3.052,
     "cache_hit_rate": 0.0
   },
   "quality": {
