@@ -41,6 +41,9 @@ def _page_name(path: Path) -> str:
 
 def _get_embedding(text: str) -> list[float] | None:
     """Get embedding via mcp_embed subprocess."""
+    import os
+    if os.environ.get("KAOS_TESTING") == "1":
+        return None
     import subprocess, sys as _sys
     mcp_embed = BASE / "_scripts" / "mcp_embed.py"
     req = json.dumps({
@@ -151,6 +154,9 @@ def suggest(min_confidence: float = 0.75, mode: str = "hybrid", top_k: int = 20)
         mode: 'embedding' (fast), 'llm' (with context analysis), or 'hybrid'
         top_k: Max suggestions to return
     """
+    import os
+    if os.environ.get("KAOS_TESTING") == "1":
+        return []
     page_map = build_graph()
     names = [n for n in page_map if n not in IGNORED_PAGES]
     if len(names) < 2:

@@ -1,4 +1,4 @@
-"""Static HTML dashboard for vault health."""
+"""Static HTML dashboard for vault health — v2 with ring gauges, sparklines, lifecycle + contradictions."""
 
 import json
 import subprocess
@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-BASE = (Path(__file__).resolve().parent.parent.parent)  # .memory/
-KAOS_ROOT = BASE.parent  # KAOS project root
+BASE = (Path(__file__).resolve().parent.parent.parent)
+KAOS_ROOT = BASE.parent
 DASHBOARD_DIR = KAOS_ROOT / ".memory" / "dashboard"
 DATA_FILE = DASHBOARD_DIR / "dashboard.json"
 HTML_FILE = DASHBOARD_DIR / "index.html"
@@ -33,6 +33,120 @@ def _read(path: Path) -> str:
         return path.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return ""
+
+
+def _calc_quality_v2() -> dict:
+    import importlib as _il
+    _il.invalidate_caches()
+    _il.import_module("lib.quality")
+    _q = _il.import_module("lib.quality")
+    _status = _q.status()
+    import re as _re
+    score = 0
+    for _line in _status.split("\n"):
+        if _line.startswith("Quality Score:"):
+            _m = _re.search(r"([\d.]+)", _line.split(":")[1])
+            if _m: score = float(_m.group(1))
+    details = _q.calculate().get("details", {})
+    return {
+        "score": score,
+        "connectivity": details.get("connectivity", {}).get("score", 0),
+        "freshness": details.get("freshness", {}).get("score", 0),
+        "embeddings": details.get("embeddings", {}).get("score", 0),
+        "confidence_matrix": details.get("confidence_matrix", {}).get("score", 0),
+        "completeness": score,
+    }
+
+
+def _lifecycle_data() -> dict:
+    try:
+        from lib import memory_lifecycle as mlc
+        results = mlc.run_evaluate_all(dry_run=True)
+        tiers = {}
+        for r in results:
+            tiers[r.get("tier", "unknown")] = tiers.get(r.get("tier", "unknown"), 0) + 1
+        avg_conf = sum(r.get("confidence", 0) for r in results) / max(len(results), 1)
+        flagged = [r for r in results if r.get("recommendation", "OK") != "OK"]
+        return {
+            "tiers": tiers,
+            "total": len(results),
+            "avg_confidence": round(avg_conf, 3),
+            "flagged": len(flagged),
+        }
+    except Exception:
+        return {"tiers": {}, "total": 0, "avg_confidence": 0, "flagged": 0}
+
+
+def _contradictions_data() -> dict:
+    try:
+        from lib import contradictions as ct
+        state = ct._load_state()
+        active = [e for e in state if e.get("status") != "resolved"]
+        contradictions = [e for e in active if e.get("verdict") == "contradiction"]
+        complements = [e for e in active if e.get("verdict") == "complement"]
+        return {
+            "total": len(active),
+            "contradictions": len(contradictions),
+            "complements": len(complements),
+        }
+    except Exception:
+        return {"total": 0, "contradictions": 0, "complements": 0}
+
+
+def _sparklines() -> str:
+    """Inline SVG sparkline for quality trend."""
+    ts_file = KAOS_ROOT / ".vault" / "quality" / "timeseries" / "daily.jsonl"
+    if not ts_file.exists():
+        return ""
+    scores = []
+    with open(ts_file) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    scores.append(json.loads(line).get("score", 0))
+                except Exception:
+                    pass
+    if len(scores) < 2:
+        return ""
+    scores = scores[-30:]
+    w, h = 120, 30
+    max_s = max(scores) or 1
+    min_s = min(scores)
+    rng = max_s - min_s or 1
+    pts = []
+    for i, s in enumerate(scores):
+        x = w * i / (len(scores) - 1)
+        y = h - (h * (s - min_s) / rng)
+        pts.append(f"{x:.1f},{y:.1f}")
+    coords = " ".join(pts)
+    color = "#22c55e" if scores[-1] >= scores[0] else "#ef4444"
+    return f"""
+<div class="sparkline">
+  <svg width="{w}" height="{h}" viewBox="0 0 {w} {h}">
+    <polyline fill="none" stroke="{color}" stroke-width="1.5" points="{coords}"/>
+  </svg>
+  <span class="spark-label">{scores[-1]:.1f}</span>
+</div>"""
+
+
+def _ring_gauge(value: float, max_val: float, label: str, color: str = "#38bdf8") -> str:
+    pct = min(100, (value / max(max_val, 1)) * 100)
+    r = 36
+    circ = 2 * 3.14159 * r
+    offset = circ - (pct / 100) * circ
+    return f"""
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="{r}" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="{r}" fill="none" stroke="{color}" stroke-width="6"
+      stroke-dasharray="{circ}" stroke-dashoffset="{offset}" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">{value:.0f}</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/{max_val:.0f}</text>
+  </svg>
+  <div class="ring-label">{label}</div>
+</div>"""
 
 
 def collect_data() -> dict:
@@ -64,7 +178,6 @@ def collect_data() -> dict:
     profile_m = re.search(r"\*\*profile\*\*:\s*(.+)", pipeline_status)
     pipeline_profile = profile_m.group(1).strip() if profile_m else "none"
 
-    # Ingest metrics
     ingest_manifest = KAOS_ROOT / ".memory" / "ingest" / "queue" / "manifest.json"
     ingest_metrics = {"total_ingested": 0, "total_deduped": 0}
     if ingest_manifest.exists():
@@ -74,7 +187,6 @@ def collect_data() -> dict:
         except Exception:
             pass
 
-    # Synapse metrics (via subprocess for reliability)
     synapse_info = {"concepts": 0, "wikilinks": 0}
     try:
         sr = subprocess.run(
@@ -102,7 +214,6 @@ def collect_data() -> dict:
     cache_entries = len(cache_data.get("entries", []))
     cache_max = cache_data.get("maxEntries", 30)
 
-    # Token usage from DSOL
     token_usage_path = KAOS_ROOT / ".memory" / "cache" / "token-usage.json"
     dsol_metrics = {"total_calls": 0, "total_cost_usd": 0, "cache_hit_rate": None}
     if token_usage_path.exists():
@@ -156,6 +267,8 @@ def collect_data() -> dict:
         },
         "deepseek": dsol_metrics,
         "quality": _calc_quality_v2(),
+        "lifecycle": _lifecycle_data(),
+        "contradictions": _contradictions_data(),
         "agents": {
             "total": 4,
             "active": ["aletheia", "kosmos", "metis", "mnemosyne"],
@@ -164,36 +277,14 @@ def collect_data() -> dict:
     }
 
 
-def _calc_quality_v2() -> dict:
-    """Calculate quality metrics using quality.status() directly (fast)."""
-    import sys as _sys
-    import importlib as _il
-    _sys.path.insert(0, str(KAOS_ROOT / ".memory" / "_scripts"))
-    _sys.path.insert(0, str(KAOS_ROOT / ".memory" / "_scripts" / "lib"))
-    try:
-        _q = _il.import_module("quality")
-        _status = _q.status()
-        import re as _re
-        score = 0
-        cm_count = 0
-        cm_total = 0
-        for _line in _status.split("\n"):
-            if _line.startswith("Quality Score:"):
-                _m = _re.search(r"([\d.]+)", _line.split(":")[1])
-                if _m: score = float(_m.group(1))
-            elif "Confidence matrix" in _line:
-                _m = _re.search(r"(\d+)/(\d+)", _line)
-                if _m:
-                    cm_count = int(_m.group(1))
-                    cm_total = int(_m.group(2))
-        return {"score": score, "has_confidence_matrix": cm_count, "total_investigations": cm_total, "completeness": score}
-    except Exception:
-        return {"score": 0, "has_confidence_matrix": 0, "total_investigations": 0, "completeness": 0}
-
-
 def render_html(data: dict) -> str:
     status_icon = "✅" if data["health"]["overall"] == "healthy" else "⚠️"
     color = "#22c55e" if data["health"]["overall"] == "healthy" else "#eab308"
+    spark = _sparklines()
+
+    q = data.get("quality", {})
+    lc = data.get("lifecycle", {})
+    ct = data.get("contradictions", {})
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -224,6 +315,12 @@ def render_html(data: dict) -> str:
   .badge {{ display:inline-block; padding:0.15rem 0.5rem; border-radius:4px; font-size:0.75rem; }}
   .badge.green {{ background:#166534; color:#86efac; }}
   .badge.yellow {{ background:#854d0e; color:#fde047; }}
+  .badge.red {{ background:#7f1d1d; color:#fca5a5; }}
+  .ring-gauges {{ display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; }}
+  .ring-wrapper {{ text-align:center; width:90px; }}
+  .ring-label {{ font-size:0.7rem; color:#94a3b8; margin-top:0.25rem; }}
+  .sparkline {{ display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }}
+  .spark-label {{ font-size:1.2rem; font-weight:700; color:#38bdf8; }}
 </style>
 </head>
 <body>
@@ -277,25 +374,50 @@ def render_html(data: dict) -> str:
     </div>
   </div>
 
-    <div class="card">
-        <h2>Wikilinks</h2>
-        <div class="metric green">{data["wikilinks"]["valid"]}</div>
-        <div style="font-size:0.85rem;color:#94a3b8;">válidos</div>
-        <div style="margin-top:0.5rem;">
-          <div class="row"><span class="label">Broken</span><span>{'✅ 0' if data['wikilinks']['broken']==0 else '❌ '+str(data['wikilinks']['broken'])}</span></div>
-        </div>
-      </div>
-      <div class="card">
-        <h2>Calidad</h2>
-        <div class="metric green">{data["quality"]["score"]}</div>
-        <div style="font-size:0.85rem;color:#94a3b8;">score compuesto</div>
-        <div style="margin-top:0.5rem;">
-          <div class="row"><span class="label">Matriz confianza</span><span>{data['quality']['has_confidence_matrix']}/{data['quality']['total_investigations']}</span></div>
-          <div class="row"><span class="label">Completitud</span><span>{data['quality']['completeness']}%</span></div>
-          <div class="row"><span class="label">Agentes</span><span>{data['agents']['total']}</span></div>
-        </div>
-      </div>
+  <div class="card">
+    <h2>Wikilinks</h2>
+    <div class="metric green">{data["wikilinks"]["valid"]}</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">válidos</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Broken</span><span>{'✅ 0' if data['wikilinks']['broken']==0 else '❌ '+str(data['wikilinks']['broken'])}</span></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Calidad</h2>
+    <div class="metric green">{q.get("score", 0)}</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">score compuesto</div>
+    {spark}
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Connectivity</span><span>{q.get('connectivity', 0)} pts</span></div>
+      <div class="row"><span class="label">Freshness</span><span>{q.get('freshness', 0)} pts</span></div>
+      <div class="row"><span class="label">Completitud</span><span>{q.get('completeness', 0)}%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="ring-gauges" style="display:flex; gap:1rem; margin-bottom:1rem;">
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155;">
+    <h2 style="font-size:0.9rem; color:#94a3b8; text-transform:uppercase; margin-bottom:0.75rem;">Lifecycle</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+      {_ring_gauge(lc.get("total", 0), max(lc.get("total", 1), 1), "Total", "#38bdf8")}
+      {_ring_gauge(lc.get("avg_confidence", 0) * 100, 100, "Avg Conf", "#22c55e")}
+      {_ring_gauge(lc.get("flagged", 0), max(lc.get("total", 1), 1), "Flagged", "#ef4444")}
+    </div>
+    <div style="margin-top:0.5rem; font-size:0.8rem;">
+      {''.join(f'<div class="row"><span class="label">{tier}</span><span>{count}</span></div>'
+               for tier, count in lc.get("tiers", {}).items())}
+    </div>
+  </div>
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155;">
+    <h2 style="font-size:0.9rem; color:#94a3b8; text-transform:uppercase; margin-bottom:0.75rem;">Contradicciones</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+      {_ring_gauge(ct.get("total", 0), max(ct.get("total", 1), 1), "Pairs", "#f59e0b")}
+      {_ring_gauge(ct.get("contradictions", 0), max(ct.get("total", 1), 1), "Contrad", "#ef4444")}
+      {_ring_gauge(ct.get("complements", 0), max(ct.get("total", 1), 1), "Complem", "#22c55e")}
+    </div>
+  </div>
+</div>
 
 <div class="grid">
   <div class="card">
@@ -314,7 +436,7 @@ def render_html(data: dict) -> str:
   </div>
 </div>
 
-<div class="footer">KAOS Memory Vault — generado por vault.py dashboard</div>
+<div class="footer">KAOS Memory Vault — generado por vault.py dashboard | F6+F7 activo</div>
 </body>
 </html>"""
 

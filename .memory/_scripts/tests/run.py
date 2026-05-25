@@ -44,6 +44,8 @@ MODULES = [
     "test_tagger",
     "test_wikilinks",
     "test_gaps",
+    "test_lifecycle",
+    "test_contradictions",
 ]
 
 SLOW_MODULES = {

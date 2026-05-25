@@ -14,7 +14,17 @@ def register(sub, kaos_root):
     PYTHON = "py" if sys.platform == "win32" else "python3"
 
     def cmd_quality(args):
-        print(quality.status())
+        if args.trend:
+            t = quality.trend(days=args.trend_days)
+            if "error" in t:
+                print(t["error"])
+            else:
+                print(f"Trend ({t['days']}d, {t['data_points']} pts): {t['direction']} {t['delta']:+.1f}")
+                print(f"  First: {t['first_score']:.1f} → Last: {t['last_score']:.1f}")
+                for s in t.get("series", []):
+                    print(f"  {s['date']}: {s['score']:.1f}")
+        else:
+            print(quality.status())
 
     def cmd_dashboard(args):
         print(dash.run())
@@ -86,7 +96,9 @@ def register(sub, kaos_root):
             print("Unknown action. Use: report, graph, suggest")
 
     # Register parsers
-    p = sub.add_parser("quality", help="Calculate dynamic quality score")
+    p = sub.add_parser("quality", help="Calculate dynamic quality score (F7)")
+    p.add_argument("--trend", action="store_true", help="Show quality trend over time")
+    p.add_argument("--trend-days", type=int, default=7, help="Days for trend calculation")
     p.set_defaults(func=cmd_quality)
 
     p = sub.add_parser("dashboard", help="Generate HTML dashboard")
