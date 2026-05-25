@@ -216,4 +216,10 @@
 
 - 2026-05-24 16:05 | curation | Curaciï¿½n completa. Issues: Lint report generated with 1 issues. | mnemosyne
 
-- 2026-05-24 16:05 | curation | Curación completa. Issues: Lint report generated with 1 issues. | mnemosyne
+- 2026-05-24 16:05 | curation | Curaciï¿½n completa. Issues: Lint report generated with 1 issues. | mnemosyne
+- [[dual-system-guide]] ï¿½ Sistema DUAL Gemini Flash + DeepSeek (added manually)
+
+
+- 2026-05-24 20:30 | curation | Curaciï¿½n completa. Issues: Lint report generated with 0 issues. | mnemosyne
+
+- 2026-05-24 20:30 | curation | Curación completa. Issues: -1 | mnemosyne

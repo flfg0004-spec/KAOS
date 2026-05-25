@@ -8,18 +8,18 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; padding:2rem; }
   h1 { font-size:1.5rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; }
-  .status { color:#eab308; }
+  .status { color:#22c55e; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; margin:1rem 0; }
   .card { background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155; }
   .card h2 { font-size:0.9rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; }
   .metric { font-size:2rem; font-weight:700; color:#38bdf8; }
-  .metric.green { color:#eab308; }
+  .metric.green { color:#22c55e; }
   .metric.red { color:#ef4444; }
   .row { display:flex; justify-content:space-between; padding:0.25rem 0; font-size:0.85rem; }
   .row:nth-child(even) { background:#1a2332; }
   .label { color:#94a3b8; }
   .bar { height:8px; background:#334155; border-radius:4px; margin-top:0.5rem; overflow:hidden; }
-  .bar-fill { height:100%; background:#eab308; border-radius:4px; transition:width 0.3s; }
+  .bar-fill { height:100%; background:#22c55e; border-radius:4px; transition:width 0.3s; }
   table { width:100%; border-collapse:collapse; font-size:0.8rem; }
   th { text-align:left; color:#94a3b8; padding:0.4rem 0.25rem; border-bottom:1px solid #334155; }
   td { padding:0.3rem 0.25rem; border-bottom:1px solid #1e293b; }
@@ -30,8 +30,8 @@
 </style>
 </head>
 <body>
-<h1>⚠️ KAOS Vault Dashboard <span class="status">●</span></h1>
-<p style="color:#64748b;font-size:0.85rem;">2026-05-24 16:05:05</p>
+<h1>✅ KAOS Vault Dashboard <span class="status">●</span></h1>
+<p style="color:#64748b;font-size:0.85rem;">2026-05-24 20:30:10</p>
 
 <div class="grid">
   <div class="card">
@@ -47,7 +47,7 @@
 
   <div class="card">
     <h2>Salud</h2>
-    <div class="metric red">1</div>
+    <div class="metric green">0</div>
     <div style="font-size:0.85rem;color:#94a3b8;">issues de lint</div>
     <div style="margin-top:0.5rem;">
       <div class="row"><span class="label">Git clean</span><span>✅</span></div>
@@ -67,7 +67,7 @@
     <div class="metric">2</div>
     <div style="font-size:0.85rem;color:#94a3b8;">archivos ingeridos</div>
     <div style="margin-top:0.5rem;">
-      <div class="row"><span class="label">Deduplicados</span><span>353</span></div>
+      <div class="row"><span class="label">Deduplicados</span><span>356</span></div>
     </div>
   </div>
 
@@ -90,11 +90,11 @@
       </div>
       <div class="card">
         <h2>Calidad</h2>
-        <div class="metric green">94.5</div>
+        <div class="metric green">99.1</div>
         <div style="font-size:0.85rem;color:#94a3b8;">score compuesto</div>
         <div style="margin-top:0.5rem;">
           <div class="row"><span class="label">Matriz confianza</span><span>23/23</span></div>
-          <div class="row"><span class="label">Completitud</span><span>94.5%</span></div>
+          <div class="row"><span class="label">Completitud</span><span>99.1%</span></div>
           <div class="row"><span class="label">Agentes</span><span>4</span></div>
         </div>
       </div>
@@ -105,7 +105,7 @@
     <h2>Actividad Reciente</h2>
     <table>
       <tr><th>Commit</th></tr>
-      <tr><td style="font-family:monospace;font-size:0.75rem;">117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">8d9a1b8 fix: 37 issues - security, pipeline, bridge locking, pre-commit hooks, dead code, absolute paths</td></tr>
+      <tr><td style="font-family:monospace;font-size:0.75rem;">fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection</td></tr>
     </table>
   </div>
   <div class="card">

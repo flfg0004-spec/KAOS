@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-24 16:05:05",
+  "timestamp": "2026-05-24 20:30:10",
   "vault": {
     "total_md": 234,
     "by_directory": {
@@ -13,8 +13,8 @@
   },
   "health": {
     "git_clean": true,
-    "lint_issues": 1,
-    "overall": "warning"
+    "lint_issues": 0,
+    "overall": "healthy"
   },
   "cache": {
     "entries": 3,
@@ -27,7 +27,7 @@
   },
   "ingest": {
     "total_ingested": 2,
-    "total_deduped": 353
+    "total_deduped": 356
   },
   "synapse": {
     "concepts": 91,
@@ -35,11 +35,11 @@
   },
   "activity": {
     "recent_commits": [
+      "fb20d81 refactor: vault.py split into 3 modules (cli_core, cli_pipeline, cli_quality) + Flash->Production persistente + 12 scheduled tasks",
       "117dafb fix: 0 lint, 96.5 quality, Flash→Production 100%, embeddings + orphan fixed",
       "efe89d2 optimize: speed ratio fix, explore skill link, crawl4ai healthcheck, Obsidian sync, pipeline cost tracking, auto-wikilinks",
       "e8e70e6 feat: 14-day production plan - CodeExperience hook, archiving, MCP cleanup, score 94.6, LangGraph threshold, cross-validation, Docker health, docs",
-      "1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection",
-      "8d9a1b8 fix: 37 issues - security, pipeline, bridge locking, pre-commit hooks, dead code, absolute paths"
+      "1b631dc feat: dual system Gemini Flash + DeepSeek - Metis Flash tools, /explore skill, cross-agent context, speed metrics, pipeline flash detection"
     ],
     "recent_logs": [
       [
@@ -74,15 +74,15 @@
     "broken": 34
   },
   "deepseek": {
-    "total_calls": 98,
-    "total_cost_usd": 2.744,
+    "total_calls": 99,
+    "total_cost_usd": 2.772,
     "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 94.5,
+    "score": 99.1,
     "has_confidence_matrix": 23,
     "total_investigations": 23,
-    "completeness": 94.5
+    "completeness": 99.1
   },
   "agents": {
     "total": 4,
