@@ -64,7 +64,7 @@ function Start-Ecosystem {
         
         $owui = Test-Endpoint "http://127.0.0.1:3000" "Open WebUI"
         $lf = Test-Endpoint "http://127.0.0.1:3001" "Langfuse"
-        $mcpo = Test-Endpoint "http://127.0.0.1:9090" "MCPO Bridge"
+        $mcpo = Test-Endpoint "http://127.0.0.1:9090/docs" "MCPO Bridge"
         
         $allReady = $owui -and $lf -and $mcpo
         $attempts++
@@ -102,7 +102,7 @@ function Show-EcosystemStatus {
     Write-Host "`n=== Verificación de Endpoints Locales ===" -ForegroundColor Cyan
     $null = Test-Endpoint "http://127.0.0.1:3000" "Open WebUI (Chat / Dashboard)"
     $null = Test-Endpoint "http://127.0.0.1:3001" "Langfuse (Observabilidad)"
-    $null = Test-Endpoint "http://127.0.0.1:9090" "MCPO Bridge"
+    $null = Test-Endpoint "http://127.0.0.1:9090/docs" "MCPO Bridge"
     $null = Test-Endpoint "http://127.0.0.1:8888" "SearXNG Metasearch"
     $null = Test-Endpoint "http://127.0.0.1:11235/health" "Crawl4AI API"
 }
