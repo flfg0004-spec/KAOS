@@ -166,6 +166,41 @@
         "agy-bridge_agy_ask_gpt55": true
       }
     },
+    "kronos": {
+      "description": "Orquestador — análisis de pipelines, routing adaptativo, recuperación de errores",
+      "mode": "subagent",
+      "color": "#FFD700",
+      "steps": 14,
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "deny",
+        "bash": {
+          "py *": "allow",
+          "cat *": "allow",
+          "type *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "task": "allow",
+        "skill": "allow"
+      },
+      "tools": {
+        "vault_*": true,
+        "sequential-thinking_*": true,
+        "knowledge-graph_*": true,
+        "strategy-mcp_*": true,
+        "mcp-obsidian-cli_*": true,
+        "obsidian_*": true,
+        "txtai_*": true,
+        "quality_*": true,
+        "dsol_*": true,
+        "gaps_*": true,
+        "lifecycle_*": true
+      }
+    },
     "kratos": {
       "description": "Agente de código — memoria experiencial, generación, depuración, revisión de código",
       "mode": "subagent",
@@ -369,6 +404,10 @@
     "reserved": 4000
   },
   "command": {
+    "open-webui": {
+      "description": "Abre Open WebUI en el navegador",
+      "template": "Abre http://localhost:3000 en el navegador. Open WebUI es el control center web de KAOS con chat multi-modelo, RAG, y dashboard de métricas."
+    },
     "quality": {
       "description": "Ejecuta smoke check de calidad del sistema KAOS",
       "template": "Ejecuta py -3 .memory/_scripts/vault.py health --auto y py -3 .memory/_scripts/vault.py lint run, luego muestra los resultados"

@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-05-25 10:08:36",
+  "timestamp": "2026-05-25 10:10:39",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 377,
-    "avg_duration_min": 51.8,
+    "total_messages": 378,
+    "avg_duration_min": 51.9,
     "feedback_avg": 0,
     "feedback_count": 0
   },
@@ -29,12 +29,12 @@
     "pressure": "unknown"
   },
   "pipeline": {
-    "status": "aletheia-ready",
-    "profile": "deep"
+    "status": "complete",
+    "profile": "standard"
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 446
+    "total_deduped": 449
   },
   "synapse": {
     "concepts": 91,
@@ -42,11 +42,11 @@
   },
   "activity": {
     "recent_commits": [
+      "4e672d2 session: mnemosyne - curation-cycle",
       "ce1c216 session: mnemosyne - curation-cycle",
       "f5b1780 session: mnemosyne - curation-cycle",
       "3807542 session: mnemosyne - curation-cycle",
-      "4114b25 session: test_agent - Integration test cycle",
-      "1f77955 session: mnemosyne - curation-cycle"
+      "4114b25 session: test_agent - Integration test cycle"
     ],
     "recent_logs": [
       [
@@ -57,12 +57,12 @@
       [
         "2026-05-25",
         "session",
-        "mnemosyne session completed"
+        "test_agent session completed"
       ],
       [
         "2026-05-25",
         "session",
-        "test_agent session completed"
+        "mnemosyne session completed"
       ],
       [
         "2026-05-25",
@@ -247,12 +247,12 @@
     "cache_hit_rate": 2.7
   },
   "quality": {
-    "score": 88.7,
+    "score": 88.6,
     "connectivity": 4.3,
     "freshness": 10.0,
     "embeddings": 13.3,
     "confidence_matrix": 23.1,
-    "completeness": 88.7
+    "completeness": 88.6
   },
   "lifecycle": {
     "tiers": {

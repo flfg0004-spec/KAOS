@@ -39,11 +39,14 @@ class MemoryBridge:
 
     def _check_deerflow(self):
         global DEERFLOW_AVAILABLE
-        try:
-            from deerflow.client import DeerFlowClient
-            DEERFLOW_AVAILABLE = True
-        except ImportError:
-            DEERFLOW_AVAILABLE = False
+        for modname in ("deerflow.client", "lib.deerflow_client"):
+            try:
+                __import__(modname, fromlist=["DeerFlowClient"])
+                DEERFLOW_AVAILABLE = True
+                return
+            except ImportError:
+                continue
+        DEERFLOW_AVAILABLE = False
 
     def _load_cache(self) -> dict:
         if MEMORY_CACHE.exists():
@@ -102,8 +105,11 @@ class MemoryBridge:
             return {"status": "mock", "facts_pushed": len(facts)}
 
         try:
-            from deerflow.client import DeerFlowClient
-            client = DeerFlowClient()
+            try:
+                from deerflow.client import DeerFlowClient as DFC
+            except ImportError:
+                from lib.deerflow_client import DeerFlowClient as DFC
+            client = DFC()
             facts = self._get_top_facts()
 
             for i, fact in enumerate(facts):
@@ -126,8 +132,11 @@ class MemoryBridge:
             return {"status": "mock", "facts_pulled": 0}
 
         try:
-            from deerflow.client import DeerFlowClient
-            client = DeerFlowClient()
+            try:
+                from deerflow.client import DeerFlowClient as DFC
+            except ImportError:
+                from lib.deerflow_client import DeerFlowClient as DFC
+            client = DFC()
             facts_raw = client.memory_get_all()
             facts = json.loads(facts_raw) if isinstance(facts_raw, str) else facts_raw
 

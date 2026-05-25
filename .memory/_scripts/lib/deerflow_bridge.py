@@ -64,16 +64,18 @@ def _check_deerflow() -> bool:
     global DEERFLOW_AVAILABLE, MOCK_MODE
     if DEERFLOW_AVAILABLE:
         return True
-    try:
-        from deerflow.client import DeerFlowClient
-        DEERFLOW_AVAILABLE = True
-        MOCK_MODE = False
-        logger.info("DeerFlowClient detected — bridge active")
-        return True
-    except ImportError:
-        MOCK_MODE = True
-        logger.warning("DeerFlow not installed — bridge in MOCK mode")
-        return False
+    for modname in ("deerflow.client", "lib.deerflow_client"):
+        try:
+            __import__(modname, fromlist=["DeerFlowClient"])
+            DEERFLOW_AVAILABLE = True
+            MOCK_MODE = False
+            logger.info(f"DeerFlowClient from {modname} — bridge active")
+            return True
+        except ImportError:
+            continue
+    MOCK_MODE = True
+    logger.warning("DeerFlow not installed — bridge in MOCK mode (install deerflow or use lib.deerflow_client)")
+    return False
 
 
 class DeerFlowBridge:
@@ -85,8 +87,15 @@ class DeerFlowBridge:
 
     def _get_client(self):
         if self.client is None and not MOCK_MODE:
-            from deerflow.client import DeerFlowClient
-            self.client = DeerFlowClient()
+            try:
+                from deerflow.client import DeerFlowClient
+                self.client = DeerFlowClient()
+            except ImportError:
+                try:
+                    from lib.deerflow_client import DeerFlowClient
+                    self.client = DeerFlowClient()
+                except ImportError:
+                    logger.warning("No DeerFlowClient available")
         return self.client
 
     def _needs_sandbox(self, task: dict) -> bool:
@@ -161,58 +170,68 @@ class DeerFlowBridge:
             return {"status": "error", "error": str(e), "quality_report": report.to_dict()}
 
     async def _via_sandbox(self, task: dict, task_id: str, start: datetime) -> dict:
-        import aiohttp
+        import subprocess
+        import json as _json
+
+        code = task.get("code", "")
+        language = task.get("language", "python")
+        timeout = task.get("timeout", 30)
+
+        payload = _json.dumps({"code": code, "language": language, "timeout": timeout})
 
         try:
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "task_id": task_id,
-                    "type": task.get("type", "code_execution"),
-                    "code": task.get("code", ""),
-                    "language": task.get("language", "python"),
-                    "timeout": task.get("timeout", 30),
-                }
-                async with session.post(
-                    f"{self.sandbox_url}/api/sandbox/execute",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=60),
-                ) as resp:
-                    result = await resp.json()
+            result = subprocess.run(
+                ["docker", "run", "--rm", "-i", "kaos-sandbox"],
+                input=payload,
+                capture_output=True,
+                text=True,
+                timeout=timeout + 10,
+            )
+
+            sandbox_output = _json.loads(result.stdout.strip()) if result.stdout.strip() else {}
 
             elapsed = (datetime.now() - start).total_seconds() * 1000
-            error_count = 1 if result.get("exit_code", 0) != 0 else 0
+            exit_code = sandbox_output.get("exit_code", -1)
+            error_count = 1 if exit_code != 0 else 0
             report = DeerFlowQualityReport(
                 task_id=task_id,
-                agent="deerflow-sandbox",
+                agent="kaos-sandbox",
                 execution_time_ms=int(elapsed),
                 token_usage={"input": 0, "output": 0},
                 error_count=error_count,
                 steps=["sandbox_execute"],
                 confidence=0.9 if error_count == 0 else 0.3,
-                output_summary=str(result.get("stdout", ""))[:200],
+                output_summary=str(sandbox_output.get("stdout", ""))[:200],
             )
             report.save()
 
             return {
                 "status": "ok" if error_count == 0 else "error",
-                "stdout": result.get("stdout", ""),
-                "stderr": result.get("stderr", ""),
-                "exit_code": result.get("exit_code", -1),
+                "stdout": sandbox_output.get("stdout", ""),
+                "stderr": sandbox_output.get("stderr", ""),
+                "exit_code": exit_code,
                 "quality_report": report.to_dict(),
             }
+
+        except subprocess.TimeoutExpired:
+            elapsed = (datetime.now() - start).total_seconds() * 1000
+            report = DeerFlowQualityReport(
+                task_id=task_id, agent="kaos-sandbox",
+                execution_time_ms=int(elapsed), token_usage={},
+                error_count=1, steps=["sandbox_execute", "timeout"],
+                confidence=0.0, output_summary="Sandbox timeout",
+            )
+            report.save()
+            return {"status": "error", "error": "timeout", "quality_report": report.to_dict()}
 
         except Exception as e:
             elapsed = (datetime.now() - start).total_seconds() * 1000
             logger.error(f"Sandbox error: {e}")
             report = DeerFlowQualityReport(
-                task_id=task_id,
-                agent="deerflow-sandbox",
-                execution_time_ms=int(elapsed),
-                token_usage={"input": 0, "output": 0},
-                error_count=1,
-                steps=["sandbox_execute", "error"],
-                confidence=0.0,
-                output_summary=f"Sandbox error: {str(e)[:100]}",
+                task_id=task_id, agent="kaos-sandbox",
+                execution_time_ms=int(elapsed), token_usage={},
+                error_count=1, steps=["sandbox_execute", "error"],
+                confidence=0.0, output_summary=f"Sandbox error: {str(e)[:100]}",
             )
             report.save()
             return {"status": "error", "error": str(e), "quality_report": report.to_dict()}

@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-25 02:49*
+*Auto-generated: 2026-05-25 11:09*
 
 ## Agentes
 
@@ -183,9 +183,12 @@
 - [adr-009-migracion-scraping-stack](../schema/adr-009-migracion-scraping-stack.md) - Migración de Stack de Scraping y Nuevo Pipeline de Investigación
 - [adr-010-integracion-dsol-langgraph](../schema/adr-010-integracion-dsol-langgraph.md) - Integracion DSOL ↔ LangGraph Orchestrator
 - [adr-011-memory-matrix](../schema/adr-011-memory-matrix.md) - Memory Matrix — Modelo Jerarquico de Memoria L0-L3
+- [adr-012-integracion-deerflow-agno](../schema/adr-012-integracion-deerflow-agno.md) - Integracion KAOS + DeerFlow + Agno
+- [adr-013-estrategia-consolidada-deerflow-agno-owui](../schema/adr-013-estrategia-consolidada-deerflow-agno-owui.md) - Estrategia Consolidada — DeerFlow + Agno + Open Web UI + KAOS
 
 ## Schema
 
+- [arquitectura-estrategica-total-kaos](../schema/arquitectura-estrategica-total-kaos.md)
 - [auditoria-estrategia-orquesta-kosmos](../schema/auditoria-estrategia-orquesta-kosmos.md)
 - [compression-strategy](../schema/compression-strategy.md)
 - [estrategia-orquesta-agentes-hermes-strategy](../schema/estrategia-orquesta-agentes-hermes-strategy.md)
@@ -196,4 +199,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-25 02:49*
+*Ultima actualizacion: 2026-05-25 11:09*

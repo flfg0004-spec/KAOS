@@ -1,5 +1,5 @@
-"""LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out."""
-import os, re, json, sqlite3
+"""LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE."""
+import os, re, json, sqlite3, logging
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Send
@@ -10,9 +10,52 @@ from lib.llm import agent_llm_call, SYSTEM_PROMPTS
 from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node, bcg_evaluator_node
 from lib.hermes_bridge import pipeline_notify
 
+_LOG = logging.getLogger(__name__)
+
 DB_PATH = VAULT_ROOT / "cache" / "langgraph.db"
 HITL_PATH = VAULT_ROOT / "_pipeline" / "hitl.json"
 EVAL_PATH = VAULT_ROOT / "_pipeline" / "evaluation.json"
+
+# ── DeerFlow / Agno LIVE mode ──────────────────────────────────────
+DEERFLOW_ENABLED = os.environ.get("DEERFLOW_ENABLED", "false").lower() == "true"
+AGNO_ENABLED = os.environ.get("AGNO_ENABLED", "false").lower() == "true"
+
+_deerflow_bridge = None
+_agno_gateway = None
+
+def _init_deerflow():
+    global _deerflow_bridge
+    if not DEERFLOW_ENABLED:
+        return
+    try:
+        from lib.deerflow_bridge import DeerFlowBridge
+        _deerflow_bridge = DeerFlowBridge()
+        _LOG.info("DeerFlow Bridge initialized (LIVE mode)")
+    except Exception as e:
+        _LOG.warning("DeerFlow init failed: %s — falling back to mock", e)
+
+def _init_agno():
+    global _agno_gateway
+    if not AGNO_ENABLED:
+        return
+    try:
+        from lib.agno_gateway import create_gateway
+        _agno_gateway = create_gateway(host="0.0.0.0", port=8010)
+        _agno_gateway.start()
+        _LOG.info("Agno MCP Gateway started on :8010 (LIVE mode)")
+    except Exception as e:
+        _LOG.warning("Agno init failed: %s — falling back to mock", e)
+
+def init_integrations():
+    """Inicializa DeerFlow y Agno si están habilitados. Llamar una vez al arrancar."""
+    _init_deerflow()
+    _init_agno()
+
+def get_deerflow_bridge():
+    return _deerflow_bridge
+
+def get_agno_gateway():
+    return _agno_gateway
 
 # Deshabilitar LangSmith si no hay API key
 if not os.environ.get("LANGCHAIN_API_KEY"):
@@ -194,6 +237,23 @@ def route_after_kratos(state: KAOSState) -> str:
     elif decision == "error":
         return "reflexion"
     return "reflexion"
+
+def _deerflow_node(state: KAOSState) -> dict:
+    """Ejecuta tareas de código via DeerFlow Sandbox si está disponible."""
+    if not DEERFLOW_ENABLED or not _deerflow_bridge:
+        return {**state, "deerflow_output": None}
+    topic = state.get("topic", "")
+    if not _has_code_keywords(topic):
+        return {**state, "deerflow_output": None}
+    try:
+        import asyncio
+        task = {"type": "code_execution", "prompt": topic, "id": f"df-{hash(topic) % 100000:05d}"}
+        result = asyncio.run(_deerflow_bridge.execute(task))
+        return {**state, "deerflow_output": result.get("output", ""),
+                "deerflow_status": result.get("status", "error")}
+    except Exception as e:
+        _LOG.warning("DeerFlow node error: %s", e)
+        return {**state, "deerflow_output": None, "deerflow_status": "error"}
 
 def route_parallel_split(state: KAOSState) -> str:
     """Split: research+código en paralelo o secuencial."""
@@ -559,12 +619,21 @@ def build_graph(with_parallel: bool = False):
             ["kratos", "parallel_validate"],
         )
     
-    # Deep routing: Kratos → Reflexion → (refine → kratos) or (advance → mnemosyne)
-    builder.add_conditional_edges(
-        "kratos",
-        route_after_kratos,
-        {"reflexion": "reflexion", "mnemosyne": "mnemosyne"}
-    )
+    # Deep routing: Kratos → (DeerFlow si sandbox) → Reflexion → refine/advance
+    if DEERFLOW_ENABLED and _deerflow_bridge:
+        builder.add_conditional_edges(
+            "kratos",
+            route_after_kratos,
+            {"reflexion": "reflexion", "mnemosyne": "mnemosyne", "deerflow": "deerflow"}
+        )
+        builder.add_node("deerflow", _deerflow_node)
+        builder.add_edge("deerflow", "reflexion")
+    else:
+        builder.add_conditional_edges(
+            "kratos",
+            route_after_kratos,
+            {"reflexion": "reflexion", "mnemosyne": "mnemosyne"}
+        )
     builder.add_conditional_edges(
         "reflexion",
         route_after_reflexion,

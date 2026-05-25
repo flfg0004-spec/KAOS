@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  sandbox:
+    build: .
+    image: kaos-sandbox
+    container_name: kaos-sandbox
+    stdin_open: true
+    tty: false
+    mem_limit: 512m
+    cpu_count: 2
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    network_mode: "none"
