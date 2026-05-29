@@ -3,23 +3,12 @@
 Tools: git, vault, sequential-thinking
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
 
 from agno_kaos import AGNO_DB_PATH, default_model
-from agno_kaos.mcp_utils import safe_mcp_tools
-
-MCP_SERVERS = [
-    "npx -y @modelcontextprotocol/server-git --repository .",
-    "py -3 .memory/_scripts/mcp_txtai.py",
-    "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory",
-    "npx -y @modelcontextprotocol/server-sequential-thinking",
-]
+from agno_kaos.mcp_utils import safe_mcp_tools, load_mcp_config
 
 
 def create_kratos(db_path: Path | None = None, model_id: str = "deepseek-v4-flash", with_mcp: bool = False) -> Agent:
@@ -29,7 +18,7 @@ def create_kratos(db_path: Path | None = None, model_id: str = "deepseek-v4-flas
 
     tools = []
     if with_mcp:
-        tools = safe_mcp_tools(MCP_SERVERS)
+        tools = safe_mcp_tools(load_mcp_config("kratos"))
 
     return Agent(
         name="A-Kratos",

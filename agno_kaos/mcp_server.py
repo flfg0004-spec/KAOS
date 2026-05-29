@@ -5,10 +5,7 @@
 """
 
 import asyncio
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agno_kaos.agents.a_aletheia import create_aletheia
 from agno_kaos.agents.a_kosmos import create_kosmos

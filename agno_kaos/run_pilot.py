@@ -5,13 +5,8 @@ Uso: python agno_kaos/run_pilot.py [--port 8022]
 
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import uvicorn
 from agno.os import AgentOS
-
-from agno_kaos import get_ports
 from agno_kaos.agents.apilot import create_pilot
 from agno_kaos.app import app as base_app
 

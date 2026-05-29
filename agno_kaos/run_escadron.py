@@ -15,6 +15,7 @@ from agno_kaos.agents.a_aletheia import create_aletheia
 from agno_kaos.agents.a_kosmos import create_kosmos
 from agno_kaos.agents.a_kratos import create_kratos
 from agno_kaos.agents.a_metis import create_metis
+from agno_kaos.agents.a_coordinator import create_coordinator
 from agno_kaos.app import app as base_app
 from agno_kaos.teams.code_team import create_code_team
 from agno_kaos.teams.research_team import create_research_team
@@ -33,6 +34,7 @@ aletheia = create_aletheia(db_path=_SCRIPTS / "agno_kaos" / "a_aletheia.db", wit
 kosmos = create_kosmos(db_path=_SCRIPTS / "agno_kaos" / "a_kosmos.db", with_mcp=True)
 metis = create_metis(db_path=_SCRIPTS / "agno_kaos" / "a_metis.db", with_mcp=True)
 kratos = create_kratos(db_path=_SCRIPTS / "agno_kaos" / "a_kratos.db", with_mcp=True)
+coordinator = create_coordinator()
 
 # Teams multi-agente
 research_team = create_research_team(with_mcp=True)
@@ -46,7 +48,7 @@ research_workflow = create_research_workflow(with_mcp=True)
 auth_config = get_auth_config()
 
 os = AgentOS(
-    agents=[aletheia, kosmos, metis, kratos],
+    agents=[coordinator, aletheia, kosmos, metis, kratos],
     teams=[research_team, code_team, strategy_team],
     workflows=[research_workflow],
     db=db,

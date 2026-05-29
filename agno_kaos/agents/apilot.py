@@ -6,11 +6,7 @@ Características:
 - Expuesto vía AgentOS con MCP habilitado
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
 
@@ -44,7 +40,7 @@ def create_pilot(
 
             vault_tools = MCPTools(command="py -m lib.mcp_kratos_memory")
             tools.append(vault_tools)
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, OSError) as e:
             print(f"[A-Pilot] MCP tools not available: {e}")
 
     pilot = Agent(

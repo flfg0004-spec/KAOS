@@ -4,11 +4,7 @@ Expone un agente agno como MCP server vía AgentOS.
 Uso: python agno_kaos/sandbox/02_agentos.py
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
 from agno.os import AgentOS

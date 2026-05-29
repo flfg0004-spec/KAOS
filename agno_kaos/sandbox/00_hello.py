@@ -3,11 +3,7 @@
 Uso: python agno_kaos/sandbox/00_hello.py
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from agno.agent import Agent
 
 from agno_kaos import default_model

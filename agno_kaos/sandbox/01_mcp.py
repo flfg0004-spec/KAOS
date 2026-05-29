@@ -3,12 +3,7 @@
 Uso: python agno_kaos/sandbox/01_mcp.py
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / ".memory" / "_scripts"))
-
 from agno.agent import Agent
 from agno.tools.mcp import MCPTools
 

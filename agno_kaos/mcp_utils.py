@@ -58,3 +58,10 @@ def safe_mcp_tools(commands: list[str]) -> list:
         except Exception as e:
             logger.warning("MCP error inesperado: %s — %s", e, cmd[:50])
     return tools
+
+
+def load_mcp_config(agent_name: str) -> list[str]:
+    """Carga la lista de comandos MCP desde config.yaml para un agente."""
+    from agno_kaos import load_config
+    cfg = load_config()
+    return cfg.get("mcp_servers", {}).get(agent_name, [])

@@ -35,3 +35,35 @@ scheduler:
   health_check_interval: 300
   memory_backup_interval: 21600
   daily_report_time: "0 8 * * *"
+
+mcp_servers:
+  aletheia:
+    - "npx -y exa-mcp-server"
+    - "npx -y searxng-mcp --url http://127.0.0.1:8888"
+    - "npx -y crawl4ai-mcp-sse-stdio --url http://127.0.0.1:11235"
+    - "npx -y scholar-search-mcp"
+    - "npx -y mcp-knowledge-graph --memory-path .memory/cache/knowledge-graph"
+    - "py -3 .memory/_scripts/mcp_txtai.py"
+    - "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory"
+    - "npx -y @modelcontextprotocol/server-sequential-thinking"
+  kosmos:
+    - "npx -y @iflow-mcp/depwire-depwire"
+    - "py -3 .memory/_scripts/mcp_structurizr.py"
+    - "npx -y mcp-knowledge-graph --memory-path .memory/cache/knowledge-graph"
+    - "py -3 .memory/_scripts/mcp_txtai.py"
+    - "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory"
+    - "npx -y @modelcontextprotocol/server-sequential-thinking"
+  kratos:
+    - "npx -y @modelcontextprotocol/server-git --repository ."
+    - "py -3 .memory/_scripts/mcp_txtai.py"
+    - "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory"
+    - "npx -y @modelcontextprotocol/server-sequential-thinking"
+  metis:
+    - "py -3 .memory/_scripts/mcp_strategy.py"
+    - "py -3 .memory/_scripts/mcp_strategy_extras.py"
+    - "npx -y @paperjsx/mcp-server"
+    - "npx -y mcp-knowledge-graph --memory-path .memory/cache/knowledge-graph"
+    - "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory"
+    - "npx -y @modelcontextprotocol/server-sequential-thinking"
+  pilot:
+    - "py -3 .memory/_scripts/mcp_kratos_memory.py"

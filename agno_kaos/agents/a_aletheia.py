@@ -3,27 +3,12 @@
 Tools: exa-search, searxng, crawl4ai, vault, txtai, knowledge-graph, scholar-search
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
 
 from agno_kaos import AGNO_DB_PATH, default_model
-from agno_kaos.mcp_utils import safe_mcp_tools
-
-MCP_SERVERS = [
-    "npx -y exa-mcp-server",
-    "npx -y searxng-mcp --url http://127.0.0.1:8888",
-    "npx -y crawl4ai-mcp-sse-stdio --url http://127.0.0.1:11235",
-    "npx -y scholar-search-mcp",
-    "npx -y mcp-knowledge-graph --memory-path .memory/cache/knowledge-graph",
-    "py -3 .memory/_scripts/mcp_txtai.py",
-    "py -3 .memory/_scripts/mcp_proxy.py -- npx -y @modelcontextprotocol/server-filesystem .memory",
-    "npx -y @modelcontextprotocol/server-sequential-thinking",
-]
+from agno_kaos.mcp_utils import safe_mcp_tools, load_mcp_config
 
 
 def create_aletheia(db_path: Path | None = None, model_id: str = "deepseek-v4-flash", with_mcp: bool = False) -> Agent:
@@ -33,7 +18,7 @@ def create_aletheia(db_path: Path | None = None, model_id: str = "deepseek-v4-fl
 
     tools = []
     if with_mcp:
-        tools = safe_mcp_tools(MCP_SERVERS)
+        tools = safe_mcp_tools(load_mcp_config("aletheia"))
 
     return Agent(
         name="A-Aletheia",
