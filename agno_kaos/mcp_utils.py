@@ -6,6 +6,8 @@ resuelve paths relativos a absolutos.
 
 import logging
 import shutil
+import time
+import threading
 from pathlib import Path
 
 logger = logging.getLogger("agno_kaos.mcp")
@@ -58,6 +60,31 @@ def safe_mcp_tools(commands: list[str]) -> list:
         except Exception as e:
             logger.warning("MCP error inesperado: %s — %s", e, cmd[:50])
     return tools
+
+
+class RateLimiter:
+    """Token bucket rate limiter para MCP tool calls.
+
+    Args:
+        rpm: Requests per minute máximo.
+    """
+
+    def __init__(self, rpm: int = 30):
+        self.rpm = rpm
+        self.tokens = float(rpm)
+        self.last_refill = time.monotonic()
+        self.lock = threading.Lock()
+
+    def acquire(self) -> bool:
+        with self.lock:
+            now = time.monotonic()
+            elapsed = now - self.last_refill
+            self.tokens = min(self.rpm, self.tokens + elapsed * (self.rpm / 60.0))
+            self.last_refill = now
+            if self.tokens >= 1:
+                self.tokens -= 1
+                return True
+            return False
 
 
 def load_mcp_config(agent_name: str) -> list[str]:

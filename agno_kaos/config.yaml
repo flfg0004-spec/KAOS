@@ -36,6 +36,10 @@ scheduler:
   memory_backup_interval: 21600
   daily_report_time: "0 8 * * *"
 
+rate_limiting:
+  enabled: true
+  rpm: 30
+
 mcp_servers:
   aletheia:
     - "npx -y exa-mcp-server"

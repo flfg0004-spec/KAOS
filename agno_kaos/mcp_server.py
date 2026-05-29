@@ -2,16 +2,30 @@
 
 - Expone agentes agno como tools MCP para que KAOS los consuma
 - Los agents agno consumen MCP servers de KAOS (vault, txtai, etc.)
+- Rate limiting integrado (30 rpm por defecto)
 """
 
 import asyncio
+import logging
 from pathlib import Path
 
+from agno_kaos.mcp_utils import RateLimiter, load_mcp_config
 from agno_kaos.agents.a_aletheia import create_aletheia
 from agno_kaos.agents.a_kosmos import create_kosmos
 from agno_kaos.agents.a_kratos import create_kratos
 from agno_kaos.agents.a_metis import create_metis
 from agno_kaos.agents.apilot import create_pilot
+
+logger = logging.getLogger("agno_kaos.mcp_server")
+
+# Rate limiter config from config.yaml
+_rl_rpm = 30
+try:
+    from agno_kaos import load_config
+    _rl_rpm = load_config().get("rate_limiting", {}).get("rpm", 30)
+except Exception:
+    pass
+_rate_limiter = RateLimiter(rpm=_rl_rpm)
 
 try:
     from mcp.server import Server as MCPServer
@@ -117,6 +131,13 @@ def _prompt_for_tool(name: str, args: dict) -> str:
 async def handle_call_tool(request: CallToolRequest) -> CallToolResult:
     name = request.params.name
     args = request.params.arguments or {}
+
+    if not _rate_limiter.acquire():
+        logger.warning("Rate limit exceeded for tool: %s", name)
+        return CallToolResult(
+            isError=True, content=[TextContent(type="text", text="Rate limit exceeded. Try again later.")]
+        )
+
     agents = get_agents()
 
     agent_map = {

@@ -1,14 +1,17 @@
 services:
+  # Base de datos Postgres para sesiones, memoria y tracing de AgentOS.
+  # Uso: docker compose -f docker-compose.agno.yml up -d
+  # Conexión: postgresql://agno:<password>@localhost:5433/agno
   postgres:
     image: postgres:16-alpine
     container_name: kaos-agno-postgres
     environment:
       POSTGRES_DB: agno
       POSTGRES_USER: agno
-      POSTGRES_PASSWORD: agno
+      POSTGRES_PASSWORD: ${AGNO_PG_PASSWORD:-agno}
     ports:
       # 5433 externo → 5432 interno (mapeado para no colisionar con Postgres local :5432)
-      - "5433:5432"
+      - "${AGNO_PG_PORT:-5433}:5432"
     volumes:
       - agno-pg-data:/var/lib/postgresql/data
     healthcheck:
