@@ -1,0 +1,37 @@
+agentos:
+  name: "A(gnO)-KAOS Escuadrón A"
+  version: "3.0.0"
+  enable_mcp_server: true
+  tracing: true
+  authorization: true
+  scheduler: true
+  scheduler_poll_interval: 15
+  telemetry: false
+  auto_provision_dbs: true
+
+models:
+  default: "deepseek-v4-flash"
+  fallback: ["deepseek-v4-flash", "go-pro"]
+
+ports:
+  escadron: 8030
+  pilot: 8022
+  aletheia: 8023
+  kosmos: 8024
+  metis: 8025
+  kratos: 8026
+
+database:
+  postgres_url: "postgresql://agno:agno@localhost:5433/agno"
+  sqlite_fallback: "agno_kaos/agno.db"
+  strict_postgres: false
+
+security:
+  internal_service_token: ""
+  jwt_algorithm: "HS256"
+  jwt_issuer: "kaos-agno"
+
+scheduler:
+  health_check_interval: 300
+  memory_backup_interval: 21600
+  daily_report_time: "0 8 * * *"
