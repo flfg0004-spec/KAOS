@@ -2,13 +2,19 @@
 
 Provee landing page, health endpoint, dashboard y rutas custom sin colisionar con MCP.
 """
+from pathlib import Path
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+
+_HERE = Path(__file__).resolve().parent
 
 app = FastAPI(title="A(gnO)-KAOS", version="3.0.0")
 
-app.mount("/static", StaticFiles(directory="agno_kaos/static"), name="static")
+_static_dir = _HERE / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
 from agno_kaos.ecosystem import router as ecosystem_router
 app.include_router(ecosystem_router)
 
@@ -33,7 +39,7 @@ async def health():
 
 @app.get("/dashboard")
 async def dashboard():
-    from fastapi.responses import HTMLResponse
-    from pathlib import Path
-    html = Path("agno_kaos/static/dashboard.html").read_text(encoding="utf-8")
-    return HTMLResponse(html)
+    html_path = _HERE / "static" / "dashboard.html"
+    if html_path.exists():
+        return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Dashboard not found</h1>", status_code=404)
