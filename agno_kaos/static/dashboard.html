@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A(gnO)-KAOS Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',monospace;background:#0d1117;color:#c9d1d9;padding:20px}
+.header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.header h1{color:#58a6ff;font-size:1.6em}
+.badge{padding:4px 12px;border-radius:12px;font-size:.75em;font-weight:600;text-transform:uppercase}
+.bg-green{background:#0d2818;color:#3fb950;border:1px solid #3fb950}
+.bg-yellow{background:#3a2e1e;color:#d29922;border:1px solid #d29922}
+.bg-red{background:#3a1e1e;color:#f85149;border:1px solid #f85149}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;text-align:center}
+.card .lbl{font-size:.7em;color:#8b949e;text-transform:uppercase}
+.card .val{font-size:1.6em;font-weight:bold;margin:4px 0}
+.green{color:#3fb950}.blue{color:#58a6ff}.red{color:#f85149}.yellow{color:#d29922}
+.agrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.acard{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px}
+.acard .hdr{display:flex;align-items:center;gap:8px;font-size:1.1em;font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+.dg{background:#3fb950;box-shadow:0 0 6px #3fb95080}
+.dy{background:#d29922;box-shadow:0 0 6px #d2992280}
+.dr{background:#f85149;box-shadow:0 0 6px #f8514980}
+.amet{display:flex;gap:16px;margin:10px 0}
+.amet>div{flex:1}
+.amet .ml{font-size:.65em;color:#8b949e}
+.amet .mv{font-size:1em;font-weight:500}
+.mcpl{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.mcpi{font-size:.68em;padding:2px 8px;border-radius:4px;background:#21262d;display:inline-flex;align-items:center;gap:4px}
+.mcpi .sd{width:6px;height:6px;border-radius:50%;display:inline-block}
+.gw{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;margin-bottom:20px}
+.gg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:10px}
+.footer{text-align:center;color:#484f58;font-size:.72em;margin-top:20px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.lo{animation:pulse 1.5s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>⚡ A(gnO)-KAOS</h1>
+  <span id="badge" class="badge">—</span>
+  <span id="ts" style="font-size:.75em;color:#484f58;margin-left:auto"></span>
+</div>
+<div class="summary" id="summary"></div>
+<div class="agrid" id="agrid"></div>
+<div class="gw" id="gw"></div>
+<div class="footer" id="ftr"></div>
+<script>
+const ICONS={"A-Aletheia":"🔍","A-Kosmos":"🏗️","A-Metis":"🧠","A-Kratos":"⚙️","A-Pilot":"🎮","A-Coordinator":"🔀"};
+const MCP_L={"exa-search":"Exa","searxng":"SearX","crawl4ai":"Crawl4AI","scholar-search":"Scholar","knowledge-graph":"KG","txtai":"TxtAI","vault":"Vault","sequential-thinking":"SeqThink","depwire":"DepWire","structurizr":"C4","git":"Git","strategy-mcp":"S-MCP","strategy-extras":"SExt","paperjsx":"PJS","kratos-memory":"KMem"};
+
+async function load(){
+  try{
+    const r=await fetch('/ecosystem/status');
+    const d=await r.json();
+    render(d);
+  }catch(e){
+    document.getElementById('summary').innerHTML='<div class="card"><div class="lbl">Error</div><div class="val red">⚠️ '+e.message+'</div></div>';
+  }
+}
+
+function render(d){
+  const e=d.ecosystem,ms=d.metrics_summary;
+  const badge=document.getElementById('badge');
+  badge.textContent=e.status;
+  badge.className='badge bg-'+e.status;
+  document.getElementById('summary').innerHTML=
+    '<div class="card"><div class="lbl">Uptime</div><div class="val green">'+fmt(e.uptime_seconds)+'</div></div>'+
+    '<div class="card"><div class="lbl">RPM</div><div class="val blue">'+ms.requests_per_minute+'</div></div>'+
+    '<div class="card"><div class="lbl">Errores/h</div><div class="val red">'+ms.errors_last_hour+'</div></div>'+
+    '<div class="card"><div class="lbl">Latencia</div><div class="val yellow">'+ms.avg_response_time_ms+'ms</div></div>';
+  document.getElementById('agrid').innerHTML=(d.agents||[]).map(a=>{
+    const ic=ICONS[a.name]||'🤖',dc=a.status==='online'?'dg':a.status==='degraded'?'dy':'dr';
+    const mcps=Object.entries(a.mcp_servers||{}).map(([k,v])=>{
+      const lb=MCP_L[k]||k,c=v==='online'?'#3fb950':v==='degraded'?'#d29922':'#f85149';
+      return '<span class="mcpi"><span class="sd" style="background:'+c+'"></span>'+lb+'</span>';
+    }).join('');
+    return '<div class="acard"><div class="hdr"><span class="dot '+dc+'"></span>'+ic+' '+a.name+'</div>'+
+      '<div class="amet"><div><div class="ml">Req</div><div class="mv">'+(a.requests_total||0)+'</div></div>'+
+      '<div><div class="ml">RPM</div><div class="mv">'+(a.requests_minute||0).toFixed(1)+'</div></div>'+
+      '<div><div class="ml">Lat</div><div class="mv">'+(a.avg_latency_ms||'—')+'ms</div></div>'+
+      '<div><div class="ml">Err</div><div class="mv">'+(a.errors_last_hour||0)+'</div></div></div>'+
+      '<div class="mcpl">'+mcps+'</div></div>';
+  }).join('');
+  const gw=d.mcp_gateway||{};
+  document.getElementById('gw').innerHTML=
+    '<h3 style="color:#58a6ff;font-size:.9em;margin-bottom:8px">🔌 MCP Gateway</h3>'+
+    '<div class="gg"><div><div class="ml">Status</div><div><span class="dot '+(gw.status==='online'?'dg':'dr')+'"></span>'+(gw.status||'?')+'</div></div>'+
+    '<div><div class="ml">Rate Limit</div><div>'+(gw.rate_limiting?.rpm||30)+' RPM</div></div>'+
+    '<div><div class="ml">Total Calls</div><div>'+(gw.total_calls||0)+'</div></div>'+
+    '<div><div class="ml">Errores</div><div class="'+(gw.errors_total>0?'red':'')+'">'+(gw.errors_total||0)+'</div></div></div>'+
+    '<div style="margin-top:10px;display:flex;gap:20px;font-size:.8em;color:#8b949e">'+
+    '<span>DB: '+(d.database?.type||'sqlite')+' ('+(d.database?.status||'?')+')</span>'+
+    '<span>Auth: '+(d.auth?.mode||'disabled')+'</span>'+
+    '<span>Telegram: '+(d.telegram?.status||'off')+'</span></div>';
+  document.getElementById('ftr').textContent='A(gnO)-KAOS v'+e.version+' · '+new Date(d.updated_at).toLocaleTimeString();
+  document.getElementById('ts').textContent='🔄 auto-refresh 10s · '+new Date().toLocaleTimeString();
+}
+
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h+'h '+m+'m'}
+load();setInterval(load,10000);
+</script>
+</body>
+</html>
