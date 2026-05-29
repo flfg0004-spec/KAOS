@@ -1,8 +1,9 @@
-"""Run Escuadrón A — AgentOS producción (Postgres, scheduler, RBAC, tracing).
+"""Run Escuadrón A — AgentOS producción (Postgres, scheduler, RBAC, tracing, Telegram).
 
 Uso: python agno_kaos/run_escadron.py
 """
 import logging
+import os
 from pathlib import Path
 
 import uvicorn
@@ -46,6 +47,30 @@ research_workflow = create_research_workflow(with_mcp=True)
 
 auth_config = get_auth_config()
 
+# Telegram interface (opcional, requiere TELEGRAM_BOT_TOKEN en .env)
+telegram_interfaces = []
+telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+if telegram_token:
+    try:
+        from agno.os.interfaces.telegram import Telegram
+
+        telegram_interfaces.append(
+            Telegram(
+                agent=coordinator,
+                token=telegram_token,
+                commands=[
+                    {"command": "investigate", "description": "Investiga un tema"},
+                    {"command": "analyze", "description": "Analiza arquitectura"},
+                    {"command": "strategize", "description": "Plan estratégico"},
+                    {"command": "code", "description": "Genera o revisa código"},
+                    {"command": "status", "description": "Estado del sistema"},
+                ],
+            )
+        )
+        logger.info("Telegram interface enabled")
+    except ImportError as e:
+        logger.warning("Telegram interface not available: %s", e)
+
 os = AgentOS(
     agents=[coordinator, aletheia, kosmos, metis, kratos],
     teams=[research_team, code_team, strategy_team],
@@ -59,6 +84,7 @@ os = AgentOS(
     authorization_config=auth_config,
     scheduler=AGENTOS_CFG.get("scheduler", False),
     scheduler_poll_interval=AGENTOS_CFG.get("scheduler_poll_interval", 15),
+    interfaces=telegram_interfaces or None,
 )
 
 app = os.get_app()
@@ -70,11 +96,16 @@ else:
     features.append("SQLite")
 if auth_config:
     features.append("RBAC")
+else:
+    features.append("NoAuth")
 if getattr(os, "_scheduler_enabled", False):
     features.append("Scheduler")
 if AGENTOS_CFG.get("tracing"):
     features.append("Tracing")
+if telegram_interfaces:
+    features.append("Telegram")
 
+logger.info("Sec mode: %s", load_config().get("security", {}).get("mode", "disabled"))
 logger.info("=" * 55)
 logger.info("  Escuadrón A — A(gnO)-KAOS AgentOS v3")
 logger.info("=" * 55)

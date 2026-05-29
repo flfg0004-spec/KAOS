@@ -99,10 +99,25 @@ def _load_public_key() -> str | None:
 
 
 def get_auth_config():
-    """Devuelve config de autorización si está habilitada."""
+    """Devuelve config de autorización según el modo de seguridad.
+
+    Modos:
+    - disabled: sin autorización (para cloud control plane)
+    - local: RS256 con clave pública (producción local)
+    - hybrid: detecta automáticamente (cloud=disabled, local=RS256)
+    """
     cfg = load_config()
-    if not cfg.get("agentos", {}).get("authorization", False):
+    mode = cfg.get("security", {}).get("mode", "disabled")
+    auth_flag = cfg.get("agentos", {}).get("authorization", False)
+
+    is_cloud = os.environ.get("KAOS_CLOUD", "").lower() == "true"
+
+    if mode == "disabled" or (mode == "hybrid" and is_cloud):
         return None
+
+    if not auth_flag and mode not in ("local",):
+        return None
+
     from agno.os.config import AuthorizationConfig
 
     algorithm = cfg.get("security", {}).get("jwt_algorithm", "HS256")

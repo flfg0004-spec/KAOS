@@ -3,7 +3,7 @@ agentos:
   version: "3.0.0"
   enable_mcp_server: true
   tracing: true
-  authorization: true
+  authorization: false
   scheduler: true
   scheduler_poll_interval: 15
   telemetry: false
@@ -27,6 +27,7 @@ database:
   strict_postgres: false
 
 security:
+  mode: "hybrid"  # "disabled" | "local" (RS256) | "hybrid" (cloud=bearer, local=RS256)
   internal_service_token: ""
   jwt_algorithm: "RS256"
   jwt_issuer: "kaos-agno"
