@@ -84,14 +84,33 @@ def get_db():
     return SqliteDb(db_file=str(sqlite_fallback))
 
 
+def _load_public_key() -> str | None:
+    """Lee la clave pública JWT desde el archivo configurado en config.yaml."""
+    cfg = load_config()
+    path = cfg.get("security", {}).get("jwt_public_key_path", "")
+    if not path:
+        return AGNO_INTERNAL_TOKEN or None
+    p = Path(path)
+    if not p.is_absolute():
+        p = (_PROJECT_ROOT / p).resolve()
+    if p.exists():
+        return p.read_text().strip()
+    return AGNO_INTERNAL_TOKEN or None
+
+
 def get_auth_config():
     """Devuelve config de autorización si está habilitada."""
     cfg = load_config()
     if not cfg.get("agentos", {}).get("authorization", False):
         return None
     from agno.os.config import AuthorizationConfig
+
+    algorithm = cfg.get("security", {}).get("jwt_algorithm", "HS256")
+    key = _load_public_key()
+    keys = [key] if key else [AGNO_INTERNAL_TOKEN or "dev-token"]
+
     return AuthorizationConfig(
-        verification_keys=[AGNO_INTERNAL_TOKEN or "dev-token"],
-        algorithm="HS256",
+        verification_keys=keys,
+        algorithm=algorithm,
         user_isolation=False,
     )

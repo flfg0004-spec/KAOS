@@ -28,8 +28,9 @@ database:
 
 security:
   internal_service_token: ""
-  jwt_algorithm: "HS256"
+  jwt_algorithm: "RS256"
   jwt_issuer: "kaos-agno"
+  jwt_public_key_path: "agno_kaos/jwt_public_key.pem"
 
 scheduler:
   health_check_interval: 300
