@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 import uvicorn
 from agno.os import AgentOS
+from agno_kaos import get_ports
 from agno_kaos.agents.apilot import create_pilot
 from agno_kaos.app import app as base_app
 
