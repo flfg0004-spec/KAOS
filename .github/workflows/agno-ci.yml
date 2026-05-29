@@ -1,0 +1,27 @@
+name: A(gnO)-KAOS CI
+
+on:
+  push:
+    paths:
+      - "agno_kaos/**"
+      - ".github/workflows/agno-ci.yml"
+  pull_request:
+    paths:
+      - "agno_kaos/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: pip install -e agno_kaos/
+      - name: Install test deps
+        run: pip install pytest pytest-asyncio
+      - name: Run smoke tests
+        run: python -m pytest agno_kaos/tests/ -v --tb=short
+      - name: Run dependency check
+        run: python agno_kaos/check_deps.py
