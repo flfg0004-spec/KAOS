@@ -8,9 +8,11 @@ from typing import TypedDict, Optional
 from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
 from lib.file_lock import acquire_lock
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
-from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, mnemosyne_node, bcg_evaluator_node
-from lib.hermes_bridge import pipeline_notify
+from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, reflexion_node, mnemosyne_node, bcg_evaluator_node
+from lib.agent_nodes.critic import critic_node
 from lib.verification_hook import record as verify_record
+
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -89,7 +91,7 @@ CODE_KEYWORDS = ["code", "codigo", "implement", "program", "function", "class",
 
 HITL_TIMEOUT_MINUTES = 60
 
-def _hitl_enabled(profile: str = "desarrollo") -> bool:
+def _hitl_enabled(profile: str = "standard") -> bool:
     """HITL solo para perfil produccion. Desarrollo/exploracion usan auto-aprobar."""
     return profile == "produccion"
 
@@ -188,7 +190,7 @@ def interrupt_human(prompt: str, context: dict = None) -> bool:
 
 def route_after_strategy(state: KAOSState) -> str:
     """Route: cross_validator for production, kratos for code, mnemosyne otherwise."""
-    profile = state.get("profile", "desarrollo")
+    profile = state.get("profile", "standard")
     if profile == "produccion":
         return "cross_validator"
     has_code = state.get("has_code_subtasks", False) or _has_code_keywords(state.get("topic", ""))
@@ -199,7 +201,8 @@ def route_after_strategy(state: KAOSState) -> str:
 def get_dsol_config(agent_name: str, topic: str) -> dict:
     """REAL DSOL integration per ADR-010: resolves model via dsol.resolve_model()."""
     try:
-        from lib.dsol import resolve_model, AGENT_DEFAULT_TASK
+        from lib.aether.router import resolve_model
+        from lib.aether.config import AGENT_DEFAULT_TASK
         task_type = AGENT_DEFAULT_TASK.get(agent_name, "general")
         result = resolve_model(task_type=task_type, agent=agent_name)
         return {
@@ -240,7 +243,7 @@ def route_after_aletheia(state: KAOSState) -> str:
 
 def _cross_validator_node(state: KAOSState) -> dict:
     """Cross-validate output with Gemini Flash (solo perfil produccion)."""
-    profile = state.get("profile", "desarrollo")
+    profile = state.get("profile", "standard")
     if profile != "produccion":
         return {**state, "cross_val_score": 100, "cross_val_passed": True}
 
@@ -272,7 +275,7 @@ def route_after_kratos(state: KAOSState) -> str:
     decision = state.get("kratos_decision", "needs_curation")
     
     # HITL: ask human before applying Kratos changes (solo perfil produccion)
-    profile = state.get("profile", "desarrollo")
+    profile = state.get("profile", "standard")
     if _hitl_enabled(profile) and (decision == "needs_curation" or decision == "complete"):
         kratos_output = state.get("kratos_output", "")
         if kratos_output and len(kratos_output) > 50:
@@ -316,7 +319,7 @@ def route_parallel_split(state: KAOSState) -> str:
 def _evaluator_node(state: KAOSState) -> dict:
     _notify("Kosmos Evaluator", "in_progress", state)
     try:
-        from lib.kosmos_evaluator import evaluate_system
+        from lib.kosmos_evaluator_v2 import evaluate_system
         result = evaluate_system(state=state)
         _notify("Kosmos Evaluator", "completed", state)
         return {**state, "evaluation": result, "evaluation_score": result.get("composite", 0)}
@@ -447,6 +450,7 @@ def critic_node(state: KAOSState) -> dict:
             '"avg_score":0,"feedback":"...",'
             '"suggestions":{"aletheia":["mejora1","mejora2"],"kosmos":[...]}}'
         )
+        from lib.llm import agent_llm_call
         raw = agent_llm_call("critic", eval_prompt)
         import json as _json
         try:
@@ -606,22 +610,40 @@ def route_after_critic(state: KAOSState) -> str:
         return "refine"
     return "advance"
 
+def _agno_node(name: str):
+    """Crea un AgnoAgentNode para el agente dado, o None si no disponible."""
+    try:
+        from agno_kaos.bridge.langgraph_bridge import AgnoAgentNode
+        return AgnoAgentNode(name)
+    except Exception as e:
+        _LOG.warning("Agno bridge unavailable for %s: %s", name, e)
+        return None
+
+
 def build_graph(with_parallel: bool = True):
     """Build LangGraph DAG.
-    
+
     Args:
         with_parallel: Enable parallel fan-out (default True)
     """
-    # Inicializar integraciones DeerFlow/Agno si estan habilitadas
     init_integrations()
 
     builder = StateGraph(KAOSState)
-    
+
     builder.add_node("planner", planner_node)
-    builder.add_node("aletheia", aletheia_node)
-    builder.add_node("kosmos", kosmos_node)
-    builder.add_node("metis", metis_node)
-    builder.add_node("kratos", kratos_node)
+
+    if AGNO_ENABLED:
+        _LOG.info("AGNO_ENABLED=true — using AgnoAgentNode bridge")
+        builder.add_node("aletheia", _agno_node("aletheia") or aletheia_node)
+        builder.add_node("kosmos", _agno_node("kosmos") or kosmos_node)
+        builder.add_node("metis", _agno_node("metis") or metis_node)
+        builder.add_node("kratos", _agno_node("kratos") or kratos_node)
+    else:
+        builder.add_node("aletheia", aletheia_node)
+        builder.add_node("kosmos", kosmos_node)
+        builder.add_node("metis", metis_node)
+        builder.add_node("kratos", kratos_node)
+
     builder.add_node("reflexion", reflexion_node)
     builder.add_node("mnemosyne", mnemosyne_node)
     builder.add_node("critic", critic_node)
