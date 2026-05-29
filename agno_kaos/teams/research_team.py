@@ -3,6 +3,7 @@
 Mode: coordinate — un agente coordinador orquesta la investigación.
 """
 
+from agno.agent import Agent
 from agno.team import Team, TeamMode
 
 from agno_kaos import default_model
@@ -13,9 +14,11 @@ from agno_kaos.agents.a_kosmos import create_kosmos
 def create_research_team(
     model_id: str = "deepseek-v4-flash",
     with_mcp: bool = False,
+    aletheia: Agent | None = None,
+    kosmos: Agent | None = None,
 ) -> Team:
-    aletheia = create_aletheia(with_mcp=with_mcp)
-    kosmos = create_kosmos(with_mcp=with_mcp)
+    aletheia = aletheia or create_aletheia(with_mcp=with_mcp)
+    kosmos = kosmos or create_kosmos(with_mcp=with_mcp)
 
     return Team(
         name="ResearchTeam",

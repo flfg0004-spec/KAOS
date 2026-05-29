@@ -3,19 +3,22 @@
 Mode: route — enruta según el tipo de tarea (revisión → Kosmos, generación → Kratos).
 """
 
+from agno.agent import Agent
 from agno.team import Team, TeamMode
 
 from agno_kaos import default_model
-from agno_kaos.agents.a_kosmos import create_kosmos
 from agno_kaos.agents.a_kratos import create_kratos
+from agno_kaos.agents.a_kosmos import create_kosmos
 
 
 def create_code_team(
     model_id: str = "deepseek-v4-flash",
     with_mcp: bool = False,
+    kratos: Agent | None = None,
+    kosmos: Agent | None = None,
 ) -> Team:
-    kratos = create_kratos(with_mcp=with_mcp)
-    kosmos = create_kosmos(with_mcp=with_mcp)
+    kratos = kratos or create_kratos(with_mcp=with_mcp)
+    kosmos = kosmos or create_kosmos(with_mcp=with_mcp)
 
     return Team(
         name="CodeTeam",

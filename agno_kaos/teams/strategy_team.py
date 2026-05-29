@@ -3,19 +3,22 @@
 Mode: route — enruta según necesidad de investigación vs análisis.
 """
 
+from agno.agent import Agent
 from agno.team import Team, TeamMode
 
 from agno_kaos import default_model
-from agno_kaos.agents.a_aletheia import create_aletheia
 from agno_kaos.agents.a_metis import create_metis
+from agno_kaos.agents.a_aletheia import create_aletheia
 
 
 def create_strategy_team(
     model_id: str = "deepseek-v4-flash",
     with_mcp: bool = False,
+    metis: Agent | None = None,
+    aletheia: Agent | None = None,
 ) -> Team:
-    metis = create_metis(with_mcp=with_mcp)
-    aletheia = create_aletheia(with_mcp=with_mcp)
+    metis = metis or create_metis(with_mcp=with_mcp)
+    aletheia = aletheia or create_aletheia(with_mcp=with_mcp)
 
     return Team(
         name="StrategyTeam",

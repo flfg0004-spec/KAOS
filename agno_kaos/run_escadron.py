@@ -2,13 +2,15 @@
 
 Uso: python agno_kaos/run_escadron.py
 """
-
+import logging
 from pathlib import Path
 
 import uvicorn
 from agno.os import AgentOS
 
 from agno_kaos import get_auth_config, get_db, get_ports, load_config
+
+logger = logging.getLogger("agno_kaos")
 
 _SCRIPTS = Path(__file__).resolve().parent.parent
 from agno_kaos.agents.a_aletheia import create_aletheia
@@ -22,29 +24,26 @@ from agno_kaos.teams.research_team import create_research_team
 from agno_kaos.teams.strategy_team import create_strategy_team
 from agno_kaos.workflows.research_workflow import create_research_workflow
 
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+
 PORTS = get_ports()
 PORT = PORTS.get("escadron", 8030)
 AGENTOS_CFG = load_config().get("agentos", {})
 
-# Database (Postgres con SQLite fallback)
 db = get_db()
 
-# Agents individuales (paths absolutos)
 aletheia = create_aletheia(db_path=_SCRIPTS / "agno_kaos" / "a_aletheia.db", with_mcp=True)
 kosmos = create_kosmos(db_path=_SCRIPTS / "agno_kaos" / "a_kosmos.db", with_mcp=True)
 metis = create_metis(db_path=_SCRIPTS / "agno_kaos" / "a_metis.db", with_mcp=True)
 kratos = create_kratos(db_path=_SCRIPTS / "agno_kaos" / "a_kratos.db", with_mcp=True)
 coordinator = create_coordinator()
 
-# Teams multi-agente
-research_team = create_research_team(with_mcp=True)
-code_team = create_code_team(with_mcp=True)
-strategy_team = create_strategy_team(with_mcp=True)
+research_team = create_research_team(with_mcp=True, aletheia=aletheia, kosmos=kosmos)
+code_team = create_code_team(with_mcp=True, kratos=kratos, kosmos=kosmos)
+strategy_team = create_strategy_team(with_mcp=True, metis=metis, aletheia=aletheia)
 
-# Workflows multi-paso
 research_workflow = create_research_workflow(with_mcp=True)
 
-# Auth config
 auth_config = get_auth_config()
 
 os = AgentOS(
@@ -76,17 +75,17 @@ if getattr(os, "_scheduler_enabled", False):
 if AGENTOS_CFG.get("tracing"):
     features.append("Tracing")
 
-print("=" * 55)
-print("  Escuadrón A — A(gnO)-KAOS AgentOS v3")
-print("=" * 55)
-print(f"  Landing:     http://127.0.0.1:{PORT}/")
-print(f"  Swagger UI:  http://127.0.0.1:{PORT}/docs")
-print(f"  Agents:      http://127.0.0.1:{PORT}/agents")
-print(f"  Teams:       http://127.0.0.1:{PORT}/teams")
-print(f"  Workflows:   http://127.0.0.1:{PORT}/workflows")
-print(f"  Health:      http://127.0.0.1:{PORT}/health")
-print(f"  MCP:         http://127.0.0.1:{PORT}/mcp")
-print(f"  Features:    {', '.join(features)}")
-print("=" * 55)
+logger.info("=" * 55)
+logger.info("  Escuadrón A — A(gnO)-KAOS AgentOS v3")
+logger.info("=" * 55)
+logger.info("  Landing:     http://127.0.0.1:%d/", PORT)
+logger.info("  Swagger UI:  http://127.0.0.1:%d/docs", PORT)
+logger.info("  Agents:      http://127.0.0.1:%d/agents", PORT)
+logger.info("  Teams:       http://127.0.0.1:%d/teams", PORT)
+logger.info("  Workflows:   http://127.0.0.1:%d/workflows", PORT)
+logger.info("  Health:      http://127.0.0.1:%d/health", PORT)
+logger.info("  MCP:         http://127.0.0.1:%d/mcp", PORT)
+logger.info("  Features:    %s", ", ".join(features))
+logger.info("=" * 55)
 
 uvicorn.run(app, host="127.0.0.1", port=PORT)
