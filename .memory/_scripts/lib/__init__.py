@@ -2,12 +2,11 @@
 
 # KosmosV2 modules
 from .kosmos_memory import ArchitectureMemoryL0, ArchitectureMemoryL1, index_adrs_sync
-from .kosmos_node_v2 import KosmosPipelineV2, run_kosmos_pipeline, resolve_routing, ROUTING_TABLE
 from .kosmos_evaluator_v2 import DimensionalEvaluator, evaluate_all_dimensions, EvaluationResult
 from .kosmos_reflect import ReflectionEngine, ReflectionReport
 
-# KosmosV2 Fase 2: Contracts
-from .kosmos_contracts import (
+# KosmosV2 Fase 2: Contracts (desde subpackage kosmos/contracts/ D3)
+from .kosmos.contracts import (
     AdherenceReport,
     OKRValidationResult,
     ADRImpactNotification,
