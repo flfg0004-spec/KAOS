@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: evaluacion-plugins-ecosistema.md
 auto-distilled: true

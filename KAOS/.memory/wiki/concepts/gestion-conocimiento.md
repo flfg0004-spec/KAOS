@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [mnemosyne, compile-then-query, add-only-extraction, llm-wiki, memory-blocks, prompt-engineering, sistemas-multiagente, espiral-seci, tácito, explícito, corporizado, embebido]

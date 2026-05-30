@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: Metis — ciclo operativo
 related: [memory-blocks, compile-then-query, add-only-extraction]
+tags: ["subject/agent", "subject/arquitectura", "subject/concept", "subject/extraction", "subject/kaos", "subject/memory", "subject/metis", "subject/only"]
 ---
 
 # Estado de la Memoria entre Sesiones

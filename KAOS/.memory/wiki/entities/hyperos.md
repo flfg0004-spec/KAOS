@@ -1,4 +1,5 @@
 ---
+audience: agent
 tags: [entity, stub, xiaomi, hyperos]
 title: HyperOS
 created: 2026-05-29

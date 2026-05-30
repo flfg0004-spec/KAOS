@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: tool
 title: Domain Mapper — Herramienta de Metis
 aliases:

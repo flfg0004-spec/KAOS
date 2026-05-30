@@ -38,7 +38,7 @@ def gate_compilation(content: str, language: str = "python") -> dict:
 def gate_compilation_multi(content: str, language: str) -> dict:
     temp_path = None
     try:
-        if language == "rust" and is_enabled("use_rust_gates"):
+        if language == "rust" and is_enabled("kratos_rust_gates"):
             if not detect_toolchain("rustc"):
                 return {"gate": "compilation", "passed": True, "score": 5.0, "detail": "rustc not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".rs", delete=False, encoding="utf-8") as f:
@@ -50,7 +50,7 @@ def gate_compilation_multi(content: str, language: str) -> dict:
                 return {"gate": "compilation", "passed": True, "score": 10.0, "detail": "rustc compiles without errors"}
             return {"gate": "compilation", "passed": False, "score": 0.0, "detail": f"rustc error: {result.stderr[:200]}"}
 
-        if language == "typescript" and is_enabled("use_ts_gates"):
+        if language == "typescript" and is_enabled("kratos_ts_gates"):
             if not detect_toolchain("tsc"):
                 return {"gate": "compilation", "passed": True, "score": 5.0, "detail": "tsc not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False, encoding="utf-8") as f:
@@ -62,7 +62,7 @@ def gate_compilation_multi(content: str, language: str) -> dict:
                 return {"gate": "compilation", "passed": True, "score": 10.0, "detail": "tsc type-checks without errors"}
             return {"gate": "compilation", "passed": False, "score": 3.0, "detail": f"tsc errors: {result.stdout[:200] or result.stderr[:200]}"}
 
-        if language == "go" and is_enabled("use_go_gates"):
+        if language == "go" and is_enabled("kratos_go_gates"):
             if not detect_toolchain("go"):
                 return {"gate": "compilation", "passed": True, "score": 5.0, "detail": "go not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".go", delete=False, encoding="utf-8") as f:

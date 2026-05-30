@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [kosmos, evaluacion, cadena-verificacion, github-mcp-oficial, lucidity-mcp]

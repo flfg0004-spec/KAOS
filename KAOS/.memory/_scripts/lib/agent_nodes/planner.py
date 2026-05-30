@@ -16,7 +16,7 @@ from lib.feature_flags import is_enabled
 
 
 def planner_node(state: dict) -> dict:
-    if is_enabled("use_new_agent_executor"):
+    if is_enabled("kratos_new_executor"):
         return _planner_node_v2(state)
     return _planner_node_impl(state)
 

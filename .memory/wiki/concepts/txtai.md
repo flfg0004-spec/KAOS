@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [vector-store, rag-architecture, mnemosyne, compile-then-query]

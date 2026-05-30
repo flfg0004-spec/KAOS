@@ -1,4 +1,5 @@
 ---
+audience: agent
 title: "Aether Routing v3 — Sistema de Routing Multi-Modelo"
 date: 2026-05-29
 agent: kosmos

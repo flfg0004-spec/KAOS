@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: strategy
 agent: metis
 date: 2026-05-26

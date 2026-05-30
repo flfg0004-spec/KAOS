@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Spot Compute — Estrategia para AI/ML
 aliases: [Spot Instances, Spot GPU, Preemptible, Spot Strategy, Spot Computing]

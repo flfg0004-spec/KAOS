@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: model
 name: MiMo-V2-TTS
 role: tts

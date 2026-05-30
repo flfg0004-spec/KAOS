@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-okr-estrategia.md
 auto-distilled: true
 distill-engine: v2
+tags: ["subject/agent", "subject/concept", "subject/estrategia", "subject/okrs", "subject/relacionado"]
 ---
 
 # Objective

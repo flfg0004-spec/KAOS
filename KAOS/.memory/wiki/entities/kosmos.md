@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: architecture
 description: Agente de arquitectura — análisis de código, C4, ADRs, gobernanza OPA, calidad real

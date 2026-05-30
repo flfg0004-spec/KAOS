@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: model-family
 name: MiMo
 role: foundation-models

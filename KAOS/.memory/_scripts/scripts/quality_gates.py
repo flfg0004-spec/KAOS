@@ -14,6 +14,8 @@ import json
 import sys
 from pathlib import Path
 
+from lib.paths import MEMORY_DIR, PROJECT_ROOT, SCRIPTS_DIR, VAULT_ROOT
+
 BASE = Path(__file__).resolve().parent.parent.parent  # .memory/
 SCRIPTS = BASE / "_scripts"
 PROJECT_ROOT = BASE.parent
@@ -119,7 +121,23 @@ check("pipeline_e2e.py syntax", "F3", lambda: _syntax_ok(SCRIPTS / "scripts" / "
 
 check("integration tests syntax", "F3", lambda: _syntax_ok(SCRIPTS / "tests" / "test_integration.py"))
 
-check("quality_gates.py self-test", "F3", lambda: True)  # este mismo archivo
+def _collect_script_paths() -> list[Path]:
+    """Collect all .py files under scripts/, hooks/, lib/, tests/ that F0-F3 reference."""
+    paths = []
+    for subdir in ["scripts", "hooks", "lib"]:
+        d = SCRIPTS / subdir
+        if d.exists():
+            paths.extend(sorted(d.rglob("*.py")))
+    tests_dir = SCRIPTS / "tests"
+    if tests_dir.exists():
+        paths.extend(sorted(tests_dir.glob("*.py")))
+    return paths
+
+check("quality_gates.py self-test", "F3", lambda: (
+    Path(__file__).exists()
+    and SCRIPTS.exists()
+    and all(p.exists() for p in _collect_script_paths())
+))
 
 
 def run_gate(gate: str) -> list[dict]:

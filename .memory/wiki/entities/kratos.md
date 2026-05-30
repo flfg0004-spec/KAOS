@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: code
 description: "Agente de codigo con memoria experiencial estructurada basada en APEX-EM"

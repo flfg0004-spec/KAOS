@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [okr-framework, metis, evaluacion, para-metis-estrategia]

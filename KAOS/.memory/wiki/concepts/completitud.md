@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [veracidad, coherencia, reproducibilidad, utilidad, metricas-calidad]

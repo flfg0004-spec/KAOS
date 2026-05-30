@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Cloud Computing — Panorama Estratégico 2025-2026
 aliases: [Cloud Computing, Cloud Market, Nube, Cloud 2025, Cloud 2026]

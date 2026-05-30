@@ -13,7 +13,7 @@ def gate_types(content: str, language: str = "python") -> dict:
     if language != "python":
         return {"gate": "types", "passed": True, "score": 5.0, "detail": "Type check only for Python"}
 
-    if is_enabled("use_real_mypy"):
+    if is_enabled("kratos_mypy"):
         try:
             if not detect_toolchain("mypy"):
                 return {"gate": "types", "passed": True, "score": 5.0, "detail": "mypy not installed"}

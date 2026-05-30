@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: investigacion-prompt-engineering.md
 auto-distilled: true

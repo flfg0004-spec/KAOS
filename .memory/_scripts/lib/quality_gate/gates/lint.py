@@ -27,7 +27,7 @@ def gate_lint(content: str, language: str = "python") -> dict:
 def gate_lint_multi(content: str, language: str) -> dict:
     temp_path = None
     try:
-        if language == "rust" and is_enabled("use_rust_gates"):
+        if language == "rust" and is_enabled("kratos_rust_gates"):
             if not detect_toolchain("cargo"):
                 return {"gate": "lint", "passed": True, "score": 5.0, "detail": "cargo not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".rs", delete=False, encoding="utf-8") as f:
@@ -38,7 +38,7 @@ def gate_lint_multi(content: str, language: str) -> dict:
             score = max(0, 10 - issues)
             return {"gate": "lint", "passed": score >= 5, "score": score, "detail": f"clippy: {issues} issues"}
 
-        if language == "typescript" and is_enabled("use_ts_gates"):
+        if language == "typescript" and is_enabled("kratos_ts_gates"):
             if not detect_toolchain("eslint"):
                 return {"gate": "lint", "passed": True, "score": 5.0, "detail": "eslint not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False, encoding="utf-8") as f:
@@ -52,7 +52,7 @@ def gate_lint_multi(content: str, language: str) -> dict:
             score = max(0, 10 - issues)
             return {"gate": "lint", "passed": score >= 5, "score": score, "detail": f"eslint: {issues} issues"}
 
-        if language == "go" and is_enabled("use_go_gates"):
+        if language == "go" and is_enabled("kratos_go_gates"):
             if not detect_toolchain("golint"):
                 return {"gate": "lint", "passed": True, "score": 5.0, "detail": "golint not installed"}
             with tempfile.NamedTemporaryFile(mode="w", suffix=".go", delete=False, encoding="utf-8") as f:

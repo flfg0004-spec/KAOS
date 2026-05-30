@@ -54,11 +54,11 @@ def add_audience_to_file(path: Path, dry_run: bool = True) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Add audience field to wiki frontmatter")
-    parser.add_argument("--dry-run", action="store_true", default=True, help="Only report (default)")
+    parser.add_argument("--dry-run", action="store_true", help="Only report (default)")
     parser.add_argument("--apply", action="store_true", help="Actually write changes")
     args = parser.parse_args()
 
-    dry_run = not args.apply
+    dry_run = args.dry_run or not args.apply
     total = {"updated": 0, "skipped": 0, "no_fm": 0}
 
     for wiki_dir in WIKI_DIRS:

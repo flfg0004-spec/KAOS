@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: technique
 name: Multi-Token Prediction (MTP)
 role: inference-optimization

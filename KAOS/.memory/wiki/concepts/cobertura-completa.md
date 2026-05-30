@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-pipeline-conocimiento.md
 auto-distilled: true
+tags: ["subject/agent", "subject/concept", "subject/conocimiento", "subject/pipeline", "subject/relacionado"]
 ---
 
 # Cobertura completa

@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [evaluacion, score-engine, cadena-verificacion, software-testing, reproducibilidad]

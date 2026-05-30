@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-30 11:46*
+*Auto-generated: 2026-05-30 12:44*
 
 ## Agentes
 
@@ -35,6 +35,7 @@
 - [mnemosyne](entities/mnemosyne.md) - Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault, knowledge scoring, síntesis automática
 - [MOPD](entities/MOPD.md) - Multi-Teacher On-Policy Distillation — técnica de destilación donde múltiples modelos teacher guían el entrenamiento on-policy, permitiendo que el modelo estudiante supere a sus teachers individuales
 - [Multi-Token-Prediction-MTP](entities/Multi-Token-Prediction-MTP.md) - Técnica de speculative decoding nativa — el modelo predice múltiples tokens futuros simultáneamente, acelerando la generación sin pérdida de calidad
+- [obsidian-workflow](entities/obsidian-workflow.md) - -
 - [ua-inspiracion](entities/ua-inspiracion.md) - -
 - [xiaomi-su7](entities/xiaomi-su7.md) - -
 - [xiaomi](entities/xiaomi.md) - -
@@ -265,4 +266,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-30 11:46*
+*Ultima actualizacion: 2026-05-30 12:44*

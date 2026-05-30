@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [veracidad, coherencia, completitud, utilidad, metricas-calidad, score-engine]

@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: strategy
 description: Agente de estrategia — planeación, OKRs, roadmaps, reportes ejecutivos, orquestador de calidad

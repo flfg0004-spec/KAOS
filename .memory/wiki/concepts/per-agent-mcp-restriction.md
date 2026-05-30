@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: OpenCode MCP docs + investigación Aletheia
 related: [mcp-ecosistema, configuracion-opencode]
+tags: ["practice/api-design", "practice/model-context-protocol", "principle/architecture-decision-record", "subject/agent", "subject/arquitectura", "subject/concept", "subject/dsol", "subject/graph"]
 ---
 
 # Per-Agent MCP Restriction

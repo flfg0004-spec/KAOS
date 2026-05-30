@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-c4-model-arquitectura.md
 auto-distilled: true
 distill-engine: v2
+tags: ["subject/agent", "subject/arquitectura", "subject/concept", "subject/model"]
 ---
 
 # Code (Nivel 4)

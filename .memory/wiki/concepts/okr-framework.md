@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [metis, evaluacion, metricas-calidad, planeacion-estrategica, key-results]

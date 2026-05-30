@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: arquitectura KAOS
 related: [pipeline-maid, dsol]
+tags: ["practice/api-design", "practice/model-context-protocol", "practice/user-experience", "subject/agent", "subject/arquitectura", "subject/calidad", "subject/concept", "subject/dedup"]
 ---
 
 # Estrategia de Integración de Herramientas — KAOS Ecosystem

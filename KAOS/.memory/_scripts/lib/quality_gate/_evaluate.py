@@ -24,7 +24,7 @@ _PYTHON_GATES = [
     ("style", gate_style, 0.10),
 ]
 
-_MULTI_LANG_FLAGS = {"rust": "use_rust_gates", "typescript": "use_ts_gates", "go": "use_go_gates"}
+_MULTI_LANG_FLAGS = {"rust": "kratos_rust_gates", "typescript": "kratos_ts_gates", "go": "kratos_go_gates"}
 _MULTI_LANG_GATES = {
     "syntax": gate_syntax_multi,
     "compilation": gate_compilation_multi,
@@ -89,7 +89,7 @@ def evaluate(content: str, language: str = "") -> dict:
 
 
 def evaluate_parallel(content: str, language: str = "", max_workers: int = 4) -> dict:
-    if not is_enabled("use_parallel_gates"):
+    if not is_enabled("kratos_parallel_gates"):
         return evaluate(content, language)
 
     if not language:
@@ -118,7 +118,7 @@ def evaluate_parallel(content: str, language: str = "", max_workers: int = 4) ->
     syntax_result = gate_syntax(content, language)
     results = {"syntax": syntax_result}
 
-    if is_enabled("use_early_exit") and not syntax_result["passed"]:
+    if is_enabled("kratos_early_exit") and not syntax_result["passed"]:
         results.update(_run_python_gates(content, language, [(n, f, w) for n, f, w in _PYTHON_GATES if n != "syntax"]))
         composite = _compute_composite(results, {n: w for n, _, w in _PYTHON_GATES})
         return {"composite": round(composite, 1), "gates": results, "passed": False,

@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [agentes-inteligentes, aletheia, kosmos, metis, mnemosyne, pipeline-maid, per-agent-mcp-restriction, orquestacion-agentes, gestion-conocimiento, máquinas-de-estado]

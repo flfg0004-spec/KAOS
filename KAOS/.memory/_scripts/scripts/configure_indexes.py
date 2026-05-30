@@ -15,6 +15,8 @@ import json
 import sys
 from pathlib import Path
 
+from lib.paths import MEMORY_DIR, PROJECT_ROOT, VAULT_ROOT
+
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 BASE = _SCRIPTS_DIR.parent  # .memory/
 PROJECT_ROOT = BASE.parent   # KAOS/

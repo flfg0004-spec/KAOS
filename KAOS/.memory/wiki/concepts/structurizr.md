@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [structurizr-mcp, c4-model, arquitectura-software]

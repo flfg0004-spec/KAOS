@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [rag-architecture, txtai, compile-then-query, adr]

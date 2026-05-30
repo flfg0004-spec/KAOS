@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: strategy
 title: 'Plan Estratégico: Obsidian Optimization & Efficiency'
 aliases:

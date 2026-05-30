@@ -4,7 +4,7 @@
 Uso:
   py -3 _scripts/scripts/schedule_tagger.py --now              # todos los archivos
   py -3 _scripts/scripts/schedule_tagger.py --incremental      # solo cambios desde HEAD
-  py -3 _scripts/scripts/schedule_tagger.py --daemon           # modo continuo
+   py -3 _scripts/scripts/schedule_tagger.py --watch            # modo continuo
 """
 
 import argparse
@@ -17,6 +17,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from lib.paths import MEMORY_DIR
+
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 _LIB_DIR = _SCRIPTS_DIR / "lib"
 if str(_LIB_DIR) not in sys.path:
@@ -26,6 +28,7 @@ from lib.tagger import tag_all, tag_file, _get_frontmatter, _read
 
 logger = logging.getLogger("schedule_tagger")
 _RUNNING = True
+_JSON_MODE = False
 
 BASE = _SCRIPTS_DIR.parent  # .memory/
 CACHE_DIR = BASE / "cache" / "tagger-reports"
@@ -53,6 +56,15 @@ def _print_summary(results: list[dict]):
     modified = sum(1 for r in results if r.get("modified"))
     errors = sum(1 for r in results if "error" in r)
     added_total = sum(len(r.get("added", [])) for r in results)
+
+    if _JSON_MODE:
+        print(json.dumps({
+            "files_processed": total,
+            "modified": modified,
+            "errors": errors,
+            "tags_added": added_total,
+        }))
+        return
 
     print(f"\n=== Tagger Summary ===")
     print(f"  Files processed: {total}")
@@ -165,7 +177,7 @@ def run_incremental(dry_run: bool = False) -> list[dict]:
 
 def daemon_loop(interval: int, dry_run: bool = False):
     """Watch mode: cada N segundos revisa git status, etiqueta cambios."""
-    logger.info("Daemon mode started (interval=%ds)", interval)
+    logger.info("Watch mode started (interval=%ds)", interval)
     while _RUNNING:
         try:
             run_incremental(dry_run=dry_run)
@@ -193,16 +205,27 @@ def main():
                         help="Etiqueta todos los archivos sin tags")
     parser.add_argument("--incremental", action="store_true",
                         help="Solo etiqueta cambios desde HEAD")
-    parser.add_argument("--daemon", action="store_true",
+    parser.add_argument("--watch", action="store_true",
                         help="Modo continuo: revisa cada N segundos")
+    parser.add_argument("--daemon", action="store_true",
+                        help=argparse.SUPPRESS)  # deprecated
     parser.add_argument("--interval", type=int, default=300,
-                        help="Intervalo en segundos para --daemon (default: 300)")
+                        help="Intervalo en segundos para --watch (default: 300)")
     parser.add_argument("--dry-run", action="store_true",
                         help="No modificar archivos, solo mostrar qué se haría")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Logging verbose")
+    parser.add_argument("--json", action="store_true", help="Output JSON")
 
     args = parser.parse_args()
+
+    if args.daemon:
+        logger.warning("--daemon is deprecated, use --watch instead")
+        args.watch = True
+
+    if args.json:
+        global _JSON_MODE
+        _JSON_MODE = True
 
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(
@@ -211,7 +234,7 @@ def main():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    if args.daemon:
+    if args.watch:
         _ensure_dirs()
         log_path = CACHE_DIR / "schedule_tagger.log"
         fh = logging.FileHandler(str(log_path), encoding="utf-8")
@@ -227,7 +250,7 @@ def main():
         run_all(dry_run=args.dry_run)
     elif args.incremental:
         run_incremental(dry_run=args.dry_run)
-    elif args.daemon:
+    elif args.watch:
         daemon_loop(args.interval, dry_run=args.dry_run)
     else:
         parser.print_help()

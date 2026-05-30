@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-orquesta-agentes-hermes.md
 auto-distilled: true
 distill-engine: v2
+tags: ["subject/agent", "subject/agentes", "subject/arquitectura", "subject/concept", "subject/hermes", "subject/relacionado", "subject/search"]
 ---
 
 # Herramientas utilizadas

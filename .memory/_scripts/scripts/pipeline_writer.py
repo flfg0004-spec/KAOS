@@ -5,10 +5,10 @@ Usa file_lock.buffered_write para acumular escrituras y descargar
 en lote cada N segundos o N archivos.
 
 Uso:
-  py -3 _scripts/scripts/pipeline_writer.py                  # daemon mode (flush cada 30s)
+  py -3 _scripts/scripts/pipeline_writer.py                  # watch mode (flush cada 30s)
   py -3 _scripts/scripts/pipeline_writer.py --flush-all     # flush inmediato
-  py -3 _scripts/scripts/pipeline_writer.py --daemon --interval 60  # flush cada 60s
-  py -3 _scripts/scripts/pipeline_writer.py --buffer-size 10        # flush cada 10 archivos
+  py -3 _scripts/scripts/pipeline_writer.py --watch --interval 60  # flush cada 60s
+  py -3 _scripts/scripts/pipeline_writer.py --buffer-size 10       # flush cada 10 archivos
 """
 
 import argparse
@@ -43,10 +43,10 @@ def flush_all():
     logger.info("Flush complete.")
 
 
-def daemon_loop(interval: float, buffer_size: int):
-    """Loop principal en modo daemon."""
+def watch_loop(interval: float, buffer_size: int):
+    """Loop principal en modo watch."""
     logger.info(
-        "Pipeline writer daemon started (interval=%ss, buffer_size=%s)",
+        "Pipeline writer watch loop started (interval=%ss, buffer_size=%s)",
         interval, buffer_size,
     )
     while _RUNNING:
@@ -57,7 +57,7 @@ def daemon_loop(interval: float, buffer_size: int):
 
     # Flush final al salir
     flush_all()
-    logger.info("Pipeline writer daemon stopped.")
+    logger.info("Pipeline writer watch loop stopped.")
 
 
 def main():
@@ -65,9 +65,14 @@ def main():
         description="Pipeline de escritura bufferizada con auto-flush",
     )
     parser.add_argument(
+        "--watch", "-w",
+        action="store_true",
+        help="Modo watch: flush periódico cada --interval segundos",
+    )
+    parser.add_argument(
         "--daemon", "-d",
         action="store_true",
-        help="Modo daemon: flush periódico cada --interval segundos",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--flush-all", "-f",
@@ -94,6 +99,11 @@ def main():
 
     args = parser.parse_args()
 
+    # Deprecation: --daemon → --watch
+    if args.daemon:
+        logger.warning("--daemon is deprecated, use --watch instead")
+        args.watch = True
+
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -108,8 +118,8 @@ def main():
         flush_all()
         return
 
-    if args.daemon:
-        daemon_loop(args.interval, args.buffer_size)
+    if args.watch:
+        watch_loop(args.interval, args.buffer_size)
         return
 
     # Sin flags: flush inmediato y salir (comportamiento por defecto)

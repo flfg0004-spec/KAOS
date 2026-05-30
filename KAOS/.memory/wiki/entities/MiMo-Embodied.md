@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: model-family
 name: MiMo-Embodied
 role: embodied-ai

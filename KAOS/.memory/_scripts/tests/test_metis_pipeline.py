@@ -85,13 +85,13 @@ class TestSyncCheck(unittest.TestCase):
 
         self.assertTrue(hasattr(metis_sync_check, "main"))
 
-    def test_sync_check_has_12_tools(self):
-        """La referencia debe tener 12 tools."""
+    def test_sync_check_has_20_tools(self):
+        """La referencia debe tener 20 tools (expansión completa)."""
         sys.path.insert(0, str(KAOS_ROOT / ".memory" / "_scripts" / "audit"))
         import metis_sync_check
 
         tools = metis_sync_check.get_metis_tools_from_opencode()
-        self.assertEqual(len(tools), 12)
+        self.assertGreaterEqual(len(tools), 20)
         self.assertIn("strategy-mcp", tools)
         self.assertNotIn("dsol", tools)
         self.assertNotIn("speed", tools)
@@ -155,11 +155,11 @@ class TestSkillMd(unittest.TestCase):
         path = KAOS_ROOT / ".opencode" / "skills" / "metis" / "SKILL.md"
         self.assertTrue(path.exists())
 
-    def test_quality_orchestrator_example_exists(self):
-        """SKILL.md debe tener el ejemplo de Quality Orchestrator."""
+    def test_quality_orchestration_mode_exists(self):
+        """SKILL.md debe tener la sección Quality Orchestration."""
         path = KAOS_ROOT / ".opencode" / "skills" / "metis" / "SKILL.md"
         content = path.read_text(encoding="utf-8")
-        self.assertIn("Quality Orchestrator Mode", content)
+        self.assertIn("Quality Orchestration Mode", content)
 
     def test_metodologia_7_fases_exists(self):
         """SKILL.md debe tener las 7 fases."""

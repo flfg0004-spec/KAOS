@@ -1,4 +1,5 @@
 ---
+audience: agent
 tags: [entity, stub, model]
 ---
 # DeepSeek V4 Flash

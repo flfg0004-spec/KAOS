@@ -39,18 +39,18 @@ def heal() -> list[str]:
     failed_count = by_decision.get("failed", 0) + by_decision.get("rejected_by_gov", 0)
     failure_rate = failed_count / max(1, total)
 
-    if failure_rate > 0.3 and is_enabled("use_parallel_gates"):
+    if failure_rate > 0.3 and is_enabled("kratos_parallel_gates"):
         disable("use_parallel_gates")
         actions.append("Disabled use_parallel_gates (failure rate >30%)")
         logger.warning("Self-heal: disabled parallel gates (failure rate %.0f%%)", failure_rate * 100)
 
     avg_quality = summary.get("avg_quality_score", 10.0)
-    if avg_quality < 5.0 and not is_enabled("use_real_mypy"):
+    if avg_quality < 5.0 and not is_enabled("kratos_mypy"):
         enable("use_real_mypy")
         actions.append("Enabled use_real_mypy (avg quality <5.0)")
         logger.warning("Self-heal: enabled real mypy (avg quality %.1f)", avg_quality)
 
-    if failure_rate > 0.15 and not is_enabled("use_circuit_breaker"):
+    if failure_rate > 0.15 and not is_enabled("kratos_circuit_breaker_legacy"):
         enable("use_circuit_breaker")
         actions.append("Enabled use_circuit_breaker (failure rate >15%)")
         logger.warning("Self-heal: enabled circuit breaker (failure rate %.0f%%)", failure_rate * 100)
@@ -64,7 +64,7 @@ def heal() -> list[str]:
                 low_quality_count += 1
         except (ValueError, TypeError):
             pass
-    if low_quality_count >= 3 and not is_enabled("use_real_mypy"):
+    if low_quality_count >= 3 and not is_enabled("kratos_mypy"):
         enable("use_real_mypy")
         actions.append("Enabled use_real_mypy (3+ recent low quality scores)")
         logger.warning("Self-heal: enabled real mypy (%d/5 recent low quality)", low_quality_count)

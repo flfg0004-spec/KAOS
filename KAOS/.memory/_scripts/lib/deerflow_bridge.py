@@ -171,7 +171,7 @@ class DeerFlowBridge:
     async def _via_sandbox(self, task: dict, task_id: str, start: datetime) -> dict:
         from lib.feature_flags import is_enabled
 
-        if not is_enabled("ether_sandbox_enabled"):
+        if not is_enabled("infra_sandbox"):
             logger.info("Sandbox disabled via feature flag — returning mock")
             return {"status": "mock", "note": "Sandbox disabled via feature flag"}
 

@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: Letta (MemGPT) — arXiv:2310.08560
 related: [compile-then-query, add-only-extraction]
+tags: ["subject/agent", "subject/agentes", "subject/arquitectura", "subject/concept", "subject/extraction", "subject/kaos", "subject/letta", "subject/memgpt"]
 ---
 
 # Memory Blocks

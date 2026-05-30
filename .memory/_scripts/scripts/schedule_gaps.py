@@ -5,7 +5,7 @@ Uso:
   py -3 _scripts/scripts/schedule_gaps.py --now              # ejecuta una vez
   py -3 _scripts/scripts/schedule_gaps.py --auto TOPIC       # detecta tema desde raw/
   py -3 _scripts/scripts/schedule_gaps.py --every 1h         # cada hora (bucle)
-  py -3 _scripts/scripts/schedule_gaps.py --daemon           # modo continuo
+   py -3 _scripts/scripts/schedule_gaps.py --watch            # modo continuo
 """
 
 import argparse
@@ -16,6 +16,8 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from lib.paths import MEMORY_DIR
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 _LIB_DIR = _SCRIPTS_DIR / "lib"
@@ -151,10 +153,12 @@ def main():
                         help="Detecta tema desde raw/ (opcional: especificar tema)")
     parser.add_argument("--every", type=str, default=None,
                         help="Cada N (ej: 1h, 30m, 3600) — bucle simple")
-    parser.add_argument("--daemon", action="store_true",
+    parser.add_argument("--watch", action="store_true",
                         help="Modo continuo con log a archivo")
+    parser.add_argument("--daemon", action="store_true",
+                        help=argparse.SUPPRESS)  # deprecated
     parser.add_argument("--interval", type=int, default=3600,
-                        help="Intervalo en segundos para --daemon (default: 3600)")
+                        help="Intervalo en segundos para --watch (default: 3600)")
     parser.add_argument("--topic", type=str, default="kaos",
                         help="Tema para gap query (default: kaos)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Logging verbose")
@@ -169,7 +173,11 @@ def main():
     )
 
     if args.daemon:
-        # Modo daemon: log a archivo también
+        logger.warning("--daemon is deprecated, use --watch instead")
+        args.watch = True
+
+    if args.watch:
+        # Modo watch: log a archivo también
         _ensure_dirs()
         log_path = CACHE_DIR / "schedule_gaps.log"
         fh = logging.FileHandler(str(log_path), encoding="utf-8")

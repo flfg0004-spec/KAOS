@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: technique
 name: Hybrid Attention
 role: architecture

@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [multi-shot-few-shot, role-assignment, self-consistency, compile-then-query, rag-architecture, tool-calling, gestion-conocimiento]

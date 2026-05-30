@@ -44,7 +44,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
         "incremental": False, "files_skipped": 0, "files_processed": 0,
     }
 
-    incremental = is_enabled("use_incremental_analysis")
+    incremental = is_enabled("mnemosyne_incremental")
     changed_files = _get_modified_files() if incremental else []
 
     if incremental and changed_files is not None:
@@ -68,7 +68,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
         has_changes = len(changed_files) > 0
 
     if not incremental or has_changes:
-        if not is_enabled("use_enhanced_parallelism"):
+        if not is_enabled("mnemosyne_parallelism"):
             try:
                 from lib.lint import run as lint_run
                 issues, report_text = lint_run([])
@@ -139,7 +139,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             logger.warning("_run_gap_detection failed, returning 0 gaps")
             return ("gaps", 0, [])
 
-    if is_enabled("use_enhanced_parallelism"):
+    if is_enabled("mnemosyne_parallelism"):
         with ThreadPoolExecutor(max_workers=PHASE_B_WORKERS) as ex:
             futs = {
                 ex.submit(_run_wikilinks): "wikilinks",
@@ -178,7 +178,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
                         results["errors"].append(f"{p}: {e}")
 
     if not incremental or has_changes:
-        if not is_enabled("use_enhanced_parallelism"):
+        if not is_enabled("mnemosyne_parallelism"):
             try:
                 from lib.gaps import GapDetector
                 detector = GapDetector()

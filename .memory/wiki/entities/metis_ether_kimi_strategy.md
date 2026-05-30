@@ -1,4 +1,5 @@
 ---
+audience: agent
 entity: Metis
 type: strategic_plan
 date: 2026-05-26

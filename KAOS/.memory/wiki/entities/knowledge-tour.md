@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: tool
 title: Knowledge Tour Generator — Herramienta de Kosmos
 aliases:

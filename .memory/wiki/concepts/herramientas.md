@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-modelos-agentes-memoria.md
 auto-distilled: true
+tags: ["practice/model-context-protocol", "subject/agent", "subject/agentes", "subject/arquitectura", "subject/concept", "subject/pipeline", "subject/relacionado", "subject/search"]
 ---
 
 # Herramientas

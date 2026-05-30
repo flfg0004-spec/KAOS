@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-herramientas-test-estrategia.md
 auto-distilled: true
 distill-engine: v2
+tags: ["subject/agent", "subject/agentes", "subject/concept", "subject/estrategia", "subject/relacionado", "subject/testing"]
 ---
 
 # Kosmos → DeepEval

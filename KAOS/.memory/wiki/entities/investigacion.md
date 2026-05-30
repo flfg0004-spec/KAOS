@@ -1,4 +1,5 @@
 ---
+audience: agent
 tags: [entity, stub, concept]
 ---
 # Investigación

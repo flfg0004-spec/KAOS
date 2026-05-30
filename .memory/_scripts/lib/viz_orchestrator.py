@@ -151,7 +151,7 @@ def orchestrate_pdf(agent: str, data: dict, output_path: str | None = None) -> V
     Returns:
         VizOutput with PDF path
     """
-    if not is_enabled("use_pdf_reports"):
+    if not is_enabled("viz_pdf"):
         return VizOutput(success=False, agent=agent, format="pdf")
 
     try:
@@ -195,7 +195,7 @@ def orchestrate(
 def _orchestrate_kosmos(data: KosmosData | None, output_path: str | Path) -> VizOutput:
     result = VizOutput(success=True, agent="kosmos", format="html")
 
-    if is_enabled("use_kroki_diagrams") and data and data.adr_content:
+    if is_enabled("viz_kroki") and data and data.adr_content:
         out = _render_kroki("structurizr", data.adr_content)
         if out.success:
             result.paths.extend(out.paths)
@@ -206,7 +206,7 @@ def _orchestrate_kosmos(data: KosmosData | None, output_path: str | Path) -> Viz
 def _orchestrate_metis(data: MetisData | None, output_path: str | Path) -> VizOutput:
     result = VizOutput(success=True, agent="metis", format="html")
 
-    if is_enabled("use_kroki_diagrams") and data and data.domain_clusters:
+    if is_enabled("viz_kroki") and data and data.domain_clusters:
         out = _render_kroki("graphviz", data.domain_clusters)
         if out.success:
             result.paths.extend(out.paths)
@@ -217,17 +217,17 @@ def _orchestrate_metis(data: MetisData | None, output_path: str | Path) -> VizOu
 def _orchestrate_mnemosyne(data: MnemosyneData | None, output_path: str | Path) -> VizOutput:
     result = VizOutput(success=True, agent="mnemosyne", format="html")
 
-    if is_enabled("use_plotly_dashboard"):
+    if is_enabled("viz_plotly"):
         out = _render_quality_dashboard(output_path=output_path / "quality-dashboard.html")
         if out.success:
             result.paths.extend(out.paths)
 
-    if is_enabled("use_cytoscape_graph"):
+    if is_enabled("viz_cytoscape"):
         out = _render_knowledge_graph(output_path=output_path / "knowledge-graph.html")
         if out.success:
             result.paths.extend(out.paths)
 
-    if is_enabled("use_markmap_mindmaps") and data and data.curation_phases:
+    if is_enabled("viz_markmap") and data and data.curation_phases:
         out = _render_markmap(data.curation_phases)
         if out.success:
             result.paths.extend(out.paths)
@@ -238,7 +238,7 @@ def _orchestrate_mnemosyne(data: MnemosyneData | None, output_path: str | Path) 
 def _orchestrate_aletheia(data: AletheiaData | None, output_path: str | Path) -> VizOutput:
     result = VizOutput(success=True, agent="aletheia", format="html")
 
-    if is_enabled("use_markmap_mindmaps") and data and data.research_tree:
+    if is_enabled("viz_markmap") and data and data.research_tree:
         out = _render_markmap(data.research_tree)
         if out.success:
             result.paths.extend(out.paths)
@@ -249,7 +249,7 @@ def _orchestrate_aletheia(data: AletheiaData | None, output_path: str | Path) ->
 def _orchestrate_kratos(data: KratosData | None, output_path: str | Path) -> VizOutput:
     result = VizOutput(success=True, agent="kratos", format="html")
 
-    if is_enabled("use_kroki_diagrams") and data and data.code_flow:
+    if is_enabled("viz_kroki") and data and data.code_flow:
         out = _render_kroki("blockdiag", data.code_flow)
         if out.success:
             result.paths.extend(out.paths)

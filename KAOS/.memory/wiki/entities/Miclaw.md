@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: product
 name: Miclaw
 role: autonomous-agent

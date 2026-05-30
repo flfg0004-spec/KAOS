@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [evaluacion, metricas-calidad, cadena-verificacion, score-engine, agentes-inteligentes, arquitectura-integracion-herramientas]

@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [sistemas-multiagente, agentes-inteligentes, pipeline-maid, perfil]

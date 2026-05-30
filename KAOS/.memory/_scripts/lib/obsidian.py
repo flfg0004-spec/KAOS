@@ -188,14 +188,10 @@ def sync_properties(path: str | Path, merge: bool = True) -> dict:
     new_lines = []
     for key in order:
         val = parsed[key]
-        # Convert comma-separated strings to YAML inline list
-        if "," in val and not val.startswith("[") and not val.endswith("]"):
-            # Check it's not just a sentence with commas
-            # Heuristic: if any value looks like a tag/keyword list, wrap it
-            items = [v.strip() for v in val.split(",")]
-            if all(len(v) < 60 and " " not in v.strip() for v in items):
-                val = "[" + ", ".join(items) + "]"
-                parsed[key] = val
+        # Normalize lists that are already in YAML inline format
+        if val.startswith("[") and val.endswith("]"):
+            # Already a YAML list, keep as-is
+            pass
         new_lines.append(f"{key}: {val}")
 
     new_fm = "\n".join(new_lines)

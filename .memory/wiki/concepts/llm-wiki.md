@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-sistemas-memoria.md
 auto-distilled: true
+tags: ["subject/agent", "subject/concept", "subject/conocimiento", "subject/kaos", "subject/karpathy", "subject/large-language-models", "subject/letta", "subject/mem0"]
 ---
 
 # LLM Wiki

@@ -1,4 +1,5 @@
 ---
+audience: agent
 tags: [concept, stub, strategy]
 ---
 # BCG Evaluator

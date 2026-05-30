@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: investigacion-obsidian-vault-alternativas.md
 auto-distilled: true

@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-configuracion-opencode.md
 auto-distilled: true
+tags: ["subject/agent", "subject/concept", "subject/opencode", "subject/pipeline", "subject/relacionado"]
 ---
 
 # Confianza general

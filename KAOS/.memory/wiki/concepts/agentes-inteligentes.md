@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [aletheia, kosmos, metis, mnemosyne, kratos, sistemas-multiagente, orquestacion-agentes, pipeline-maid, software-testing]

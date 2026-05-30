@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Cloud Storage — Estrategia de Precios 2025-2026
 aliases: [Cloud Storage, Storage Pricing, Block Storage, Object Storage, File Storage]

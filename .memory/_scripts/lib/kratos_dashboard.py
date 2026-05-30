@@ -46,9 +46,9 @@ def render_dashboard() -> str:
 
     # Active flags section
     kratos_flags = [
-        "use_kratos_telemetry", "use_real_coverage", "use_parallel_gates",
-        "use_early_exit", "use_real_mypy", "use_circuit_breaker",
-        "use_rust_gates", "use_ts_gates", "use_go_gates",
+        "kratos_telemetry", "kratos_coverage", "kratos_parallel_gates",
+        "kratos_early_exit", "kratos_mypy", "kratos_circuit_breaker_legacy",
+        "kratos_rust_gates", "kratos_ts_gates", "kratos_go_gates",
     ]
     active = [f for f in kratos_flags if is_enabled(f)]
     if active:
@@ -72,7 +72,7 @@ def render_dashboard() -> str:
 
 def show_dashboard() -> None:
     """Print the dashboard to stdout, respecting the use_kratos_dashboard flag."""
-    if not is_enabled("use_kratos_dashboard"):
+    if not is_enabled("kratos_dashboard"):
         print("[Dashboard disabled — set use_kratos_dashboard=true]")
         return
     print(render_dashboard())

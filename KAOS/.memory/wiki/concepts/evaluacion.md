@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [score-engine, cadena-verificacion, metricas-calidad, veracidad]

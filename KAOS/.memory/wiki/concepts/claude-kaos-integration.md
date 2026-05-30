@@ -1,4 +1,5 @@
 ---
+audience: agent
 title: "Guía de Integración de Modelos Anthropic en KAOS"
 date: 2026-05-29
 agent: kosmos

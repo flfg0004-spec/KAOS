@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-obsidian-vault-alternativas.md
 auto-distilled: true
 distill-engine: v2
+tags: ["practice/model-context-protocol", "subject/agent", "subject/alternativas", "subject/concept", "subject/obsidian", "subject/relacionado", "subject/vault"]
 ---
 
 # Dependencia externa

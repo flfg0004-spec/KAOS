@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-herramientas-test-estrategia.md
 auto-distilled: true
 distill-engine: v2
+tags: ["subject/agent", "subject/arquitectura", "subject/concept", "subject/estrategia", "subject/metis", "subject/planeacion", "subject/relacionado"]
 ---
 
 # Para Metis (Estrategia)

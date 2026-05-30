@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [retrieval-augmented-generation, pipeline-conocimiento-raw-wiki, compile-then-query, vector-store]

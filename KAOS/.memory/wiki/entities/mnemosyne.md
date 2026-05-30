@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: knowledge-curator
 description: Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault, knowledge scoring, síntesis automática

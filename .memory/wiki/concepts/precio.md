@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md
 auto-distilled: true
+tags: ["subject/agent", "subject/agentes", "subject/concept", "subject/optimizacion", "subject/relacionado"]
 ---
 
 # Precio

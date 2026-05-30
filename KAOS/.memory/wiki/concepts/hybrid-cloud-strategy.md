@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Hybrid Cloud Strategy — Estrategia Híbrida Óptima para AI/ML
 aliases: [Estrategia Cloud Híbrida, Hybrid Cloud, Cloud Híbrida, Estrategia Híbrida AI/ML]

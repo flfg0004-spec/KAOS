@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: GPU Pricing — Panorama 2025-2026
 aliases: [GPU Pricing, GPU Cost, GPU Market, GPU Price Comparison]

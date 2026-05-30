@@ -89,7 +89,7 @@ def locked_read(path: Path) -> Any:
             portalocker.unlock(f)
         return data
     lock_name = f"read_{path.stem}"
-    if acquire_lock(lock_name, timeout=LOCK_TIMEOUT):
+    if acquire_lock(lock_name, timeout=DEFAULT_TIMEOUT):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             return data
@@ -107,7 +107,7 @@ def locked_write(path: Path, data: Any) -> None:
             portalocker.unlock(f)
         return
     lock_name = f"write_{path.stem}"
-    if acquire_lock(lock_name, timeout=LOCK_TIMEOUT):
+    if acquire_lock(lock_name, timeout=DEFAULT_TIMEOUT):
         try:
             path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         finally:

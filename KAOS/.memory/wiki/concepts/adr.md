@@ -1,5 +1,6 @@
 ---
 
+audience: agent
 type: concept
 source: KAOS
 related: [kosmos, arquitectura-software, c4-model, vector-store, duplicidad-de-funcionalidad]

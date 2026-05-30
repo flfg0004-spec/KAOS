@@ -1,8 +1,10 @@
 ---
+audience: agent
 type: concept
 source: investigacion-obsidian-vault-alternativas.md
 auto-distilled: true
 distill-engine: v2
+tags: ["principle/architecture-decision-record", "subject/agent", "subject/alternativas", "subject/concept", "subject/extraction", "subject/obsidian", "subject/only", "subject/relacionado"]
 ---
 
 # Duplicidad de funcionalidad

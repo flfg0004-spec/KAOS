@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Hyperscalers — Comparativa Estratégica
 aliases: [Hyperscalers, AWS vs Azure vs GCP vs Oracle, Cloud Providers]

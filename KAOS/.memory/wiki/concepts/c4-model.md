@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: KAOS
 related: [code-nivel-4, structurizr, kosmos, adr, arquitectura-software, structurizr-mcp, context-nivel-1, container-nivel-2, component-nivel-3]

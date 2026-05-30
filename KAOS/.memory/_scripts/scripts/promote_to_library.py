@@ -17,6 +17,8 @@ from datetime import date
 from pathlib import Path
 from shutil import copy2
 
+from lib.paths import MEMORY_DIR, PROJECT_ROOT
+
 BASE = Path(__file__).resolve().parent.parent.parent  # .memory/
 WIKI_CONCEPTS = BASE / "wiki" / "concepts"
 WIKI_ENTITIES = BASE / "wiki" / "entities"
@@ -109,12 +111,15 @@ def main():
     parser.add_argument("--dry-run", action="store_true", default=True, help="Only report (default)")
     parser.add_argument("--apply", action="store_true", help="Actually write changes")
     parser.add_argument("--min-score", type=int, default=70, help="Minimum quality score (default: 70)")
+    parser.add_argument("--json", action="store_true", help="Output JSON")
     args = parser.parse_args()
 
     promote_file._min_score = args.min_score
     dry_run = not args.apply
+    json_mode = args.json
 
     total = {"promoted": 0, "skipped": 0, "diverged": 0, "existing": 0, "no_fm": 0}
+    files_results = []
 
     for src_dir, dst_dir in SOURCE_MAP.items():
         if not src_dir.exists():
@@ -122,21 +127,39 @@ def main():
         for f in sorted(src_dir.glob("*.md")):
             result = promote_file(f, dst_dir, dry_run=dry_run)
             status = result["status"]
+            file_entry = {"path": str(result["path"]), "status": status}
             if status == "promoted":
                 total["promoted"] += 1
-                prefix = "[DRY-RUN]" if dry_run else "[PROMOTED]"
-                print(f"{prefix} {result['path']} -> {dst_dir.name}/{f.name}")
+                file_entry["reason"] = "copy"
+                if not json_mode:
+                    prefix = "[DRY-RUN]" if dry_run else "[PROMOTED]"
+                    print(f"{prefix} {result['path']} -> {dst_dir.name}/{f.name}")
             elif status == "diverged":
                 total["diverged"] += 1
-                print(f"[DIVERGED] {result['path']} (source differs from existing copy)")
+                file_entry["reason"] = "source differs from existing copy"
+                if not json_mode:
+                    print(f"[DIVERGED] {result['path']} (source differs from existing copy)")
             elif status == "exists_identical":
                 total["existing"] += 1
+                file_entry["reason"] = "already exists, identical"
             elif status == "no_frontmatter":
                 total["no_fm"] += 1
+                file_entry["reason"] = "no frontmatter"
             else:
                 total["skipped"] += 1
+                file_entry["reason"] = status
+            files_results.append(file_entry)
 
-    print(f"\nResumen: {total['promoted']} promovidos, {total['existing']} ya existentes, {total['diverged']} divergidos, {total['skipped']} saltados, {total['no_fm']} sin frontmatter")
+    if json_mode:
+        output = {
+            "promoted": total["promoted"],
+            "skipped": total["existing"] + total["no_fm"] + total["skipped"],
+            "diverged": total["diverged"],
+            "files": files_results,
+        }
+        print(json.dumps(output, indent=2, ensure_ascii=False))
+    else:
+        print(f"\nResumen: {total['promoted']} promovidos, {total['existing']} ya existentes, {total['diverged']} divergidos, {total['skipped']} saltados, {total['no_fm']} sin frontmatter")
     return 0
 
 

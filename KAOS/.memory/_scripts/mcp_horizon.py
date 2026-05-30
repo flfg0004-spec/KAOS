@@ -4,6 +4,8 @@ import json
 import sys
 import urllib.request
 import urllib.error
+import http.client
+import socket
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from html.parser import HTMLParser
@@ -93,8 +95,7 @@ def _fetch_github_trending(limit: int) -> list[dict]:
             timeout=10,
         )
         html = resp.read().decode("utf-8", errors="replace")
-        items = []
-        # Simple parser to extract repo links from trending page
+
         class TrendingParser(HTMLParser):
             def __init__(self):
                 super().__init__()
@@ -102,24 +103,30 @@ def _fetch_github_trending(limit: int) -> list[dict]:
                 self.in_link = False
                 self.repos = []
                 self.current = {}
-                self.tag_stack = []
+                self._collected = 0
+                self._limit = limit
 
             def handle_starttag(self, tag, attrs):
+                if self._collected >= self._limit:
+                    return
                 attrs_dict = dict(attrs)
-                if tag == "h2" and "class" in attrs_dict and "h3" in attrs_dict.get("class", ""):
-                    self.in_h2 = True
+                if tag == "h2":
+                    classes = attrs_dict.get("class", "")
+                    if "h3" in classes.split():
+                        self.in_h2 = True
                 if tag == "a" and self.in_h2:
                     self.in_link = True
-                if tag == "article" and len(self.repos) < limit:
+                    self._href = attrs_dict.get("href", "")
+                if tag == "article":
                     self.current = {}
 
             def handle_data(self, data):
+                if self._collected >= self._limit:
+                    return
                 if self.in_link and self.in_h2:
                     name = data.strip()
-                    if name and name not in [r.get("title", "") for r in self.repos]:
+                    if name:
                         self.current["title"] = name
-                if "p" in self.tag_stack or True:  # fallback catch
-                    pass
 
             def handle_endtag(self, tag):
                 if tag == "h2":
@@ -127,24 +134,27 @@ def _fetch_github_trending(limit: int) -> list[dict]:
                 if tag == "a":
                     if self.in_link and self.current.get("title"):
                         self.current["source"] = "github_trending"
-                        self.current["url"] = f"https://github.com/{self.current['title']}"
+                        href = getattr(self, "_href", "")
+                        self.current["url"] = f"https://github.com{href}" if href else "https://github.com/trending"
                         self.current["timestamp"] = datetime.now().isoformat()
-                        if self.current not in self.repos:
-                            self.repos.append(self.current)
+                        exists = any(r.get("title") == self.current["title"] for r in self.repos)
+                        if not exists:
+                            self.repos.append(dict(self.current))
+                            self._collected += 1
                         self.current = {}
+                        self._href = ""
+                    self.in_link = False
+                if tag == "article":
+                    self.in_h2 = False
                     self.in_link = False
 
         parser = TrendingParser()
         parser.feed(html)
+        return parser.repos[:limit]
 
-        return parser.repos[:limit] if parser.repos else [
-            {"title": "trending/repo1", "url": "https://github.com", "source": "github_trending"},
-            {"title": "trending/repo2", "url": "https://github.com", "source": "github_trending"},
-        ]
-    except urllib.error.URLError as e:
-        # Fallback with simulated data
+    except (urllib.error.URLError, ConnectionResetError, socket.timeout, http.client.RemoteDisconnected) as e:
         return [
-            {"title": f"GitHub Trending (offline: {e.reason})", "url": "https://github.com/trending", "source": "github_trending"},
+            {"title": f"GitHub Trending unavailable", "url": "https://github.com/trending", "source": "github_trending", "score": 0},
         ]
 
 

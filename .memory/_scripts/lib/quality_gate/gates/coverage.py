@@ -33,7 +33,7 @@ def _find_project_tests() -> list[str]:
 
 
 def gate_coverage(content: str = "", has_tests: bool = False) -> dict:
-    if is_enabled("use_real_coverage") and content.strip():
+    if is_enabled("kratos_coverage") and content.strip():
         # Try real project tests first
         project_tests = _find_project_tests()
         if project_tests:

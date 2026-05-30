@@ -20,6 +20,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from lib.paths import MEMORY_DIR, PROJECT_ROOT
+
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 _LIB_DIR = _SCRIPTS_DIR / ".." / "lib"
 if str(_LIB_DIR.resolve()) not in sys.path:
@@ -110,7 +112,7 @@ def phase_tag(dry_run: bool = False) -> dict:
         return {"phase": "tag", "elapsed": "0.00s", "error": "schedule_tagger.py not found"}
 
     start = time.time()
-    cmd = [sys.executable, str(script), "--incremental"]
+    cmd = [sys.executable, str(script), "--incremental", "--json"]
     if dry_run:
         cmd.append("--dry-run")
 
@@ -121,20 +123,19 @@ def phase_tag(dry_run: bool = False) -> dict:
         if r.returncode != 0:
             logger.warning("schedule_tagger exited with code %d: %s", r.returncode, r.stderr.strip())
 
-        # Parse summary from stdout
+        # Parse JSON output from child
         files_proc = 0
         modified = 0
         errors = 0
         added = 0
-        for line in r.stdout.splitlines():
-            if "Files processed:" in line:
-                files_proc = int(line.split(":")[-1].strip())
-            elif "Modified:" in line:
-                modified = int(line.split(":")[-1].strip())
-            elif "Errors:" in line:
-                errors = int(line.split(":")[-1].strip())
-            elif "Tags added:" in line:
-                added = int(line.split(":")[-1].strip())
+        try:
+            data = json.loads(r.stdout)
+            files_proc = data.get("files_processed", 0)
+            modified = data.get("modified", 0)
+            errors = data.get("errors", 0)
+            added = data.get("tags_added", 0)
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning("Failed to parse JSON from schedule_tagger: %s. Using defaults.", e)
 
         _print_phase("tag", f"{files_proc} procesados, {modified} modificados, "
                            f"{errors} errores, +{added} tags ({elapsed})")
@@ -223,7 +224,7 @@ def phase_promote(dry_run: bool = False) -> dict:
         return {"phase": "promote", "elapsed": "0.00s", "error": "promote_to_library.py not found"}
 
     start = time.time()
-    cmd = [sys.executable, str(script)]
+    cmd = [sys.executable, str(script), "--json"]
     if dry_run:
         cmd.append("--dry-run")
     else:
@@ -236,30 +237,17 @@ def phase_promote(dry_run: bool = False) -> dict:
         if r.returncode != 0:
             logger.warning("promote_to_library exited with code %d", r.returncode)
 
-        # Parse summary
+        # Parse JSON output from child
         promoted = 0
         skipped = 0
         diverged = 0
-        for line in r.stdout.splitlines():
-            if "promovidos" in line:
-                parts = line.strip()
-                for seg in parts.split(","):
-                    seg = seg.strip()
-                    if "promovidos" in seg:
-                        try:
-                            promoted = int(seg.split()[0])
-                        except (ValueError, IndexError):
-                            pass
-                    elif "saltados" in seg:
-                        try:
-                            skipped = int(seg.split()[0])
-                        except (ValueError, IndexError):
-                            pass
-                    elif "divergidos" in seg:
-                        try:
-                            diverged = int(seg.split()[0])
-                        except (ValueError, IndexError):
-                            pass
+        try:
+            data = json.loads(r.stdout)
+            promoted = data.get("promoted", 0)
+            skipped = data.get("skipped", 0)
+            diverged = data.get("diverged", 0)
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning("Failed to parse JSON from promote_to_library: %s. Using defaults.", e)
 
         _print_phase("promote", f"{promoted} promovidos, {skipped} saltados, "
                                f"{diverged} divergidos ({elapsed})")

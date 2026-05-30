@@ -39,7 +39,7 @@ def _get_services() -> dict:
     services = dict(CORE_SERVICES)
     try:
         from lib.feature_flags import is_enabled
-        langfuse_active = is_enabled("ether_langfuse_enabled")
+        langfuse_active = is_enabled("infra_langfuse")
     except ImportError:
         langfuse_active = os.environ.get("LANGFUSE_ENABLED", "").lower() in ("true", "1")
     if langfuse_active:

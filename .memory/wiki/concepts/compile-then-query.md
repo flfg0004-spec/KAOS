@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: Karpathy LLM Wiki — gist abril 2026
 related: [memory-blocks, add-only-extraction]
+tags: ["subject/agent", "subject/agentes", "subject/concept", "subject/conocimiento", "subject/extraction", "subject/kaos", "subject/karpathy", "subject/large-language-models"]
 ---
 
 # Compile-then-query

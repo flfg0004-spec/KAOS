@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 title: Understand Anything (UA) — Inspiración Arquitectónica
 aliases:

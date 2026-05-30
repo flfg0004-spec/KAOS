@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: model
 name: Kimi
 role: llm-backend

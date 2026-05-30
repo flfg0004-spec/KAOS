@@ -1,5 +1,6 @@
 ---
 
+audience: agent
 type: concept
 source: Mem0 — arXiv:2504.19413
 related: [memory-blocks, compile-then-query]

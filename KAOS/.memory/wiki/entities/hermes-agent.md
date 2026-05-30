@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: messaging-gateway
 description: "Hermes Agent v0.15.2 — gateway LLM, sistema de mensajería, kanban, y orquestación de tickets del ecosistema KAOS"

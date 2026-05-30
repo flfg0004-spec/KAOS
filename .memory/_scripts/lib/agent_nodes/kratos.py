@@ -27,7 +27,7 @@ from lib.lang_utils import detect_code_language as _detect_code_language
 
 
 def kratos_node(state: dict[str, Any]) -> dict[str, Any]:
-    if is_enabled("use_new_agent_executor"):
+    if is_enabled("kratos_new_executor"):
         return _kratos_node_v2(state)
 
     v1_result = _kratos_node_impl(state)
@@ -258,7 +258,7 @@ def _kratos_node_impl(state: dict[str, Any]) -> dict[str, Any]:
                 import json as _json
 
                 from lib.llm import agent_llm_call
-                if is_enabled("use_circuit_breaker"):
+                if is_enabled("kratos_circuit_breaker_legacy"):
                     review = _cb(lambda: agent_llm_call("critic", review_prompt))()
                 else:
                     review = agent_llm_call("critic", review_prompt)
@@ -310,12 +310,12 @@ def _kratos_node_impl(state: dict[str, Any]) -> dict[str, Any]:
         # ── Post-processing: governance, viz, sleep ──
         post = _run_post_processing(raw, state, prompt)
         # ── Telemetry recording (feature-flagged) ──
-        if is_enabled("use_kratos_telemetry"):
+        if is_enabled("kratos_telemetry"):
             record_invocation(
                 decision=str(decision),
                 quality_score=0.0,  # placeholder until quality integration
                 language=detected_lang,
-                flags_active={k: is_enabled(k) for k in ["use_kratos_v2", "use_real_coverage", "use_rust_gates", "use_ts_gates", "use_go_gates", "use_early_exit"]},
+                flags_active={k: is_enabled(k) for k in ["kratos_new_executor", "kratos_coverage", "kratos_rust_gates", "kratos_ts_gates", "kratos_go_gates", "kratos_early_exit"]},
                 duration_ms=(time.time() - _start_time) * 1000,
                 iteration=_iteration,
             )
@@ -391,7 +391,7 @@ def _kratos_node_v2(state: dict[str, Any]) -> dict[str, Any]:
         "kratos_version": "v2",
     }
 
-    if is_enabled("use_kratos_telemetry"):
+    if is_enabled("kratos_telemetry"):
         try:
             from lib.kratos_telemetry import record_invocation
             record_invocation(
@@ -399,15 +399,15 @@ def _kratos_node_v2(state: dict[str, Any]) -> dict[str, Any]:
                 quality_score=composite,
                 language=detected_lang,
                 flags_active={k: is_enabled(k) for k in [
-                    "use_kratos_telemetry", "use_parallel_gates",
-                    "use_early_exit", "use_real_mypy", "use_circuit_breaker",
+                    "kratos_telemetry", "kratos_parallel_gates",
+                    "kratos_early_exit", "kratos_mypy", "kratos_circuit_breaker_legacy",
                 ]},
                 duration_ms=(time.time() - _start_time) * 1000,
             )
         except Exception:
             pass
 
-    if is_enabled("use_kratos_telemetry"):
+    if is_enabled("kratos_telemetry"):
         try:
             from lib.kratos_self_heal import heal
             actions = heal()

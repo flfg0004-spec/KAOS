@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: Investigación pipeline conocimiento Aletheia
 related: [compile-then-query, add-only-extraction]
+tags: ["subject/agent", "subject/concept", "subject/conocimiento", "subject/decisiones", "subject/extraction", "subject/metis", "subject/only", "subject/pipeline"]
 ---
 
 # Pipeline de Conocimiento raw→wiki→schema

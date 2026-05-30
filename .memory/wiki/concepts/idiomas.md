@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-modelos-agentes-memoria.md
 auto-distilled: true
+tags: ["subject/agent", "subject/agentes", "subject/concept", "subject/relacionado"]
 ---
 
 # Idiomas

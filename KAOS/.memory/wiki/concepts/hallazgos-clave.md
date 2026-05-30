@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-sistemas-memoria.md
 auto-distilled: true
+tags: ["subject/agent", "subject/concept", "subject/kaos", "subject/large-language-models", "subject/relacionado"]
 ---
 
 # Hallazgos clave

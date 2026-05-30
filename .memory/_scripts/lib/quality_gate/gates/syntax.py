@@ -2,7 +2,7 @@
 
 from lib.feature_flags import is_enabled
 
-_MULTI_LANG_FLAGS = {"rust": "use_rust_gates", "typescript": "use_ts_gates", "go": "use_go_gates"}
+_MULTI_LANG_FLAGS = {"rust": "kratos_rust_gates", "typescript": "kratos_ts_gates", "go": "kratos_go_gates"}
 
 
 def gate_syntax(content: str, language: str = "python") -> dict:

@@ -1,4 +1,5 @@
 ---
+audience: agent
 entity: hermes-workspace-integration
 type: tactical-plan
 version: 1.0

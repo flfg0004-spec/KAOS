@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: service
 name: DSOL
 role: routing

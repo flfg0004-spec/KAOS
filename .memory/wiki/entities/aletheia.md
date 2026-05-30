@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: agent
 role: research
 description: Agente de investigación — búsqueda web, papers, noticias, investigación profunda

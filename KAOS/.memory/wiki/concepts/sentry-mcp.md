@@ -1,4 +1,5 @@
 ---
+audience: agent
 type: concept
 source: investigacion-mejoras-mcp-ecosistema.md
 auto-distilled: true

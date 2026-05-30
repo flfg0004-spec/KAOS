@@ -1,7 +1,9 @@
 ---
+audience: agent
 type: concept
 source: investigacion-mejoras-mcp-ecosistema.md
 auto-distilled: true
+tags: ["practice/model-context-protocol", "subject/agent", "subject/concept", "subject/lucidity", "subject/only", "subject/relacionado"]
 ---
 
 # PostgreSQL MCP (Oficial)
