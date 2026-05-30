@@ -1,15 +1,15 @@
 {
   "id": "ADR-054",
-  "title": "ADR-054: test G2 no-dup",
-  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\test-g2-no-dup-adr.md",
+  "title": "ADR-054:",
+  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\-adr.md",
   "type": "adr",
   "tags": [
     "adr",
     "architecture",
-    "test-g2-no-dup"
+    ""
   ],
   "existing_wikilinks": [],
   "needs_curation": true,
-  "requested_at": "2026-05-29T17:56:52.202788",
+  "requested_at": "2026-05-29T18:23:26.452996",
   "priority": "medium"
 }

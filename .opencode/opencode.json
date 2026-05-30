@@ -41,7 +41,8 @@
         "agy-bridge_agy_ask_gpt55": true,
         "agy-bridge_agy_ask_gpt55_thinking": true,
         "hermes-gateway_*": true,
-        "firecrawl_*": true
+        "firecrawl_*": true,
+        "kaos-kanban_*": true
       }
     },
     "mnemosyne": {
@@ -162,100 +163,8 @@
         "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true,
         "agy-bridge_agy_ask_gpt55": true,
-        "agy-bridge_agy_ask_gpt55_thinking": true
-      }
-    },
-    "metis": {
-      "description": "Agente de estrategia \u00e2\u20ac\u201d planeaci\u00c3\u00b3n, OKRs, roadmaps, an\u00c3\u00a1lisis competitivo, reportes - orquestador del sistema DUAL",
-      "mode": "subagent",
-      "color": "#E8A87C",
-      "steps": 12,
-      "temperature": 0.4,
-      "permission": {
-        "websearch": "allow",
-        "webfetch": "allow",
-        "read": "allow",
-        "edit": "ask",
-        "bash": {
-          "py *": "allow",
-          ".memory/_scripts/*": "allow",
-          "*": "deny"
-        },
-        "task": "allow",
-        "skill": "allow",
-        "question": "allow",
-        "todowrite": "allow"
-      },
-      "tools": {
-        "excalidraw_*": true,
-        "paperjsx_*": true,
-        "exa-search_*": true,
-        "sequential-thinking_*": true,
-        "mcp-obsidian-cli_*": true,
-        "vault_*": true,
-        "strategy-mcp_*": true,
-        "strategy-extras_*": true,
-        "mcp-speed_*": true,
-        "mcp-dsol_*": true,
-        "mcp-pandas_*": true,
-        "mcp-simulate_*": true,
-        "mcp-causal-graph_*": true,
-        "mcp-strategy-feedback_*": true,
-        "agy-bridge_agy_ask_flash": true,
-        "agy-bridge_agy_ask_sonnet": true,
-        "agy-bridge_agy_ask_opus": true,
-        "agy-bridge_agy_ask_gpt55": true,
-        "mcp-post-output-hook_*": true,
-        "mcp-creative-spark_*": true,
-        "mcp-roadmap-3h_*": true
-      },
-      "eval_profile": {
-        "strategy_exploration": {
-          "description": "Para brainstorming de alternativas y pensamiento divergente"
-        },
-        "analysis": {
-          "description": "Para analisis causal riguroso y evaluacion precisa"
-        },
-        "creative_synthesis": {
-          "description": "Para recombinacion creativa y generacion de opciones novedosas"
-        },
-        "execution": {
-          "description": "Para planes concretos y accionables"
-        }
-      }
-    },
-    "kronos": {
-      "description": "Orquestador \u00e2\u20ac\u201d an\u00c3\u00a1lisis de pipelines, routing adaptativo, recuperaci\u00c3\u00b3n de errores",
-      "mode": "subagent",
-      "color": "#FFD700",
-      "steps": 14,
-      "temperature": 0.1,
-      "permission": {
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "edit": "deny",
-        "bash": {
-          "py *": "allow",
-          "cat *": "allow",
-          "type *": "allow",
-          ".memory/_scripts/*": "allow",
-          "*": "deny"
-        },
-        "task": "allow",
-        "skill": "allow"
-      },
-      "tools": {
-        "vault_*": true,
-        "sequential-thinking_*": true,
-        "knowledge-graph_*": true,
-        "strategy-mcp_*": true,
-        "txtai_*": true,
-        "quality_*": true,
-        "gaps_*": true,
-        "lifecycle_*": true,
-        "mcp-speed_*": true,
-        "mcp-dsol_*": true
+        "agy-bridge_agy_ask_gpt55_thinking": true,
+        "kaos-kanban_*": true
       }
     },
     "kratos": {
@@ -289,7 +198,8 @@
         "git_*": true,
         "exa-search_*": true,
         "agy-bridge_agy_ask_flash": true,
-        "agy-bridge_agy_ask_sonnet": true
+        "agy-bridge_agy_ask_sonnet": true,
+        "kaos-kanban_*": true
       }
     }
   },
@@ -316,7 +226,8 @@
     "crossref_*": false,
     "strategy-mcp_*": false,
     "strategy-extras_*": false,
-    "agy-bridge_*": false
+    "agy-bridge_*": false,
+    "kaos-kanban_*": true
   },
   "mcp": {
     "mcp-obsidian-cli": {
@@ -639,6 +550,34 @@
         "py",
         "-3",
         ".memory/_scripts/mcp_post_output_hook.py"
+      ],
+      "enabled": true
+    },
+    "kaos-kanban": {
+      "type": "local",
+      "command": [
+        "hermes",
+        "kanban",
+        "--json"
+      ],
+      "enabled": true
+    }
+  },
+    "mcp-verification-chain": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_verification_chain.py"
+      ],
+      "enabled": true
+    },
+    "mcp-session-runner": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_session_runner.py"
       ],
       "enabled": true
     }

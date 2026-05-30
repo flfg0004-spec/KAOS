@@ -17,6 +17,8 @@ METIS_SERVERS = [
     "mcp-post-output-hook",
     "mcp-creative-spark",
     "mcp-roadmap-3h",
+    "mcp-verification-chain",
+    "mcp-session-runner",
 ]
 
 
