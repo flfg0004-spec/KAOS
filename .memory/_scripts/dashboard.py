@@ -375,7 +375,7 @@ async def api_health():
             lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
             last_alerts = [json.loads(line) for line in lines[-5:] if line.strip()]
     except Exception:
-        pass
+        _LOG.warning("Failed to read alerts log for health endpoint", exc_info=True)
     last_error = None
     last_error_at = None
     for a in reversed(last_alerts):
@@ -406,7 +406,7 @@ async def api_alerts():
             lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
             alerts = [json.loads(line) for line in lines[-50:] if line.strip()]
     except Exception:
-        pass
+        _LOG.warning("Failed to read alerts log for alerts endpoint", exc_info=True)
     return JSONResponse({"alerts": alerts, "total": len(alerts)})
 
 
@@ -571,7 +571,7 @@ async def _startup():
         from alert_daemon import start as start_alerts
         start_alerts()
     except Exception:
-        pass
+        _LOG.warning("alert_daemon not available — alerts may not start", exc_info=True)
     _LOG.info("Dashboard startup complete — EventBus bridge + AlertDaemon active")
 
 
@@ -584,7 +584,7 @@ async def _eventbus_bridge():
             event_type, data = await loop.run_in_executor(None, eb_queue.get)
             await _broadcast(event_type, data)
         except Exception:
-            pass
+            _LOG.error("EventBus bridge failed to process event", exc_info=True)
 
 
 # ── Entry point (for direct execution) ─────────────

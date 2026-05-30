@@ -73,7 +73,7 @@ def save_context(agent: str, data: dict) -> None:
         try:
             ctx = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
         except Exception:
-            pass
+            logger.warning("Failed to load existing context, starting fresh", exc_info=True)
     if agent not in ctx["agents"]:
         ctx["agents"].append(agent)
     ctx["context_summary"][agent] = {
@@ -132,8 +132,8 @@ def load_context() -> dict:
         try:
             return json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
         except Exception:
-            pass
-    return {"pipeline_id": "", "agents": [], "context_summary": {},
+            logger.warning("Failed to load context in load_context, returning empty", exc_info=True)
+    return {"pipeline_id": "", "agents": [], "context_summary": [],
             "files_read": [], "files_written": [], "cross_agent": {}}
 
 
@@ -251,7 +251,7 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
             data["links"] = data["links"][-100:]
             fps_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
         except Exception:
-            pass
+            logger.warning("Failed to write flash-production link", exc_info=True)
     
     prof = _load_profile(profile)
     tools_str = ", ".join(prof.get("tools", ["exa-search", "searxng", "sequential-thinking"]))
@@ -340,7 +340,7 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     try:
         (VAULT_ROOT / "_pipeline" / "started_at.txt").write_text(str(datetime.now().timestamp()), encoding="utf-8")
     except Exception:
-        pass
+        logger.warning("Failed to save started_at timestamp", exc_info=True)
 
     _log_entry(f"Pipeline {pipeline_id} initialized: {topic} [{profile}]")
     
@@ -469,7 +469,7 @@ def step_done(agent: str) -> str:
         if CONTEXT_PATH.exists():
             state = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
     except Exception:
-        pass
+        logger.warning("Failed to load context from %s", CONTEXT_PATH, exc_info=True)
 
     if not next_agent:
         try:
@@ -484,7 +484,7 @@ def step_done(agent: str) -> str:
                 try:
                     data = json.loads(durations_file.read_text(encoding="utf-8"))
                 except Exception:
-                    pass
+                    logger.warning("Failed to load durations from %s", durations_file, exc_info=True)
             started_at_path = VAULT_ROOT / "_pipeline" / "started_at.txt"
             duration_s = 0
             if started_at_path.exists():
@@ -492,7 +492,7 @@ def step_done(agent: str) -> str:
                     started = float(started_at_path.read_text().strip())
                     duration_s = int((datetime.now().timestamp() - started) * 1000) / 1000
                 except Exception:
-                    pass
+                    logger.warning("Failed to parse started_at from %s", started_at_path, exc_info=True)
             profile_from_status = "standard"
             pm = re.search(r"\*\*profile\*\*:\s*(\S+)", status_text)
             if pm: profile_from_status = pm.group(1)
@@ -545,14 +545,14 @@ def step_done(agent: str) -> str:
                     ev = json.loads(ev_path.read_text(encoding="utf-8"))
                     _score = int(ev.get("composite", ev.get("pipeline_score", ev.get("system_health", 0))))
             except Exception:
-                pass
+                logger.warning("Failed to load evaluation score", exc_info=True)
             try:
                 started_path = VAULT_ROOT / "_pipeline" / "started_at.txt"
                 if started_path.exists():
                     started = float(started_path.read_text().strip())
                     _duration_s = int(datetime.now().timestamp() - started)
             except Exception:
-                pass
+                logger.warning("Failed to parse started_at for duration", exc_info=True)
 
             notify_pipeline(topic=topic, score=_score, duration_s=_duration_s, passed=True)
         except ImportError:

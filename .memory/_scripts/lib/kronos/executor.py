@@ -139,7 +139,7 @@ class ParallelExecutor:
             try:
                 self._on_status(task_id, state.value, None)
             except Exception:
-                pass
+                _LOG.warning("Status callback failed for task %s", task_id, exc_info=True)
 
     def get_state(self, task_id: str) -> str | None:
         with self._lock:
