@@ -18,8 +18,8 @@ def _check_rate_limit() -> bool:
     if _LAST_RESET is None or (now - _LAST_RESET) > timedelta(hours=1):
         _ACTION_COUNT = 0
         _LAST_RESET = now
-    if _ACTION_COUNT >= 3:
-        logger.warning("Self-heal rate limit reached (3 actions/hour)")
+    if _ACTION_COUNT >= 5:
+        logger.warning("Self-heal rate limit reached (5 actions/hour)")
         return False
     _ACTION_COUNT += 1
     return True
@@ -54,5 +54,31 @@ def heal() -> list[str]:
         enable("use_circuit_breaker")
         actions.append("Enabled use_circuit_breaker (failure rate >15%)")
         logger.warning("Self-heal: enabled circuit breaker (failure rate %.0f%%)", failure_rate * 100)
+
+    # Rule 4: Consistently low quality → enable real mypy
+    recent = summary.get("recent", [])
+    low_quality_count = 0
+    for entry in recent[-5:]:
+        try:
+            if float(entry.get("quality_score", 10)) < 5.0:
+                low_quality_count += 1
+        except (ValueError, TypeError):
+            pass
+    if low_quality_count >= 3 and not is_enabled("use_real_mypy"):
+        enable("use_real_mypy")
+        actions.append("Enabled use_real_mypy (3+ recent low quality scores)")
+        logger.warning("Self-heal: enabled real mypy (%d/5 recent low quality)", low_quality_count)
+
+    # Rule 5: No activity in 24h → log info
+    if recent:
+        try:
+            last_ts = recent[-1].get("timestamp", "")
+            if last_ts:
+                last_time = datetime.fromisoformat(last_ts)
+                hours_since = (datetime.now() - last_time).total_seconds() / 3600
+                if hours_since > 24:
+                    logger.info("Self-heal: no invocations in %.0fh", hours_since)
+        except Exception:
+            pass
 
     return actions

@@ -153,3 +153,52 @@ Dentro del loop PRGII:
 - Confidence < 0.3: no sugerir automáticamente
 - Máximo 3 iteraciones de repair en el loop PRGII
 - OPA denials bloquean automáticamente el output
+
+## Description
+
+Code agent with experiential memory (APEX-EM PRGII). Executes the PRGII pipeline (Plan → Retrieve → Generate → Iterate → Ingest) with 8 quality gates (syntax, compilation, lint, types, structure, security, coverage, style). Supports multi-language code generation (Rust, TypeScript, Go) via feature flags with parallel gate execution.
+
+## Triggers
+
+- When the user needs code generation, debugging, review, or testing
+- When feature implementation requires the PRGII pipeline (Plan → Retrieve → Generate → Iterate → Document)
+- When code quality verification with 8 quality gates is needed
+- When multi-language code is required (Rust, TypeScript, Go) via feature flags
+- When the user needs circuit-broken LLM critic calls for code review
+- When self-healing is needed based on telemetry metrics
+- **Do NOT trigger** for architecture decisions (use kosmos) or strategy (use metis)
+
+## Steps
+
+1. **Plan** — Interpret request, determine scope, select language and quality gates
+2. **Retrieve** — Query experiential memory (APEX-EM) for similar past experiences
+3. **Generate** — Produce code with proper blocks ```language, tests in separate block
+4. **Iterate** — Run quality gates in parallel via ThreadPoolExecutor; repair up to 3 iterations
+5. **Document** — Explain technical decisions outside code blocks, summarize modified/created files
+6. **Ingest** — Capture code experience into vault for contextual bandit learning (LinUCB)
+
+## Requirements
+
+- vault_*, sequential-thinking_*, git_*, exa-search_*, server-git_*, server-github_*, ce-memory_* tools
+- 8 quality gates (syntax, compilation, lint, types, structure, security, coverage, style)
+- Feature flags for multi-lang support (Rust, TypeScript, Go)
+- Circuit Breaker for LLM critic calls
+- OPA governance (configurable fail-open/fail-close)
+- KratosDecision enum (5 values, str-compatible)
+- Type guards for cross-agent data (never crashes)
+
+## Examples
+
+```python
+# Entry point - called by agent orchestrator
+state = {"task": "Implement fibonacci", "language": "python"}
+result = kratos_node(state)
+# Returns: {"code": "...", "tests": "...", "decisions": [...], "confidence": 0.95}
+```
+
+## Metadata
+
+- name: kratos
+- version: 2.0.0
+- author: KAOS
+- tags: [code, generation, quality, prgii, multi-lang]

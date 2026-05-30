@@ -611,3 +611,62 @@ Al finalizar cada sesión de calidad, ejecutar el cierre completo:
 - Documentar todas las decisiones en el Decision Log para trazabilidad
 - Incluir resumen ejecutivo de un párrafo en toda entrega
 - Validar supuestos críticos con el equipo de producto antes de finalizar
+
+## Description
+
+Strategic methodology skill that activates the complete Metis framework: frameworks, tools, and workflows for planning, OKRs, roadmaps, competitive analysis, business modeling, and executive reporting. Guides the agent step by step from diagnosis through strategy communication. Includes quality orchestration mode for cross-agent verification.
+
+## Triggers
+
+- When the user needs strategic planning, OKR formulation, or roadmap creation
+- When competitive analysis or market research is required
+- When business model analysis (BMC, SWOT, Wardley) is needed
+- When RICE scoring or initiative prioritization is required
+- When executive reports and strategy presentations are needed
+- When cross-agent quality orchestration is required (Aletheia → Kosmos → Metis verification cycle)
+- When goal health checking (BCG evaluation) is needed
+- **Do NOT trigger** for code generation tasks (use kratos) or architecture decisions (use kosmos)
+
+## Steps
+
+1. **Diagnose** — Use SWOT, competitive analysis, or market research to establish baseline
+2. **Formulate** — Define OKRs with explicit baseline and numeric targets, apply RICE scoring
+3. **Model** — Apply Business Model Canvas, Wardley maps, or causal models as needed
+4. **Validate** — Run `check_goals_health` (7 criteria), BCG evaluation (minimum 7.0/10), and `analyze_impact`
+5. **Plan** — Build 3-horizon roadmap (H1/H2/H3) with critical path and risk mitigations
+6. **Communicate** — Produce executive reports, visual dashboards, and PowerPoint presentations
+7. **Orchestrate quality** — In Quality Orchestrator mode, run smoke/functional/audit tests and cross-agent verification
+
+## Requirements
+
+- strategy-mcp (12 frameworks: RICE, OKR, Wardley, Jobs-to-be-Done, TAM/SAM/SOM, etc.)
+- strategy-extras (SWOT, BMC, Planning, Goal Health)
+- exa-search_* for market and competitive research
+- mcp-pandas_* for quantitative analysis
+- mcp-simulate_* for Monte Carlo simulation on OKRs
+- mcp-roadmap-3h_* for 3-horizon roadmap with RICE
+- mcp-verification-chain_* and mcp-session-runner_* for quality orchestration
+- excalidraw_* for visual strategy maps
+- paperjsx_* for PPTX executive reports
+- DSOL model routing for adaptive model selection
+
+## Examples
+
+```bash
+# Run complete strategic analysis
+# 1. SWOT: strategy-extras → create_swot_analysis
+# 2. OKRs: strategy-mcp → okr_generator → strategy-extras → check_goals_health
+# 3. Roadmap: mcp-roadmap-3h → analyze_impact
+# 4. Validate: BCG evaluation (minimum 7.0/10)
+
+# Quality orchestration
+py -3 .memory/_scripts/session_runner.py smoke produccion
+py -3 .memory/_scripts/verification_chain.py produccion
+```
+
+## Metadata
+
+- name: metis
+- version: 2.0.0
+- author: KAOS
+- tags: [strategy, planning, okr, roadmap, competitive-analysis]

@@ -1,0 +1,5 @@
+{
+  "sources": ["hackernews", "github_trending"],
+  "schedule": "daily",
+  "output_dir": ".memory/raw"
+}

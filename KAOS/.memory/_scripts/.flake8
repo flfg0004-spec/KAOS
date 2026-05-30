@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 120
+exclude = .git,__pycache__,*.pyc,.memory
+per-file-ignores =
+    dashboard.py: E402
+    mcp_pipeline.py: E402

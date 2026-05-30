@@ -13,6 +13,7 @@ from lib.bridge.auto_mode import should_disclose, estimate_schema_tokens, get_co
 from lib.bridge.scoped_catalog import ScopedToolCatalog
 from lib.bridge.ab_test import ABTest, ABTestSession
 from lib.bridge.hermes_bridge import HermesBridge
+from lib.feature_flags import enable, disable, reset, is_enabled
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ class TestToolSearch:
         ts.build_index()
         results = ts.search("zzz_nonexistent_zzz", top_k=3)
         ids = {r["id"] for r in results}
-        assert "terminal_run" in ids, "Core tool should appear even with no-match query"
+        assert "terminal" in ids, "Core tool should appear even with no-match query"
 
     def test_core_tools_definition(self):
         assert "terminal" in CORE_TOOLS
@@ -174,6 +175,9 @@ class TestToolSearch:
 # ── Phase 2: Auto-mode Detector ───────────────────────────────────────
 
 class TestAutoMode:
+    def setup_method(self):
+        enable("use_progressive_disclosure")
+
     def test_should_disclose_above_threshold(self):
         assert should_disclose(20000, 100000, threshold=0.10) == True
 
@@ -239,6 +243,13 @@ class TestScopedCatalog:
 # ── Phase 5: A/B Test Harness ─────────────────────────────────────────
 
 class TestABTest:
+    def setup_method(self):
+        # Clear persistent data between tests
+        import os as _os
+        _p = Path(__file__).resolve().parent.parent.parent / "cache" / "ab_test_results.json"
+        if _p.exists():
+            _p.unlink()
+
     def test_start_and_record_session(self):
         ab = ABTest()
         session = ab.start_session(variant="progressive", agent="kratos", tool_count=10, schema_tokens=5000)
@@ -285,6 +296,8 @@ class TestABTest:
 # ── Phase 3: Hermes Bridge ────────────────────────────────────────────
 
 class TestHermesBridge:
+    def setup_method(self):
+        enable("use_progressive_disclosure")
     def test_tool_search(self, bridge):
         results = bridge.tool_search("search")
         assert len(results) >= 1

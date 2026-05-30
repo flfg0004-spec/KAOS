@@ -1,0 +1,12 @@
+{
+  "name": "mastra-poc-kaios",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build"
+  },
+  "dependencies": {
+    "@mastra/core": "^0.1.0"
+  }
+}

@@ -29,7 +29,31 @@ from lib.lang_utils import detect_code_language as _detect_code_language
 def kratos_node(state: dict[str, Any]) -> dict[str, Any]:
     if is_enabled("use_new_agent_executor"):
         return _kratos_node_v2(state)
-    return _kratos_node_impl(state)
+
+    v1_result = _kratos_node_impl(state)
+
+    # Shadow mode: execute v2 in parallel for comparison, but return v1 result
+    if is_enabled("kratos_shadow_mode"):
+        try:
+            v2_result = _kratos_node_v2(state)
+            _log_shadow_comparison(v1_result, v2_result)
+        except Exception as e:
+            logger.warning("Shadow mode v2 failed: %s", e)
+
+    return v1_result
+
+
+def _log_shadow_comparison(v1: dict, v2: dict) -> None:
+    """Log comparison between v1 and v2 outputs for shadow mode analysis."""
+    v1_dec = str(v1.get("kratos_decision", "?"))
+    v2_dec = str(v2.get("kratos_decision", "?"))
+    v1_qs = v1.get("kratos_composite", v1.get("quality_score", 0))
+    v2_qs = v2.get("kratos_composite", 0)
+    match = "✓" if v1_dec == v2_dec else "✗"
+    logger.info(
+        "[SHADOW] v1=%s(q=%.1f) vs v2=%s(q=%.1f) %s",
+        v1_dec, v1_qs, v2_dec, v2_qs, match
+    )
 
 
 def _run_post_processing(content: str, state: dict[str, Any], prompt: str) -> dict[str, Any]:
@@ -319,4 +343,77 @@ def _kratos_node_impl(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def _kratos_node_v2(state: dict[str, Any]) -> dict[str, Any]:
-    raise NotImplementedError("Kratos 2.0 parallel pipeline")
+    _start_time = time.time()
+    topic = state.get("topic", "")
+    slug = slugify(topic)
+    detected_lang = _detect_code_language(topic)
+
+    from lib.quality_gate import evaluate_parallel
+    quality_result = evaluate_parallel(topic, language=detected_lang)
+
+    try:
+        from lib.opa_bridge import check_agent
+        governance = check_agent("kratos", topic)
+        gov_allowed = governance.get("allowed", True)
+        gov_denials = governance.get("denials", [])
+    except Exception as e:
+        if is_enabled("opa_strict_mode"):
+            gov_allowed = False
+            gov_denials = [f"OPA check failed (strict mode): {e}"]
+            logger.warning("OPA strict mode: denying due to check failure: %s", e)
+        else:
+            gov_allowed = True
+            gov_denials = []
+            logger.warning("OPA check failed (permissive mode): %s", e)
+
+    composite = quality_result.get("composite", 0.0)
+    gates_passed = quality_result.get("passed", False)
+
+    if not gov_allowed:
+        decision = KratosDecision.REJECTED_BY_GOV
+    elif not gates_passed and composite < 3.0:
+        decision = KratosDecision.FAILED
+    elif not gates_passed:
+        decision = KratosDecision.NEEDS_CURATION
+    else:
+        decision = KratosDecision.COMPLETE
+
+    output = {
+        **state,
+        "kratos_output": f"## Quality Assessment\n\n{quality_result.get('summary', '')}",
+        "kratos_prompt": topic,
+        "kratos_decision": decision,
+        "kratos_composite": composite,
+        "kratos_language": detected_lang,
+        "kratos_gates": quality_result.get("gates", {}),
+        "governance_allowed": gov_allowed,
+        "governance_denials": gov_denials,
+        "kratos_version": "v2",
+    }
+
+    if is_enabled("use_kratos_telemetry"):
+        try:
+            from lib.kratos_telemetry import record_invocation
+            record_invocation(
+                decision=str(decision),
+                quality_score=composite,
+                language=detected_lang,
+                flags_active={k: is_enabled(k) for k in [
+                    "use_kratos_telemetry", "use_parallel_gates",
+                    "use_early_exit", "use_real_mypy", "use_circuit_breaker",
+                ]},
+                duration_ms=(time.time() - _start_time) * 1000,
+            )
+        except Exception:
+            pass
+
+    if is_enabled("use_kratos_telemetry"):
+        try:
+            from lib.kratos_self_heal import heal
+            actions = heal()
+            if actions:
+                logger.info("Self-heal actions: %s", actions)
+        except Exception:
+            pass
+
+    return output

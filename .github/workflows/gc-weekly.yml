@@ -1,0 +1,20 @@
+name: Weekly Garbage Collection
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+
+jobs:
+  gc:
+    name: Garbage Collection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dry run
+        run: python -c "import sys; sys.path.insert(0, '.memory/_scripts'); from lib.garbage import run_gc; r = run_gc(dry_run=True); print(r)"
+      - name: Report
+        run: echo "GC complete (dry-run mode — set dry_run=False to enable deletion)"

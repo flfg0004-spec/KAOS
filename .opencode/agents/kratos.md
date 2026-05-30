@@ -8,3 +8,11 @@
 - **Outputs**: code review, diffs, PRs, test suites, CodeExperience entries
 - **library**: Biblioteca de conocimiento curado — lectura para contexto
 - **Tags**: #kratos #codigo #code-agent
+
+## Harness
+
+- **Verification**: `py -3 -m pytest .memory/_scripts/tests/ -v --no-header`
+- **Health threshold**: ≥ 80
+- **Lifecycle**: active
+- **Sensors**: quality_gates (syntax, compilation, lint, types, structure, security, coverage, style), circuit_breaker, code_experience, telemetry_health
+- **Guides**: ADR-011 (Kratos 2.0 Production), ADR-009 (Arquitectura Kratos), quality_gate docs

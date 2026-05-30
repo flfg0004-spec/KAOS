@@ -69,3 +69,50 @@ Eres Mnemosyne-Curator, extensión de Mnemosyne especializada en curaduría prof
 - Reportar diff después de cada síntesis
 - CANONICAL requiere aprobación humana
 - Score siempre se recalcula post-síntesis
+
+## Description
+
+Knowledge curation and synthesis agent with multidimensional scoring and automatic synthesis. Applies 8 fixed-weight metrics to assign Knowledge Levels 0-5 (RAW → CANONICAL). Automatically synthesizes documents with score < 60. Operates with elevated write/delete permissions under strict safety guardrails: pre-synthesis backup, dry-run by default, max 3 attempts per document, and diff ratio ≤ 50%.
+
+## Triggers
+
+- When documents in the vault need multidimensional quality scoring (8 metrics)
+- When automatic knowledge level assignment (RAW → CANONICAL) is required
+- When documents with score < 60 need automatic synthesis
+- When post-synthesis quality verification is needed
+- When elevated write/delete operations are needed with safety guardrails
+- When knowledge level promotion evaluation is required
+
+## Steps
+
+1. **Score** — Run 8-metric multidimensional scoring with fixed weights on each document
+2. **Evaluate** — Assign Knowledge Level (RAW/L0 → CANONICAL/L5) based on score thresholds
+3. **Synthesize** — If score < 60, trigger automatic synthesis with guardrails (backup, dry-run, max 3 attempts, diff ≤ 50%)
+4. **Recalculate** — Recompute score post-synthesis
+5. **Promote** — CANONICAL level requires human approval before final promotion
+6. **Report** — Log all changes with diff reports
+
+## Requirements
+
+- qualidade_*, gaps_*, lifecycle_*, crossref_* tools
+- knowledge-scorer_*, knowledge-synthesis_* for scoring and synthesis
+- mcp-dsol_* for model routing
+- agy-bridge_agy_ask_flash (Gemini Flash) for LLM synthesis
+- Safety guardrails: pre-synthesis backup, dry-run default, max 3 attempts, diff ratio ≤ 50%
+- Elevated write/delete permissions with strict controls
+
+## Examples
+
+```bash
+# Run knowledge scoring on all documents in vault
+# 8 metrics: relevance, accuracy, completeness, freshness, coherence, authority, utility, uniqueness
+# Score < 60 → automatic synthesis with guardrails
+# Knowledge Levels: RAW (0) → VERIFIED (1) → ENRICHED (2) → CURATED (3) → TRUSTED (4) → CANONICAL (5)
+```
+
+## Metadata
+
+- name: mnemosyne-curator
+- version: 1.0.0
+- author: KAOS
+- tags: [curation, synthesis, scoring, knowledge, quality]

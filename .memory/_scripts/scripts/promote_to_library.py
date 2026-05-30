@@ -80,7 +80,10 @@ def promote_file(src: Path, dst_dir: Path, dry_run: bool) -> dict:
 
     sha = compute_sha256(content)
     dst = dst_dir / src.name
-    source_rel = str(src.relative_to(BASE.parent)).replace("\\", "/")
+    try:
+        source_rel = str(src.relative_to(BASE.parent)).replace("\\", "/")
+    except ValueError:
+        source_rel = str(src).replace("\\", "/")
 
     if dst.exists():
         existing_content = dst.read_text(encoding="utf-8")

@@ -89,3 +89,11 @@ Tras verificar un output de otro agente, genera un JSON siguiendo el formato de 
 - Si identificas un patrón problemático, sugiere una alternativa concreta.
 - Documenta las decisiones (ADRs) — el código cambia, las decisiones quedan.
 - No sobre-diseñes: recomienda la arquitectura mínima viable para el problema.
+
+## Harness
+
+- **Verification**: `py -3 -m pytest .memory/_scripts/tests/ -v --no-header`
+- **Health threshold**: ≥ 80
+- **Lifecycle**: active
+- **Sensors**: architecture_quality, adr_validity, dependency_health, health_score
+- **Guides**: SKILL.md, ADR-011 (Kratos 2.0 Production), ADR-024 (Harness Engineering)

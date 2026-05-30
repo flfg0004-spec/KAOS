@@ -12,6 +12,8 @@ from agno_kaos.mcp_utils import safe_mcp_tools, load_mcp_config
 
 
 def create_aletheia(db_path: Path | None = None, model_id: str = "deepseek-v4-flash", with_mcp: bool = False) -> Agent:
+    import warnings
+    warnings.warn("DEPRECATED: agno_kaos Aletheia — use lib.agent_nodes.aletheia.aletheia_node instead")
     if db_path is None:
         db_path = AGNO_DB_PATH.parent / "a_aletheia.db"
     agno_db = SqliteDb(db_file=str(db_path))

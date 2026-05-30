@@ -49,6 +49,10 @@ Ejecutas fases 1-5 de curación específicas para este nuevo contenido (no ciclo
 ## Herramientas
 
 - **library**: Destino de promoción para contenido curado con score ≥ 70 — escribe en `library/concepts/`
+- **promote_to_library.py**: Script de promoción COPY wiki→library con SHA256 tracking — `py -3 _scripts/scripts/promote_to_library.py --apply`
+- **pre-commit-library.py**: Governance hook que verifica frontmatter, audience y source_hash en library/
+- **quality_gates.py**: Verificación de todos los gates F0-F3 — `py -3 _scripts/scripts/quality_gates.py`
+- **pipeline_e2e.py**: Orquestador completo del pipeline Mnemosyne (gap→tag→score→promote→sync→index)
 - **Vault MCP** (server-filesystem .memory/): Escritura directa en raw/, wiki/, schema/
 - **txtai MCP** (local Python v2.0): Búsqueda semántica con embeddings reales (fastembed) — `semantic_search`, `deduplicate`, `similarity_matrix`
 - **mcp-embed**: Servicio de embeddings persistente (BAAI/bge-small-en-v1.5, 384 dims)
@@ -67,3 +71,11 @@ Mnemosyne es el **paso final opcional** del pipeline Aletheia→Kosmos→Metis. 
 4. Cierra con `vault.py extract --agent mnemosyne`
 
 Como **pre-memoria**, también responde a `query_gaps(topic)` antes de que Aletheia inicie investigación.
+
+## Harness
+
+- **Verification**: `py -3 -m pytest .memory/_scripts/tests/ -v --no-header`
+- **Health threshold**: ≥ 80
+- **Lifecycle**: active
+- **Sensors**: vault_quality, wikilink_health, orphan_detection, graph_health, gap_detection
+- **Guides**: SKILL.md, knowledge-curation-skill, ADR-002 (Sistema de Scores)

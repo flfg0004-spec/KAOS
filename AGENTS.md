@@ -47,3 +47,13 @@
 - `lib/kratos_dashboard.py`
 - `lib/kratos_self_heal.py`
 - `lib/kratos_contract.py`
+
+## Skills
+
+| Agent | Skill | Description |
+|-------|-------|-------------|
+| Aletheia | [aletheia](.opencode/skills/aletheia/SKILL.md) | Truth verification and quality assurance |
+| Kosmos | [kosmos](.opencode/skills/kosmos/SKILL.md) | Architecture analysis and system design |
+| Kratos | [kratos](.opencode/skills/kratos/SKILL.md) | Code generation and PRGII pipeline execution |
+| Metis | [metis](.opencode/skills/metis/SKILL.md) | Strategic planning, OKRs, and competitive analysis |
+| Mnemosyne | [mnemosyne](.opencode/skills/mnemosyne/SKILL.md) | Memory curation and knowledge management |

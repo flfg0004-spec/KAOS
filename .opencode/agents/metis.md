@@ -17,3 +17,11 @@ Al iniciar, ejecuta `strategy_memory.recall(context)` para aprender de estrategi
 ## Herramientas
 
 - **library**: Biblioteca de conocimiento curado — lectura para contexto
+
+## Harness
+
+- **Verification**: `py -3 -m pytest .memory/_scripts/tests/ -v --no-header`
+- **Health threshold**: ≥ 80
+- **Lifecycle**: active
+- **Sensors**: strategy_quality (BCG), goal_health, output_quality, cross_agent_verification
+- **Guides**: SOUL.md, SKILL.md, AGENTS.md, ADR-003 (Protocolo de Verificación)

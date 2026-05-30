@@ -68,3 +68,59 @@ query_gaps(topic: str) -> {
 - Sleep cycle: NREM+REM+Compaction+Forgetting
 - Responde a query_gaps de Aletheia con prioridad alta
 - Curación targeted (fases 1-5) para contenido nuevo de Aletheia
+
+## Description
+
+Memory curation and knowledge management agent. Guardian of the vault: curation, wikilinks, quality scoring, compression, and graph analysis. Bidirectional integration with Aletheia for gap query and post-research curation. Uses a sleep cycle (NREM + REM + Compaction + Forgetting) and 14-phase methodology for knowledge lifecycle management.
+
+## Triggers
+
+- When the user needs knowledge curation, deduplication, linking, or indexing in the vault
+- When the system needs to analyze the knowledge graph for gaps, topic islands, or decay
+- When post-research curation is needed after Aletheia completes an investigation
+- When Aletheia queries `query_gaps(topic)` for pre-research context
+- When knowledge compression and consolidation is needed
+- When wikilink suggestions or semantic tagging is required
+- When automated sleep cycles (NREM/REM/Compaction/Forgetting) need to run
+- **Do NOT trigger** for code generation (use kratos) or strategy (use metis)
+
+## Steps
+
+0. **Gap Query** — Respond to Aletheia's `query_gaps(topic)`: return existing concepts, gaps, topic islands, and decay scores
+1. **Ingest** — Detect changes in raw/ directory
+2. **Tag** — Auto-tagging with Gemini Flash + embeddings
+3. **Link** — Suggest semantic wikilinks (embedding + AI)
+4. **Index** — Update search index for full-text retrieval
+5. **Graph** — Rebuild knowledge graph with new connections
+6. **Compress** — Apply lossless compression for long-term storage
+7. **Forget** — Execute forgetting phase based on decay thresholds
+8. **Report** — Log all changes and graph metrics
+
+## Requirements
+
+- sequential-thinking_*, vault_*, txtai_*, knowledge-graph_* tools
+- mcp-obsidian-cli_*, mcp-embed_* for Obsidian integration and embeddings
+- agy-bridge_* (Gemini Flash via DSOL) for auto-tagging
+- pipeline_* for cross-agent context
+- Bidirectional integration with Aletheia (gap query + post-research)
+- DSOL model routing for adaptive model selection
+
+## Examples
+
+```bash
+# Query gaps for a topic before Aletheia starts research
+# Returns: existing concepts, gaps, topic islands, decay scores
+
+# Run curation sleep cycle
+# 1. NREM: Ingest + Tag + Link + Index
+# 2. REM: Graph analysis
+# 3. Compaction: Compress eligible content
+# 4. Forgetting: Archive below-threshold content
+```
+
+## Metadata
+
+- name: mnemosyne
+- version: 1.0.0
+- author: KAOS
+- tags: [memory, curation, knowledge, graph, vault]

@@ -221,3 +221,15 @@ Cuando operas en modo **Quality Orchestrator**, tus herramientas y outputs cambi
 ## Nota sobre Temperatura
 
 La temperatura del modelo deepseek-v4-flash está fijada en **0.4** globalmente en `opencode.json`. No hay modos de temperatura dinámicos. El ajuste de comportamiento (precisión, creatividad, crítica) se logra mediante instrucciones semánticas en el prompt, no cambiando la temperatura.
+
+## Harness
+
+- **Verification**: `py -3 -m pytest .memory/_scripts/tests/ -v --no-header`
+- **Health threshold**: ≥ 80
+- **Lifecycle**: active
+- **Sensors**: strategy_quality (BCG), goal_health, output_quality, cross_agent_verification
+- **Guides**: SOUL.md, SKILL.md, AGENTS.md, ADR-003 (Protocolo de Verificación)
+
+## Skills
+
+- [metis](.opencode/skills/metis/SKILL.md) — Strategic methodology skill for planning, OKRs, roadmaps, competitive analysis, business modeling, and executive reporting

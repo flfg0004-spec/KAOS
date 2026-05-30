@@ -330,3 +330,32 @@ def test_gate_compilation_multi_go():
     from lib.quality_gate import gate_compilation_multi
     result = gate_compilation_multi("package main\nfunc main() {}", "go")
     assert "score" in result
+
+
+# ── Phase 2: QualityGateService tests ──
+
+
+def test_quality_service_auto_detect():
+    """QualityGateService auto-detects mode without crashing."""
+    from lib.quality_gate._service import QualityGateService
+    svc = QualityGateService()
+    mode = svc.detect_mode()
+    assert mode in ("local", "mcp")
+
+
+def test_quality_service_evaluate():
+    """QualityGateService.evaluate returns expected structure."""
+    from lib.quality_gate._service import QualityGateService
+    svc = QualityGateService()
+    result = svc.evaluate("x = 1", "python")
+    assert "composite" in result
+    assert "gates" in result
+
+
+def test_quality_service_list_gates():
+    """QualityGateService.list_gates returns gate names."""
+    from lib.quality_gate._service import QualityGateService
+    svc = QualityGateService()
+    gates = svc.list_gates()
+    assert len(gates) >= 8
+    assert "syntax" in gates

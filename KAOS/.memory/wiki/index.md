@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-30 11:09*
+*Auto-generated: 2026-05-30 11:46*
 
 ## Agentes
 
@@ -186,6 +186,7 @@
 - [estrategia-anthropic-kaos](../raw/estrategia-anthropic-kaos.md) - 2026-05-30
 - [estrategia-openai-kaos](../raw/estrategia-openai-kaos.md) - 2026-05-30
 - [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-30
+- [horizon-briefing-2026-05-30](../raw/horizon-briefing-2026-05-30.md) - 2026-05-30
 - [investigacion-anthropic-gaps](../raw/investigacion-anthropic-gaps.md) - 2026-05-30
 - [investigacion-c4-model-arquitectura](../raw/investigacion-c4-model-arquitectura.md) - 2026-05-30
 - [investigacion-configuracion-opencode](../raw/investigacion-configuracion-opencode.md) - 2026-05-30
@@ -249,6 +250,7 @@
 - [auditoria-estrategia-orquesta-kosmos](../schema/auditoria-estrategia-orquesta-kosmos.md)
 - [compression-strategy](../schema/compression-strategy.md)
 - [estrategia-orquesta-agentes-hermes-strategy](../schema/estrategia-orquesta-agentes-hermes-strategy.md)
+- [health-dashboard-spec](../schema/health-dashboard-spec.md)
 - [health-report](../schema/health-report.md)
 - [integracion-7-recursos-evaluacion-arquitectonica](../schema/integracion-7-recursos-evaluacion-arquitectonica.md)
 - [KAOS](../schema/KAOS.md)
@@ -259,7 +261,8 @@
 - [metis-mnemosyne-boundary](../schema/metis-mnemosyne-boundary.md)
 - [orphan-report](../schema/orphan-report.md)
 - [plan-estrategico-tactico-paralelo-2026](../schema/plan-estrategico-tactico-paralelo-2026.md)
+- [tech-debt](../schema/tech-debt.md)
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-30 11:09*
+*Ultima actualizacion: 2026-05-30 11:46*

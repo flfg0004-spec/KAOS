@@ -154,8 +154,9 @@ def status():
     embeddings = _get_embeddings(create=False)
     if embeddings:
         try:
-            results = embeddings.search(f"SELECT id FROM txtai WHERE id LIKE '{STRATEGY_PREFIX}%'")
-            embedded = len(results)
+            results = embeddings.search("SELECT id FROM txtai LIMIT 1000")
+            strategy_ids = [r for r in results if isinstance(r.get("id",""), str) and r["id"].startswith(STRATEGY_PREFIX)]
+            embedded = len(strategy_ids)
         except Exception as e:
             logger.warning("Failed to query embedded count in status(): %s", e)
     health_str = f"{embedded}/{total}" if total else "N/A"

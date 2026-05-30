@@ -149,6 +149,10 @@ def pipeline_cancel(pipeline_id: str) -> dict:
 
     data["state"] = "cancelled"
     data["completed_at"] = _now_iso()
+    for nid in data.get("nodes", {}):
+        data["nodes"][nid]["state"] = "cancelled"
+        data["nodes"][nid]["completed_at"] = _now_iso()
+        data["nodes"][nid]["error"] = "Pipeline cancelled"
     _save(pipeline_id, data)
 
     # Publish cancellation events for each node

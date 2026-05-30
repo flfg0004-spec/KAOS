@@ -1,0 +1,13 @@
+{
+  "index_only_current_vault": true,
+  "index_folder": ".memory/library",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "chunk_size": 512,
+  "excluded_folders": [
+    ".memory/_scripts",
+    ".memory/cache",
+    ".memory/raw"
+  ],
+  "auto_index": true,
+  "index_interval_minutes": 60
+}

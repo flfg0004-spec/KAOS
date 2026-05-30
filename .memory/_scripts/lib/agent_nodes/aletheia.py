@@ -1,3 +1,4 @@
+import os
 import logging
 import re
 from datetime import datetime
@@ -61,7 +62,7 @@ def _scope_phase(state: dict) -> dict:
     state["research_brief"] = brief
 
     # 2. Pre-consult Mnemosyne gaps
-    if _HAS_GAPS:
+    if _HAS_GAPS and not os.environ.get("KAOS_TESTING") == "1":
         try:
             gaps = query_gaps(topic)
             state["gaps_pre"] = gaps
@@ -69,14 +70,17 @@ def _scope_phase(state: dict) -> dict:
                 state["existing_concepts"] = [c["name"] for c in gaps["existing_concepts"][:5]]
             if gaps.get("gaps_detected"):
                 state["aletheia_pending_gaps"] = [g["reason"][:100] for g in gaps["gaps_detected"][:3]]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Gap query failed: %s", e)
 
     # 3. Pre-consult vault context
-    try:
-        vault_context = build_rag_context(topic)
-        state["vault_context"] = vault_context
-    except Exception:
+    if os.environ.get("KAOS_TESTING") != "1":
+        try:
+            vault_context = build_rag_context(topic)
+            state["vault_context"] = vault_context
+        except Exception as e:
+            state["vault_context"] = ""
+            logger.warning("Vault context failed: %s", e)
         state["vault_context"] = ""
 
     return state
@@ -208,8 +212,8 @@ def _aletheia_node_impl(state: dict) -> dict:
         try:
             from lib.viz_orchestrator import orchestrate as _viz
             _viz("aletheia", {"research_tree": raw})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Viz orchestrate skipped: %s", e)
         if state.get("aletheia_pending_gaps"):
             from lib.quality.agent import record_gap_feedback
             pending = state["aletheia_pending_gaps"]
@@ -237,8 +241,8 @@ def _aletheia_node_impl(state: dict) -> dict:
     try:
         from lib.viz_orchestrator import orchestrate as _viz
         _viz("aletheia", {"research_tree": topic})
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Viz orchestrate skipped: %s", e)
 
     if state.get("aletheia_pending_gaps"):
         from lib.quality import record_gap_feedback
@@ -287,9 +291,9 @@ def _synthesis_phase(state: dict, raw: str) -> dict:
 
     try:
         from lib.quality.agent import record as qa_record
-        qa_record("aletheia", raw, topic=state.get("topic", ""), pipeline_id="", task_prompt=state.get("research_brief", {}).get("topic", ""))
-    except Exception:
-        pass
+        qa_record("aletheia", raw, topic=state.get("topic", ""), pipeline_id=state.get("pipeline_id", ""), task_prompt=state.get("topic", ""))
+    except Exception as e:
+        logger.warning("Quality record failed: %s", e)
 
     return state
 

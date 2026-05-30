@@ -92,6 +92,11 @@ def trend(days: int = 30) -> list[dict]:
     return [{"day": r[0], "avg_score": round(r[1], 3), "count": r[2]} for r in rows]
 
 
+def latest_scores(limit: int = 10) -> list[dict]:
+    """Get the most recent score records."""
+    return history(limit=limit)
+
+
 def get_model_score(model_name: str = "", task_type: str = "", min_samples: int = 3) -> float:
     """Returns average quality score for a model from recent samples.
     

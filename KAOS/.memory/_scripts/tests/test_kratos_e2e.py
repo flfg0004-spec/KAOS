@@ -240,5 +240,61 @@ def test_kratos_dashboard_imports():
 def test_opa_strict_mode_flag():
     """opa_strict_mode flag exists in feature flags."""
     from lib.feature_flags import is_enabled
-    # Should not raise — flag exists with default false
     assert is_enabled("opa_strict_mode") is False
+
+
+# ── F1: _kratos_node_v2 tests ──
+
+
+def test_kratos_v2_returns_dict():
+    """_kratos_node_v2 returns dict with expected fields."""
+    from lib.agent_nodes.kratos import _kratos_node_v2
+    result = _kratos_node_v2({"topic": "def foo(): pass", "profile": "desarrollo"})
+    assert isinstance(result, dict)
+    assert "kratos_decision" in result
+    assert "kratos_composite" in result
+    assert "kratos_version" in result
+    assert result["kratos_version"] == "v2"
+
+
+def test_kratos_v2_decision_is_enum():
+    """_kratos_node_v2 returns KratosDecision in output."""
+    from lib.agent_nodes.kratos import _kratos_node_v2
+    from lib.kratos_decision import KratosDecision
+    result = _kratos_node_v2({"topic": "def foo(): pass", "profile": "desarrollo"})
+    assert isinstance(result["kratos_decision"], KratosDecision)
+
+
+def test_kratos_v2_flag_use_new():
+    """Flag use_new_agent_executor routes to v2."""
+    from lib.agent_nodes.kratos import kratos_node
+    from lib.feature_flags import enable, disable
+    enable("use_new_agent_executor")
+    try:
+        result = kratos_node({"topic": "def foo(): pass", "profile": "desarrollo"})
+        assert result.get("kratos_version") == "v2"
+    finally:
+        disable("use_new_agent_executor")
+
+
+def test_kratos_v2_shadow_mode():
+    """Shadow mode executes v2 but returns v1 output."""
+    from lib.agent_nodes.kratos import kratos_node
+    from lib.feature_flags import enable, disable, is_enabled
+    if not is_enabled("kratos_shadow_mode"):
+        enable("kratos_shadow_mode")
+        try:
+            result = kratos_node({"topic": "def foo(): pass", "profile": "desarrollo"})
+            assert "kratos_decision" in result
+        finally:
+            disable("kratos_shadow_mode")
+
+
+# ── Phase 2: Self-heal extended rules ──
+
+
+def test_self_heal_extended_rules():
+    """Self-heal extended rules don't crash."""
+    from lib.kratos_self_heal import heal
+    result = heal()
+    assert isinstance(result, list)

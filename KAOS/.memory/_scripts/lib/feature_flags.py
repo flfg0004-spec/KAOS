@@ -52,8 +52,18 @@ DEFAULT_FLAGS: Final[dict[str, bool]] = {
     "opa_strict_mode": False,
     "use_kratos_dashboard": False,
 
+    # === Kratos 2.0 Alpha — Shadow Mode ===
+    "kratos_shadow_mode": False,
+
     # === Hermes Tool Bridge (WS-1) ===
     "use_progressive_disclosure": False,
+
+    # === Harness Lite (WS-2) ===
+    "use_hard_quality_gates": False,
+
+    # === H3 Sprint 4 — MCP Quality Gates (Phase 2) ===
+    "mcp_quality_server": False,
+    "mcp_quality_client": False,
 }
 
 _flags: dict[str, bool] = {}
