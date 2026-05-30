@@ -25,17 +25,23 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
+import logging
+
+_LOG = logging.getLogger(__name__)
+
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from lib.config import VAULT_ROOT
-from mcp_pipeline import (
+from lib.events import EventBus, EVENT_TYPES
+from lib.pipeline_store import (
     PIPELINE_DIR,
-    _load,
-    _save,
-    _now_iso,
-    _PRIORITY_ORDER,
-    _VALID_PRIORITIES,
+    load_pipeline,
+    save_pipeline,
+    now_iso,
+    VALID_PRIORITIES,
+)
+from mcp_pipeline import (
     pipeline_list,
     pipeline_status,
     pipeline_run,
@@ -52,9 +58,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ── SSE State ──────────────────────────────────────
+# ── Global state ────────────────────────────────────
 _sse_queues: list[asyncio.Queue] = []
 _simulation_running = True
+_start_time = datetime.now(timezone.utc)
+ALERTS_LOG = VAULT_ROOT / "cache" / "alerts.log"
 
 
 # ── Broadcast helper ───────────────────────────────
@@ -117,11 +125,13 @@ async def _simulation_tick() -> None:
     if not files:
         return
 
-    # Collect candidates (queued or running)
+    # Collect candidates (simulation only, queued or running, non-terminal)
     candidates: list[dict] = []
     for f in files:
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
+            if data.get("source") != "simulation":
+                continue
             if data.get("state") in ("queued", "running"):
                 candidates.append(data)
         except Exception:
@@ -148,42 +158,45 @@ async def _simulation_tick() -> None:
         )
         if all_terminal and pipeline["state"] == "running":
             pipeline["state"] = "completed"
-            pipeline["completed_at"] = _now_iso()
-            _save(pid, pipeline)
+            pipeline["completed_at"] = now_iso()
+            save_pipeline(pid, pipeline)
             await _broadcast("pipeline_update", {
                 "pipeline_id": pid,
                 "state": "completed",
                 "changed_node": None,
-                "timestamp": _now_iso(),
+                "timestamp": now_iso(),
             })
         return
 
     # ── Start the node (pending → running) ──
     node = pipeline["nodes"][next_node]
     node["state"] = "running"
-    node["started_at"] = _now_iso()
+    node["started_at"] = now_iso()
     node["attempt"] = node.get("attempt", 0) + 1
 
     if pipeline["state"] == "queued":
         pipeline["state"] = "running"
-        pipeline["started_at"] = _now_iso()
+        pipeline["started_at"] = now_iso()
 
-    _save(pid, pipeline)
+    save_pipeline(pid, pipeline)
 
     await _broadcast("pipeline_update", {
         "pipeline_id": pid,
         "state": "running",
         "changed_node": next_node,
         "node_state": "running",
-        "timestamp": _now_iso(),
+        "timestamp": now_iso(),
     })
 
     # Simulate processing delay
     await asyncio.sleep(random.uniform(1.0, 3.0))
 
     # Reload — pipeline may have been modified externally
-    data = _load(pid)
+    data = load_pipeline(pid)
     if data is None:
+        return
+
+    if data.get("state") in ("cancelled", "failed", "completed"):
         return
 
     n = data["nodes"].get(next_node)
@@ -199,7 +212,7 @@ async def _simulation_tick() -> None:
         n["state"] = "completed"
         n["result"] = "OK"
 
-    n["completed_at"] = _now_iso()
+    n["completed_at"] = now_iso()
     n["elapsed_ms"] = random.uniform(1000.0, 3000.0)
 
     # Update aggregate counters
@@ -215,16 +228,16 @@ async def _simulation_tick() -> None:
     )
     if all_terminal:
         data["state"] = "completed"
-        data["completed_at"] = _now_iso()
+        data["completed_at"] = now_iso()
 
-    _save(pid, data)
+    save_pipeline(pid, data)
 
     await _broadcast("pipeline_update", {
         "pipeline_id": pid,
         "state": data["state"],
         "changed_node": next_node,
         "node_state": n["state"],
-        "timestamp": _now_iso(),
+        "timestamp": now_iso(),
         "elapsed_ms": n.get("elapsed_ms", 0),
         "error": n.get("error"),
     })
@@ -279,7 +292,7 @@ async def api_pipelines(
     """List all pipelines, optionally filtered by state / priority."""
     result = pipeline_list(limit=100, state=state)
     pipelines = result.get("pipelines", [])
-    if priority and priority in _VALID_PRIORITIES:
+    if priority and priority in VALID_PRIORITIES:
         pipelines = [p for p in pipelines if p.get("priority") == priority]
     return JSONResponse({"pipelines": pipelines, "total": len(pipelines)})
 
@@ -287,7 +300,7 @@ async def api_pipelines(
 @app.get("/dashboard/api/pipeline/{pipeline_id}")
 async def api_pipeline_detail(pipeline_id: str):
     """Full detail for a single pipeline, including node data."""
-    data = _load(pipeline_id)
+    data = load_pipeline(pipeline_id)
     if data is None:
         return JSONResponse({"error": "Pipeline not found"}, status_code=404)
     return JSONResponse(data)
@@ -309,7 +322,7 @@ async def api_run_pipeline(request: Request):
     agents = body.get("agents")
     priority = body.get("priority", "normal")
     result = pipeline_run(topic=topic, agents=agents, priority=priority)
-    return JSONResponse(result)
+    return JSONResponse(result, status_code=201)
 
 
 @app.post("/dashboard/api/cancel/{pipeline_id}")
@@ -321,9 +334,74 @@ async def api_cancel_pipeline(pipeline_id: str):
         "pipeline_id": pipeline_id,
         "state": "cancelled",
         "changed_node": None,
-        "timestamp": _now_iso(),
+        "timestamp": now_iso(),
     })
     return JSONResponse(result)
+
+
+@app.get("/dashboard/api/health")
+async def api_health():
+    """Health check del sistema con estado de componentes."""
+    components = {}
+    try:
+        pipeline_list(limit=1)
+        components["pipeline_store"] = True
+    except Exception:
+        components["pipeline_store"] = False
+    try:
+        from lib.quality.store import history
+        history(limit=1)
+        components["quality_store"] = True
+    except Exception:
+        components["quality_store"] = False
+    components["event_bus"] = EventBus.subscriber_count >= 0
+
+    try:
+        active = len(pipeline_list(state="running").get("pipelines", []))
+        total = pipeline_list(limit=1000).get("total", 0)
+    except Exception:
+        active = total = -1
+
+    uptime = int((datetime.now(timezone.utc) - _start_time).total_seconds())
+    last_alerts = []
+    try:
+        if ALERTS_LOG.exists():
+            lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
+            last_alerts = [json.loads(l) for l in lines[-5:] if l.strip()]
+    except Exception:
+        pass
+    last_error = None
+    last_error_at = None
+    for a in reversed(last_alerts):
+        if a.get("severity") in ("error", "critical"):
+            last_error = a.get("message")
+            last_error_at = a.get("timestamp")
+            break
+
+    all_ok = all(components.values()) and active >= 0
+    return JSONResponse({
+        "status": "healthy" if all_ok else "degraded",
+        "uptime_seconds": uptime,
+        "pipelines_active": active,
+        "pipelines_total": total,
+        "last_error": last_error,
+        "last_error_at": last_error_at,
+        "components": components,
+        "timestamp": now_iso(),
+    })
+
+
+@app.get("/dashboard/api/alerts")
+async def api_alerts():
+    """Últimas alertas del sistema."""
+    alerts = []
+    try:
+        if ALERTS_LOG.exists():
+            lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
+            alerts = [json.loads(l) for l in lines[-50:] if l.strip()]
+    except Exception:
+        pass
+    return JSONResponse({"alerts": alerts, "total": len(alerts)})
 
 
 @app.get("/dashboard/api/score")
@@ -351,15 +429,27 @@ def _calculate_scores() -> dict:
 
     # adaptive_routing: existe aether router + quality feedback
     try:
-        from lib.aether.router import resolve_model, _apply_quality_feedback
+        from lib.aether.router import resolve_model, _quality_select
         from lib.aether.quality_store import QualityStore
         scores["adaptive_routing"] = min(100.0, (
             (1.0 if callable(resolve_model) else 0) * 40 +
-            (1.0 if callable(_apply_quality_feedback) else 0) * 30 +
+            (1.0 if callable(_quality_select) else 0) * 30 +
             (1.0 if QualityStore else 0) * 30
         ))
     except Exception:
         scores["adaptive_routing"] = 0.0
+
+    # audit_quality: resultados de Kosmos audit
+    try:
+        from lib.quality.audit_trigger import run_audit
+        audit = run_audit()
+        summary = audit.get("summary", {})
+        errors = summary.get("errors", 0)
+        warnings = summary.get("warnings", 0)
+        score = 100.0 - (errors * 20 + warnings * 5)
+        scores["audit_quality"] = max(0.0, min(100.0, score))
+    except Exception:
+        scores["audit_quality"] = 0.0
 
     # error_recovery: timeout + retry + circuit breaker
     try:
@@ -432,7 +522,7 @@ async def api_sse_events(request: Request):
                 except asyncio.TimeoutError:
                     yield (
                         "event: heartbeat\n"
-                        f"data: {json.dumps({'timestamp': _now_iso()})}\n\n"
+                        f"data: {json.dumps({'timestamp': now_iso()})}\n\n"
                     )
         except asyncio.CancelledError:
             pass  # client disconnected
@@ -450,6 +540,30 @@ async def api_sse_events(request: Request):
             "Access-Control-Allow-Origin": "*",
         },
     )
+
+
+# ── Startup: bridge EventBus → SSE + AlertDaemon ──
+@app.on_event("startup")
+async def _startup():
+    asyncio.create_task(_eventbus_bridge())
+    try:
+        from alert_daemon import start as start_alerts
+        start_alerts()
+    except Exception:
+        pass
+    _LOG.info("Dashboard startup complete — EventBus bridge + AlertDaemon active")
+
+
+async def _eventbus_bridge():
+    """Bridge: EventBus (thread-safe queue) → SSE queues."""
+    loop = asyncio.get_event_loop()
+    eb_queue = EventBus.subscribe()
+    while True:
+        try:
+            event_type, data = await loop.run_in_executor(None, eb_queue.get)
+            await _broadcast(event_type, data)
+        except Exception:
+            pass
 
 
 # ── Entry point (for direct execution) ─────────────

@@ -1,43 +1,28 @@
 """Pipeline MCP Server — pipeline_status, pipeline_run, pipeline_cancel, pipeline_list."""
 
 import json
+import logging
 import random
 import time
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional
 
-from lib.config import VAULT_ROOT
+_LOG = logging.getLogger(__name__)
+
 from lib.kronos import ParallelExecutor, TaskState
+from lib.events import EventBus
+from lib.pipeline_store import (
+    PIPELINE_DIR,
+    PRIORITY_ORDER as _PRIORITY_ORDER,
+    VALID_PRIORITIES as _VALID_PRIORITIES,
+    DEFAULT_TIMEOUT as _DEFAULT_TIMEOUT,
+    now_iso as _now_iso,
+    load_pipeline as _load,
+    save_pipeline as _save,
+)
 
-PIPELINE_DIR = VAULT_ROOT / "cache" / "pipeline_runs"
 PIPELINE_DIR.mkdir(parents=True, exist_ok=True)
-
-# ── Priority helpers ───────────────────────────────────────────
-_PRIORITY_ORDER = {"critical": 0, "high": 1, "normal": 2, "low": 3}
-_VALID_PRIORITIES = frozenset(_PRIORITY_ORDER.keys())
-_DEFAULT_TIMEOUT = 300  # 5 minutes per node
-
-
-def _pipeline_path(pipeline_id: str) -> Path:
-    return PIPELINE_DIR / f"{pipeline_id}.json"
-
-
-def _now_iso() -> str:
-    return datetime.now().isoformat()
-
-
-def _load(pipeline_id: str) -> Optional[dict]:
-    path = _pipeline_path(pipeline_id)
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _save(pipeline_id: str, data: dict):
-    path = _pipeline_path(pipeline_id)
-    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
 
 def _generate_id() -> str:
@@ -55,6 +40,8 @@ def pipeline_run(
     """Ejecuta un pipeline. Crea el run y devuelve su ID."""
     if agents is None:
         agents = ["aletheia", "kratos", "kosmos", "metis"]
+    if isinstance(agents, list) and len(agents) == 0:
+        return {"error": "agents list cannot be empty. Provide at least one agent."}
 
     if priority not in _VALID_PRIORITIES:
         return {"error": f"Invalid priority '{priority}'. Valid: critical, high, normal, low"}
@@ -100,6 +87,13 @@ def pipeline_run(
     }
 
     _save(pipeline_id, data)
+    EventBus.publish("pipeline_update", {
+        "pipeline_id": pipeline_id,
+        "state": "queued",
+        "topic": topic,
+        "priority": priority,
+        "timestamp": _now_iso(),
+    })
     return {"pipeline_id": pipeline_id, "state": "queued", "nodes": len(nodes), "priority": priority}
 
 
@@ -132,11 +126,30 @@ def pipeline_cancel(pipeline_id: str) -> dict:
     if data is None:
         return {"error": f"Pipeline {pipeline_id} not found"}
     if data["state"] in ("completed", "failed", "cancelled"):
-        return {"pipeline_id": pipeline_id, "state": data["state"], "msg": "Already terminal"}
+        return {
+            "pipeline_id": pipeline_id,
+            "state": data["state"],
+            "msg": f"Cannot cancel: pipeline is already {data['state']}",
+        }
 
     data["state"] = "cancelled"
     data["completed_at"] = _now_iso()
     _save(pipeline_id, data)
+
+    # Publish cancellation events for each node
+    for nid in data.get("nodes", {}):
+        EventBus.publish("node_update", {
+            "pipeline_id": pipeline_id,
+            "node_id": nid,
+            "state": "cancelled",
+            "timestamp": _now_iso(),
+        })
+    EventBus.publish("pipeline_update", {
+        "pipeline_id": pipeline_id,
+        "state": "cancelled",
+        "timestamp": _now_iso(),
+    })
+
     return {"pipeline_id": pipeline_id, "state": "cancelled", "msg": "Pipeline cancelled"}
 
 
@@ -167,6 +180,31 @@ def pipeline_list(limit: int = 10, state: str = None, sort_by_priority: bool = T
         results.sort(key=lambda r: _PRIORITY_ORDER.get(r.get("priority", "normal"), 99))
 
     return {"pipelines": results[:limit], "total": len(results)}
+
+
+# ── CLI entry point ────────────────────────────────────
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) < 2:
+        print("Usage: py -3 mcp_pipeline.py <run|status|cancel|list> [args...]")
+        sys.exit(1)
+
+    cmd = sys.argv[1]
+    if cmd == "run" and len(sys.argv) >= 3:
+        agents = sys.argv[3].split(",") if len(sys.argv) > 3 else ["aletheia", "kratos"]
+        result = pipeline_run(sys.argv[2], agents)
+    elif cmd == "status" and len(sys.argv) >= 3:
+        result = pipeline_status(sys.argv[2])
+    elif cmd == "cancel" and len(sys.argv) >= 3:
+        result = pipeline_cancel(sys.argv[2])
+    elif cmd == "list":
+        result = pipeline_list()
+    else:
+        print(f"Unknown command or missing args: {cmd}")
+        sys.exit(1)
+
+    print(json.dumps(result, indent=2, default=str))
 
 
 def _update_node(pipeline_id: str, node_id: str, **updates) -> dict:
@@ -310,6 +348,12 @@ def _execute_node_task(pipeline_id: str, node_id: str, mock_delay: float = 0.0) 
         "result": None,
     }
     _start = time.monotonic()
+    EventBus.publish("node_update", {
+        "pipeline_id": pipeline_id,
+        "node_id": node_id,
+        "state": "running",
+        "timestamp": _now_iso(),
+    })
 
     for attempt in range(max_retries + 1):
         node["attempt"] = attempt + 1
@@ -320,6 +364,11 @@ def _execute_node_task(pipeline_id: str, node_id: str, mock_delay: float = 0.0) 
             node["error"] = f"Timeout after {mock_delay:.1f}s (limit: {timeout_seconds}s)"
             node["completed_at"] = _now_iso()
             node["elapsed_ms"] = (time.monotonic() - _start) * 1000
+            EventBus.publish("node_update", {
+                "pipeline_id": pipeline_id, "node_id": node_id,
+                "state": "timeout", "error": node["error"],
+                "timestamp": _now_iso(),
+            })
             return node
 
         # Simulate processing
@@ -333,6 +382,11 @@ def _execute_node_task(pipeline_id: str, node_id: str, mock_delay: float = 0.0) 
             node["completed_at"] = _now_iso()
             node["result"] = f"OK (attempt {attempt + 1})"
             node["elapsed_ms"] = (time.monotonic() - _start) * 1000
+            EventBus.publish("node_update", {
+                "pipeline_id": pipeline_id, "node_id": node_id,
+                "state": "completed", "elapsed_ms": node["elapsed_ms"],
+                "timestamp": _now_iso(),
+            })
             return node
 
         # ── Retry with exponential backoff ──
@@ -345,6 +399,11 @@ def _execute_node_task(pipeline_id: str, node_id: str, mock_delay: float = 0.0) 
             node["error"] = f"All {max_retries + 1} attempts failed"
             node["completed_at"] = _now_iso()
             node["elapsed_ms"] = (time.monotonic() - _start) * 1000
+            EventBus.publish("node_update", {
+                "pipeline_id": pipeline_id, "node_id": node_id,
+                "state": "failed", "error": node["error"],
+                "timestamp": _now_iso(),
+            })
             return node
 
     return {"node_id": node_id, "state": "failed", "error": "Unexpected exit"}
@@ -377,6 +436,14 @@ def pipeline_execute(pipeline_id: str, mock_delay: float = 0.0) -> dict:
     data["state"] = "running"
     data["started_at"] = _now_iso()
     _save(pipeline_id, data)
+    _LOG.info("Pipeline %s execution started (%d nodes)", pipeline_id, len(data["nodes"]))
+    EventBus.publish("pipeline_update", {
+        "pipeline_id": pipeline_id,
+        "state": "running",
+        "topic": data.get("topic", ""),
+        "total_nodes": len(data["nodes"]),
+        "timestamp": _now_iso(),
+    })
 
     # Build one task per node
     tasks = []
@@ -428,6 +495,16 @@ def pipeline_execute(pipeline_id: str, mock_delay: float = 0.0) -> dict:
     data["state"] = "completed" if failed == 0 else "failed"
     data["completed_at"] = _now_iso()
     _save(pipeline_id, data)
+    _LOG.info("Pipeline %s completed: state=%s, completed=%d, failed=%d",
+              pipeline_id, data["state"], completed, failed)
+    EventBus.publish("pipeline_update", {
+        "pipeline_id": pipeline_id,
+        "state": data["state"],
+        "completed_nodes": completed,
+        "failed_nodes": failed,
+        "total_cost_usd": data["total_cost_usd"],
+        "timestamp": _now_iso(),
+    })
 
     return {
         "pipeline_id": pipeline_id,

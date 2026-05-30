@@ -1,12 +1,12 @@
 """ParallelExecutor — concurrent task execution with live state tracking."""
 
+import logging
 import threading
 import time
-import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, wait
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
 _LOG = logging.getLogger(__name__)
 
@@ -76,6 +76,7 @@ class ParallelExecutor:
 
         with ThreadPoolExecutor(max_workers=self._max) as pool:
             futures = {}
+            max_timeout = 300
             for t in tasks:
                 tid = t.get("id", str(id(t)))
                 fn = t.get("fn")
@@ -84,15 +85,18 @@ class ParallelExecutor:
                     results.append(TaskResult(tid, TaskState.FAILED, error="fn not callable"))
                     continue
 
-                timeout = t.get("timeout", 300)
+                task_timeout = t.get("timeout", 300)
+                max_timeout = max(max_timeout, task_timeout)
                 args = t.get("args", ())
                 kwargs = t.get("kwargs", {})
 
                 self._set_state(tid, TaskState.RUNNING)
-                fut = pool.submit(self._run_wrapper, tid, fn, args, kwargs, timeout)
+                fut = pool.submit(self._run_wrapper, tid, fn, args, kwargs, task_timeout)
                 futures[fut] = tid
 
-            for fut in as_completed(futures):
+            completed_futures, pending_futures = wait(futures, timeout=int(max_timeout))
+
+            for fut in completed_futures:
                 tid = futures[fut]
                 try:
                     result, elapsed = fut.result()
@@ -101,6 +105,12 @@ class ParallelExecutor:
                 except Exception as e:
                     self._set_state(tid, TaskState.FAILED)
                     results.append(TaskResult(tid, TaskState.FAILED, error=str(e)))
+
+            for fut in pending_futures:
+                tid = futures[fut]
+                fut.cancel()
+                self._set_state(tid, TaskState.TIMEOUT)
+                results.append(TaskResult(tid, TaskState.TIMEOUT, error=f"Timeout after {timeout}s"))
 
         return results
 
@@ -120,7 +130,7 @@ class ParallelExecutor:
             except Exception:
                 pass
 
-    def get_state(self, task_id: str) -> Optional[str]:
+    def get_state(self, task_id: str) -> str | None:
         with self._lock:
             s = self._states.get(task_id)
         return s.value if s else None

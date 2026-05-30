@@ -89,13 +89,30 @@ cost_caps:
 
 # ── Fallback Chains ───────────────────────────────────────────
 fallback_chains:
-  go-flash:        [go-flash, go-mimo, go-qwen, go-pro, go-kimi-latest]
-  go-pro:          [go-pro, go-mimo, go-kimi-latest, go-flash, go-qwen]
-  go-kimi-latest:  [go-kimi-latest, mimo-direct, go-pro, go-flash, go-qwen]
-  mimo-direct:     [mimo-direct, go-kimi-latest, go-pro, go-flash, go-qwen]
-  go-mimo:         [go-mimo, go-flash, go-qwen, go-pro, go-kimi-latest]
-  go-qwen:         [go-qwen, go-mimo, go-flash, go-pro, go-kimi-latest]
-  go-gemini-flash:  [go-gemini-flash, go-flash, go-mimo, go-qwen, go-pro]
+  go-flash:        [go-flash, go-mimo, go-qwen, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-pro:          [go-pro, go-mimo, go-kimi-latest, go-flash, go-qwen, router9-minimax, router9-glm]
+  go-kimi-latest:  [go-kimi-latest, mimo-direct, go-pro, go-flash, go-qwen, router9-minimax, router9-glm]
+  mimo-direct:     [mimo-direct, go-kimi-latest, go-pro, go-flash, go-qwen, router9-minimax, router9-glm]
+  go-mimo:         [go-mimo, go-flash, go-qwen, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-qwen:         [go-qwen, go-mimo, go-flash, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-gemini-flash:  [go-gemini-flash, go-flash, go-mimo, go-qwen, go-pro, router9-minimax, router9-glm]
+
+# ── Evaluation Sampling ───────────────────────────────────────
+eval_sampling:
+  enabled: true
+  tiers:
+    pro: {sample_rate: 0.5, tier: pro}
+    kimi: {sample_rate: 0.5, tier: kimi}
+    flash: {sample_rate: 0.2, tier: flash}
+    mimo: {sample_rate: 0.05, tier: mimo}
+  quality_feedback:
+    enabled: true
+    high_score_threshold: 8.0
+    reduction_factor: 0.5
+    failure_boost_factor: 2.0
+    min_samples: 5
+  budget:
+    max_daily_usd: 0.05
 
 # ── Feature Flags ─────────────────────────────────────────────
 # Env vars override these (e.g., ETHER_MIMO_ENABLED=false)
@@ -105,8 +122,9 @@ feature_flags:
   ether_kimi_enabled: true
   ether_context_routing: true
   ether_multimodal_enabled: true
-  ether_budget_enforcement: false
-  ether_langfuse_enabled: false
-  ether_deepeval_enabled: false
+  ether_budget_enforcement: true
+  ether_langfuse_enabled: true
+  ether_deepeval_enabled: true
   quality_routing_enabled: true
-  ether_eval_sample_size: 10
+  ether_eval_sample_size: 30
+  ether_router9_enabled: false

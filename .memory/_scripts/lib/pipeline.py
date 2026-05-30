@@ -1,9 +1,9 @@
+import json
+import logging
+import re
+import time
 from datetime import datetime
 from pathlib import Path
-import json
-import re
-import os, sys, time
-import logging
 
 from lib.config import VAULT_ROOT
 
@@ -265,7 +265,7 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     first_status = "aletheia-ready"
 
     lines = [
-        f"# Pipeline Status",
+        "# Pipeline Status",
         f"*Updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
         "",
         f"## Active: {pipeline_id}",
@@ -285,9 +285,9 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     ]
     if has_code:
         lines.append(f"| 4 | Kratos | :hourglass: pending | {kratos_output} | — | — |")
-        lines.append(f"| 5 | Mnemosyne | :hourglass: pending | curation | — | — |")
+        lines.append("| 5 | Mnemosyne | :hourglass: pending | curation | — | — |")
     else:
-        lines.append(f"| 4 | Mnemosyne | :hourglass: pending | curation | — | — |")
+        lines.append("| 4 | Mnemosyne | :hourglass: pending | curation | — | — |")
     if flash_ctx:
         lines.insert(0, f"> 🟢 Flash exploration found: `{flash_ctx['report_path']}` ({int(flash_ctx['age_seconds'])}s old)")
         lines.append("")
@@ -447,7 +447,7 @@ def step_done(agent: str) -> str:
             if "Elapsed" not in line:
                 line = line.rstrip() + f" | {now}"
             if next_agent:
-                line = line.replace(f":hourglass: pending", ":clock1: ready", 1)
+                line = line.replace(":hourglass: pending", ":clock1: ready", 1)
         if next_agent and re.match(r"\| \d+ \| " + re.escape(next_agent) + r" \|", line):
             line = line.replace(":hourglass: pending", ":clock1: ready")
         new_lines.append(line)
@@ -462,6 +462,14 @@ def step_done(agent: str) -> str:
 
     _write_status(new_lines)
     _log_entry(f"Pipeline step done: {agent}" + (f" → {next_agent} ready" if next_agent else " → COMPLETE"))
+
+    state = {}
+    status_text = "\n".join(_read_status())
+    try:
+        if CONTEXT_PATH.exists():
+            state = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        pass
 
     if not next_agent:
         try:
@@ -486,7 +494,6 @@ def step_done(agent: str) -> str:
                 except Exception:
                     pass
             profile_from_status = "standard"
-            status_text = "\n".join(_read_status())
             pm = re.search(r"\*\*profile\*\*:\s*(\S+)", status_text)
             if pm: profile_from_status = pm.group(1)
             data["entries"].append({
@@ -633,7 +640,7 @@ def check_stale() -> str:
                                 results.append(f"STALE: {agent} waiting {int(elapsed_min)}min")
                                 stale_found = True
                         except ValueError:
-                            pass
+                            logger.warning("Could not parse elapsed time for stale check — skipping")
 
     if not stale_found:
         return "Pipeline healthy, no stale steps."
@@ -643,7 +650,6 @@ def check_stale() -> str:
 
 def watch(interval: int = 15, max_cycles: int = 0, max_minutes: int = 0) -> str:
     """Poll pipeline status. Auto-detect handoffs. Optional max_minutes timeout."""
-    import time
 
     cycle = 0
     last_status = ""

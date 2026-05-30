@@ -12,14 +12,14 @@ def test_resolve_model_comprehensive():
     cases = [
         ("task_type=research", {"task_type": "research"}, "go-pro", "high"),
         ("task_type=strategy", {"task_type": "strategy"}, "go-kimi-latest", None),
-        ("task_type=lint", {"task_type": "lint"}, "go-flash", None),
+        ("task_type=lint", {"task_type": "lint"}, "go-gemini-flash", None),
         ("agent=aletheia", {"agent": "aletheia"}, "go-pro", "high"),
         ("agent=metis", {"agent": "metis"}, "go-kimi-latest", None),
         ("agent=kratos", {"agent": "kratos"}, "go-flash", None),
         ("agent=mnemosyne", {"agent": "mnemosyne"}, "go-flash", None),
         ("override=kimi", {"task_type": "lint", "model_override": "go-kimi-latest"}, "go-kimi-latest", None),
-        ("agent=unknown", {"agent": "unknown"}, "go-flash", None),
-        ("empty", {}, "go-flash", None),
+        ("agent=unknown", {"agent": "unknown"}, "go-gemini-flash", None),
+        ("empty", {}, "go-gemini-flash", None),
     ]
 
     for name, kwargs, expected_model, expected_thinking in cases:
@@ -160,13 +160,12 @@ def test_aether_config_env_vars():
     """Verify ETHER_* config env vars are properly exported."""
     from lib.aether.config import (
         ETHER_CIRCUIT_RESET_TIMEOUT,
-        ETHER_DEFAULT_MODEL,
+        ETHER_BUDGET_ENFORCEMENT,
         ETHER_FAILURE_THRESHOLD,
         ETHER_HALF_OPEN_MAX,
     )
 
-    assert isinstance(ETHER_DEFAULT_MODEL, str)
-    assert ETHER_DEFAULT_MODEL.startswith("go-")
+    assert isinstance(ETHER_BUDGET_ENFORCEMENT, bool)
     assert isinstance(ETHER_CIRCUIT_RESET_TIMEOUT, int)
     assert isinstance(ETHER_FAILURE_THRESHOLD, int)
     assert isinstance(ETHER_HALF_OPEN_MAX, int)

@@ -50,7 +50,7 @@ def test_resolve_extract():
 
 def test_resolve_default():
     r6 = resolve_model()
-    assert r6["model"] == "go-flash"
+    assert r6["model"] == "go-gemini-flash"
 
 
 def test_quality_store():
