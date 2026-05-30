@@ -46,7 +46,7 @@ if ($ExistingProcess) {
 try {
     $env:HERMES_NONINTERACTIVE = "1"
     $process = Start-Process -FilePath "hermes" `
-        -ArgumentList "gateway", "--port", "$Port" `
+        -ArgumentList "gateway", "run", "--port", "$Port" `
         -NoNewWindow `
         -PassThru `
         -RedirectStandardOutput $LogFile `
