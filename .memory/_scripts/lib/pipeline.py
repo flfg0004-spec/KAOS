@@ -529,6 +529,21 @@ def step_done(agent: str) -> str:
         except ImportError:
             logger.warning("kratos_hook not available — output capture skipped")
 
+    if agent_cap == "Kratos":
+        try:
+            from lib.kratos_self_eval import kratos_self_eval as _kratos_self_eval
+            _eval_result = _kratos_self_eval("kratos", {"code": ""})
+            logger.info("Kratos self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
+    elif agent_cap == "Aletheia":
+        try:
+            from lib.aletheia_self_eval import aletheia_self_eval as _aletheia_self_eval
+            _eval_result = _aletheia_self_eval("aletheia", {"content": ""})
+            logger.info("Aletheia self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
+
     # Send Telegram notification when pipeline completes
     if not next_agent:
         try:
