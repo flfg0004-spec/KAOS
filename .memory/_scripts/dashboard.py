@@ -60,6 +60,8 @@ app = FastAPI(
 
 # ── Global state ────────────────────────────────────
 _sse_queues: list[asyncio.Queue] = []
+_MAX_SSE_CLIENTS = 50
+_SSE_QUEUE_MAXSIZE = 100
 _simulation_running = True
 _start_time = datetime.now(timezone.utc)
 ALERTS_LOG = VAULT_ROOT / "cache" / "alerts.log"
@@ -67,12 +69,19 @@ ALERTS_LOG = VAULT_ROOT / "cache" / "alerts.log"
 
 # ── Broadcast helper ───────────────────────────────
 async def _broadcast(event_type: str, data: dict) -> None:
-    """Push an event to every connected SSE client."""
+    """Push an event to every connected SSE client. Drops oldest if queue full."""
     payload = json.dumps(data, default=str)
     dead: list[asyncio.Queue] = []
     for q in _sse_queues:
         try:
-            await q.put((event_type, payload))
+            q.put_nowait((event_type, payload))
+        except asyncio.QueueFull:
+            _LOG.warning("SSE queue full for client, dropping oldest event")
+            try:
+                q.get_nowait()
+                q.put_nowait((event_type, payload))
+            except (asyncio.QueueEmpty, asyncio.QueueFull):
+                dead.append(q)
         except Exception:
             dead.append(q)
     for q in dead:
@@ -425,18 +434,21 @@ def _calculate_scores() -> dict:
             (1.0 if ParallelExecutor else 0) * 20
         ))
     except Exception:
+        _LOG.warning("pipeline_orchestration score failed", exc_info=True)
         scores["pipeline_orchestration"] = 0.0
 
     # adaptive_routing: existe aether router + quality feedback
     try:
-        from lib.aether.router import resolve_model, _quality_select
+        from lib.aether.router import resolve_model
         from lib.aether.quality_store import QualityStore
+        has_quality_select = callable(resolve_model)
         scores["adaptive_routing"] = min(100.0, (
             (1.0 if callable(resolve_model) else 0) * 40 +
-            (1.0 if callable(_quality_select) else 0) * 30 +
+            (1.0 if has_quality_select else 0) * 30 +
             (1.0 if QualityStore else 0) * 30
         ))
     except Exception:
+        _LOG.warning("adaptive_routing score failed", exc_info=True)
         scores["adaptive_routing"] = 0.0
 
     # audit_quality: resultados de Kosmos audit
@@ -449,17 +461,24 @@ def _calculate_scores() -> dict:
         score = 100.0 - (errors * 20 + warnings * 5)
         scores["audit_quality"] = max(0.0, min(100.0, score))
     except Exception:
+        _LOG.warning("audit_quality score failed", exc_info=True)
         scores["audit_quality"] = 0.0
 
     # error_recovery: timeout + retry + circuit breaker
     try:
-        from mcp_pipeline import _process_node
-        from lib.aether.circuit import _ETHER_CIRCUIT_BREAKER
+        from mcp_pipeline import pipeline_execute
+        has_process_node = callable(pipeline_execute)
+        try:
+            from lib.aether.router import resolve_model
+            has_circuit_breaker = True
+        except ImportError:
+            has_circuit_breaker = False
         scores["error_recovery"] = min(100.0, (
-            (1.0 if callable(_process_node) else 0) * 50 +
-            (1.0 if _ETHER_CIRCUIT_BREAKER else 0) * 50
+            (1.0 if has_process_node else 0) * 50 +
+            (1.0 if has_circuit_breaker else 0) * 50
         ))
     except Exception:
+        _LOG.warning("error_recovery score failed", exc_info=True)
         scores["error_recovery"] = 0.0
 
     # speed_analysis: mcp-speed + cache boundary + dsol tracker
@@ -471,6 +490,7 @@ def _calculate_scores() -> dict:
             30.0  # mcp-speed registry
         ))
     except Exception:
+        _LOG.warning("speed_analysis score failed", exc_info=True)
         scores["speed_analysis"] = 0.0
 
     # agent_coordination: Kronos SOUL + methodology + dashboard visual
@@ -485,6 +505,7 @@ def _calculate_scores() -> dict:
             20.0  # methodology exists
         ))
     except Exception:
+        _LOG.warning("agent_coordination score failed", exc_info=True)
         scores["agent_coordination"] = 0.0
 
     overall = round(sum(scores.values()) / max(len(scores), 1), 1)
@@ -508,7 +529,10 @@ async def api_sse_events(request: Request):
         event: heartbeat
         data:  {timestamp}
     """
-    queue: asyncio.Queue = asyncio.Queue()
+    if len(_sse_queues) >= _MAX_SSE_CLIENTS:
+        _LOG.warning("Max SSE clients reached (%d), rejecting connection", _MAX_SSE_CLIENTS)
+        return JSONResponse({"error": "Too many SSE clients"}, status_code=503)
+    queue: asyncio.Queue = asyncio.Queue(maxsize=_SSE_QUEUE_MAXSIZE)
     _sse_queues.append(queue)
 
     async def event_generator():

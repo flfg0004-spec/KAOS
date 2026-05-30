@@ -12,6 +12,18 @@ _LOG = logging.getLogger(__name__)
 
 from lib.kronos import ParallelExecutor, TaskState
 from lib.events import EventBus
+
+# ── Shared executor pool ──────────────────────────
+_EXECUTOR_POOL = None
+
+def _get_executor(max_workers: int = 4):
+    """Return a shared ThreadPoolExecutor (lazy-init)."""
+    global _EXECUTOR_POOL
+    if _EXECUTOR_POOL is None:
+        from concurrent.futures import ThreadPoolExecutor
+        _EXECUTOR_POOL = ThreadPoolExecutor(max_workers=max_workers)
+        _LOG.info("Created shared executor pool (max_workers=%d)", max_workers)
+    return _EXECUTOR_POOL
 from lib.pipeline_store import (
     PIPELINE_DIR,
     PRIORITY_ORDER as _PRIORITY_ORDER,
@@ -457,9 +469,9 @@ def pipeline_execute(pipeline_id: str, mock_delay: float = 0.0) -> dict:
             "timeout": node_conf.get("timeout_seconds", _DEFAULT_TIMEOUT),
         })
 
-    # Execute in parallel
+    # Execute in parallel (shared pool)
     executor = ParallelExecutor(max_concurrent=len(tasks))
-    results = executor.execute_all(tasks)
+    results = executor.execute_all(tasks, executor=_get_executor())
 
     # Merge results into fresh pipeline state
     data = _load(pipeline_id)

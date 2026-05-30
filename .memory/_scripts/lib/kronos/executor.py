@@ -55,7 +55,7 @@ class ParallelExecutor:
     def max_concurrent(self, value: int):
         self._max = max(1, value)
 
-    def execute_all(self, tasks: list[dict]) -> list[TaskResult]:
+    def execute_all(self, tasks: list[dict], executor=None) -> list[TaskResult]:
         """Ejecuta todas las tareas respetando max_concurrent.
 
         Cada task es un dict con:
@@ -65,16 +65,23 @@ class ParallelExecutor:
             - args: tuple (opcional)
             - kwargs: dict (opcional)
 
+        Args:
+            tasks: Lista de tareas a ejecutar.
+            executor: ThreadPoolExecutor externo (opcional). Si no se provee,
+                      crea uno interno.
+
         Returns: lista de TaskResult en el mismo orden que tasks.
         """
         results: list[TaskResult] = []
+        external = executor is not None
 
         for t in tasks:
             tid = t.get("id", str(id(t)))
             self._states[tid] = TaskState.PENDING
             self._timestamps[tid] = time.time()
 
-        with ThreadPoolExecutor(max_workers=self._max) as pool:
+        pool = executor if external else ThreadPoolExecutor(max_workers=self._max)
+        try:
             futures = {}
             max_timeout = 300
             for t in tasks:
@@ -110,7 +117,11 @@ class ParallelExecutor:
                 tid = futures[fut]
                 fut.cancel()
                 self._set_state(tid, TaskState.TIMEOUT)
-                results.append(TaskResult(tid, TaskState.TIMEOUT, error=f"Timeout after {timeout}s"))
+                results.append(TaskResult(tid, TaskState.TIMEOUT, error=f"Timeout after {max_timeout}s"))
+
+        finally:
+            if not external:
+                pool.shutdown(wait=False)
 
         return results
 
