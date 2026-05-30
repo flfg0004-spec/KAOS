@@ -66,6 +66,8 @@ def safe_mcp_tools(commands: list[str], init_timeout: int = 5) -> list:
             logger.warning("MCP import error: %s — %s", e, cmd[:50])
         except (FileNotFoundError, PermissionError, OSError) as e:
             logger.debug("MCP file error: %s — %s", e, cmd[:50])
+        except (ConnectionRefusedError, ConnectionError, TimeoutError) as e:
+            logger.warning("MCP connection error: %s — %s", e, cmd[:50])
         except Exception as e:
             logger.warning("MCP error inesperado: %s — %s", e, cmd[:50])
     return tools

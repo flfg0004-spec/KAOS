@@ -33,17 +33,17 @@ AGENTOS_CFG = load_config().get("agentos", {})
 
 db = get_db()
 
-aletheia = create_aletheia(db_path=_SCRIPTS / "agno_kaos" / "a_aletheia.db", with_mcp=True)
-kosmos = create_kosmos(db_path=_SCRIPTS / "agno_kaos" / "a_kosmos.db", with_mcp=True)
-metis = create_metis(db_path=_SCRIPTS / "agno_kaos" / "a_metis.db", with_mcp=True)
-kratos = create_kratos(db_path=_SCRIPTS / "agno_kaos" / "a_kratos.db", with_mcp=True)
+aletheia = create_aletheia(db_path=_SCRIPTS / "agno_kaos" / "a_aletheia.db", with_mcp=False)
+kosmos = create_kosmos(db_path=_SCRIPTS / "agno_kaos" / "a_kosmos.db", with_mcp=False)
+metis = create_metis(db_path=_SCRIPTS / "agno_kaos" / "a_metis.db", with_mcp=False)
+kratos = create_kratos(db_path=_SCRIPTS / "agno_kaos" / "a_kratos.db", with_mcp=False)
 coordinator = create_coordinator()
 
-research_team = create_research_team(with_mcp=True, aletheia=aletheia, kosmos=kosmos)
-code_team = create_code_team(with_mcp=True, kratos=kratos, kosmos=kosmos)
-strategy_team = create_strategy_team(with_mcp=True, metis=metis, aletheia=aletheia)
+research_team = create_research_team(with_mcp=False, aletheia=aletheia, kosmos=kosmos)
+code_team = create_code_team(with_mcp=False, kratos=kratos, kosmos=kosmos)
+strategy_team = create_strategy_team(with_mcp=False, metis=metis, aletheia=aletheia)
 
-research_workflow = create_research_workflow(with_mcp=True)
+research_workflow = create_research_workflow(with_mcp=False)
 
 auth_config = get_auth_config()
 
