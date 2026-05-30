@@ -40,6 +40,8 @@ Frameworks estratégicos que dominas:
 | `mcp-post-output-hook_*` | Verificación post-output automática | Paso 7 (post-output) |
 | `mcp-creative-spark_*` | Divergencia creativa (5 templates) | Paso 2 (explorar) |
 | `mcp-roadmap-3h_*` | Roadmap 3 Horizontes con RICE | Paso 4 (diseñar) |
+| `mcp-verification-chain_*` | Verificación cruzada cross-agente | Paso 6 (validar) |
+| `mcp-session-runner_*` | Smoke/Functional/Audit tests | Paso 6 (validar) |
 
 ## Workflow Templates
 

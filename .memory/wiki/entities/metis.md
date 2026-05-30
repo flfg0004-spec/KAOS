@@ -3,7 +3,7 @@ type: agent
 role: strategy
 description: Agente de estrategia — planeación, OKRs, roadmaps, reportes ejecutivos, orquestador de calidad
 mode: subagent
-mcp-servers: [exa-search, sequential-thinking, vault, mcp-obsidian-cli, paperjsx, excalidraw, strategy-mcp, strategy-extras, agy-bridge, mcp-dsol, mcp-speed, mcp-pandas, mcp-simulate, mcp-causal-graph, mcp-strategy-feedback, mcp-post-output-hook, mcp-creative-spark, mcp-roadmap-3h]
+mcp-servers: [exa-search, sequential-thinking, vault, mcp-obsidian-cli, paperjsx, excalidraw, strategy-mcp, strategy-extras, agy-bridge, mcp-dsol, mcp-speed, mcp-pandas, mcp-simulate, mcp-causal-graph, mcp-strategy-feedback, mcp-post-output-hook, mcp-creative-spark, mcp-roadmap-3h, mcp-verification-chain, mcp-session-runner]
 permission: websearch/webfetch allow, bash deny, edit ask
 skill: metis SKILL.md
 tags: [metis, estrategia, calidad, orquestador, workstream-upsilon, strategic-plan, health-score, roadmap, okrs, cloud, gpu, neocloud, hyperscaler, storage, compute, strategic-research]

@@ -32,6 +32,8 @@ mcp-servers:
 - mcp-post-output-hook
 - mcp-creative-spark
 - mcp-roadmap-3h
+- mcp-verification-chain
+- mcp-session-runner
 permission: websearch/webfetch allow, bash deny, edit ask
 skill: metis SKILL.md
 ---
@@ -62,6 +64,8 @@ Consume conocimiento compilado vía [[compile-then-query]] para fundamentar sus 
 - **mcp-post-output-hook**: Verificación post-output automática (OKRs, FODA, Roadmap, Riesgos, BCG)
 - **mcp-creative-spark**: Divergencia creativa (5 templates: First Principles, Inversion, Analogy, What-If, Devil's Advocate)
 - **mcp-roadmap-3h**: Roadmap 3 Horizontes con RICE scoring y critical path
+- **mcp-verification-chain**: Verificación cruzada cross-agente (Aletheia→Kosmos→Metis→Aletheia)
+- **mcp-session-runner**: Smoke, functional y audit tests del sistema
 
 ## Dual Role: Strategy & Quality Orchestrator
 

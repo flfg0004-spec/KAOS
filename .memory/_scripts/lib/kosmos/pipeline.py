@@ -13,7 +13,44 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict
+
+# ── D7: State schema documentation ──
+
+class KosmosState(TypedDict, total=False):
+    """Schema documentado del estado compartido del pipeline (D7).
+    Este TypedDict documenta qué keys espera y produce cada nodo.
+    No se valida en runtime — es solo documentación del contrato entre nodos.
+    """
+    topic: str
+    profile: str
+    skip_eval: bool
+    cache_enabled: bool
+    parallel_enabled: bool
+    aletheia_real: bool
+    rate_limiter: bool
+    aletheia_output: str
+    discovery: Dict[str, Any]
+    model: Dict[str, Any]
+    analyze: Dict[str, Any]
+    quality: Dict[str, Any]
+    visualize: Dict[str, Any]
+    kosmos_diagrams: List[str]
+    document: Dict[str, Any]
+    kosmos_adr: str
+    adr: Dict[str, Any]
+    tags: List[str]
+    govern: Dict[str, Any]
+    validate: Dict[str, Any]
+    kosmos_eval_v2: Dict[str, Any]
+    kosmos_reflection: Dict[str, Any]
+    kosmos_contracts: Dict[str, Any]
+    kosmos_fase3: Dict[str, Any]
+    kosmos_output: str
+    kosmos_prompt: str
+    pipeline_status: Dict[str, Any]
+    kosmos_errors: Dict[str, Any]
+
 
 logger = logging.getLogger(__name__)
 

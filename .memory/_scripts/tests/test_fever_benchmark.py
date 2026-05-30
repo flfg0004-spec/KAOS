@@ -121,6 +121,41 @@ FEVER_CASES = [
         r"Score actual.*76\.8|76\.8/100",
         "QL-01: Quality score from glosario-kaos.md",
     ),
+    # ── Cron Scheduler ───────────────────────────────────────────────
+    (
+        "KAOS utiliza Windows Task Scheduler para tareas programadas de monitoreo de calidad",
+        1.0,
+        r"Task Scheduler|install_schedule",
+        "CR-01: Task Scheduler from glosario-kaos.md",
+    ),
+    # ── API Server ───────────────────────────────────────────────────
+    (
+        "Hermes Agent sirve como API server de mensajería para el ecosistema KAOS",
+        1.0,
+        r"gateway.*mensajería",
+        "AP-01: API messaging server from hermes-agent.md",
+    ),
+    # ── ntfy Push ────────────────────────────────────────────────────
+    (
+        "KAOS usa ntfy.sh para notificaciones push de alertas del sistema",
+        0.5,
+        r"ntfy|ntfy\.sh",
+        "NT-01: ntfy push — sin referencia directa en vault wiki",
+    ),
+    # ── Webhook Adapter ──────────────────────────────────────────────
+    (
+        "KAOS usa webhooks para comunicación bidireccional en su arquitectura de mensajería",
+        1.0,
+        r"webhook",
+        "WH-01: Webhook from metis.md / hermes-workspace-integration.md",
+    ),
+    # ── WhatsApp Bridge ──────────────────────────────────────────────
+    (
+        "KAOS tiene un bridge de WhatsApp para mensajería entrante",
+        0.5,
+        r"whatsapp|baileys",
+        "WA-01: WhatsApp bridge — sin referencia en vault wiki",
+    ),
 ]
 
 

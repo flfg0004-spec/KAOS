@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-29 18:29*
+*Auto-generated: 2026-05-29 18:45*
 
 ## Agentes
 
@@ -240,6 +240,8 @@
 - [adr-015-estrategia-multi-modelo](../schema/adr-015-estrategia-multi-modelo.md) - Estrategia Multi-Modelo para Reducción de Sesgo Cognitivo
 - [adr-017-ua-inspiracion-fase1](../schema/adr-017-ua-inspiracion-fase1.md) - Adopción de Patrones UA en KAOS
 - [adr-018-consolidacion-arquitectura-routing](../schema/adr-018-consolidacion-arquitectura-routing.md) - Consolidación de la Arquitectura de Routing
+- [adr-019-quality-testing-strategy](../schema/adr-019-quality-testing-strategy.md) - Quality Testing Strategy
+- [adr-020-windows-service-strategy](../schema/adr-020-windows-service-strategy.md) - Windows Service Strategy
 - [adr-anth-001-claude-tier-premium](../schema/adr-anth-001-claude-tier-premium.md) - adr-anth-001-claude-tier-premium
 
 ## Schema
@@ -250,6 +252,7 @@
 - [estrategia-orquesta-agentes-hermes-strategy](../schema/estrategia-orquesta-agentes-hermes-strategy.md)
 - [health-report](../schema/health-report.md)
 - [KAOS](../schema/KAOS.md)
+- [kosmosv3-consolidacion-final](../schema/kosmosv3-consolidacion-final.md)
 - [lint-report](../schema/lint-report.md)
 - [mcp-security-audit](../schema/mcp-security-audit.md)
 - [metis-kronos-boundary](../schema/metis-kronos-boundary.md)
@@ -259,4 +262,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-29 18:29*
+*Ultima actualizacion: 2026-05-29 18:45*

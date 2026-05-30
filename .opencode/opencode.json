@@ -201,6 +201,41 @@
         "agy-bridge_agy_ask_sonnet": true,
         "kaos-kanban_*": true
       }
+    },
+    "metis": {
+      "type": "agent",
+      "description": "Agente de estrategia \u2014 planeaci\u00f3n, OKRs, roadmaps, an\u00e1lisis competitivo, reportes ejecutivos, orquestador de calidad",
+      "mode": "subagent",
+      "file": ".opencode/agents/metis/SOUL.md",
+      "temperature": 0.4,
+      "color": "#E8A87C",
+      "steps": 12,
+      "tools": {
+        "exa-search_web_search_exa": true,
+        "exa-search_web_fetch_exa": true,
+        "sequential-thinking_sequential-thinking": true,
+        "strategy-mcp_*": true,
+        "strategy-extras_*": true,
+        "excalidraw_*": true,
+        "paperjsx_*": true,
+        "vault_*": true,
+        "mcp-obsidian-cli_*": true,
+        "agy-bridge_agy_ask_flash": true,
+        "agy-bridge_agy_ask_sonnet": true,
+        "agy-bridge_agy_ask_opus": true,
+        "agy-bridge_agy_ask_gpt55": true,
+        "mcp-dsol_*": true,
+        "mcp-speed_*": true,
+        "mcp-pandas_*": true,
+        "mcp-simulate_*": true,
+        "mcp-causal-graph_*": true,
+        "mcp-strategy-feedback_*": true,
+        "mcp-post-output-hook_*": true,
+        "mcp-creative-spark_*": true,
+        "mcp-roadmap-3h_*": true,
+        "mcp-verification-chain_*": true,
+        "mcp-session-runner_*": true
+      }
     }
   },
   "tools": {
@@ -227,7 +262,9 @@
     "strategy-mcp_*": false,
     "strategy-extras_*": false,
     "agy-bridge_*": false,
-    "kaos-kanban_*": true
+    "kaos-kanban_*": true,
+    "mcp-verification-chain_*": false,
+    "mcp-session-runner_*": false
   },
   "mcp": {
     "mcp-obsidian-cli": {
@@ -561,8 +598,7 @@
         "--json"
       ],
       "enabled": true
-    }
-  },
+    },
     "mcp-verification-chain": {
       "type": "local",
       "command": [
@@ -582,46 +618,28 @@
       "enabled": true
     }
   },
+  "mcp-verification-chain": {
+    "type": "local",
+    "command": [
+      "py",
+      "-3",
+      ".memory/_scripts/mcp_verification_chain.py"
+    ],
+    "enabled": true
+  },
+  "mcp-session-runner": {
+    "type": "local",
+    "command": [
+      "py",
+      "-3",
+      ".memory/_scripts/mcp_session_runner.py"
+    ],
+    "enabled": true
+  },
   "compaction": {
     "auto": true,
     "tail_turns": 10,
     "preserve_recent_tokens": 16000,
     "reserved": 4000
-  },
-  "command": {
-    "quality": {
-      "description": "Ejecuta smoke check de calidad del sistema KAOS",
-      "template": "Ejecuta py -3 .memory/_scripts/vault.py health --auto y py -3 .memory/_scripts/vault.py lint run, luego muestra los resultados"
-    },
-    "investigate": {
-      "description": "Invoca a Aletheia para investigar un tema",
-      "template": "@aletheia investiga el siguiente tema: {{input}}",
-      "agent": "aletheia",
-      "subtask": true
-    },
-    "architect": {
-      "description": "Invoca a Kosmos para an\u00c3\u00a1lisis arquitect\u00c3\u00b3nico",
-      "template": "@kosmos analiza la arquitectura de: {{input}}",
-      "agent": "kosmos",
-      "subtask": true
-    },
-    "strategy": {
-      "description": "Invoca a Metis para an\u00c3\u00a1lisis estrat\u00c3\u00a9gico con perfil",
-      "template": "@metis desarrolla una estrategia para: {{input}} usando perfil {{profile}}",
-      "agent": "metis",
-      "subtask": true
-    },
-    "curate": {
-      "description": "Ejecuta ciclo completo de curadur\u00c3\u00ada Mnemosyne (14 fases)",
-      "template": "Ejecuta py -3 .memory/_scripts/run_curation.py y luego py -3 .memory/_scripts/vault.py curation report, reporta el resumen de curadur\u00c3\u00ada",
-      "agent": "mnemosyne",
-      "subtask": true
-    },
-    "metis_mode": {
-      "description": "Detecta modo de operacion de Metis basado en perfil activo de eval-profile.yaml",
-      "template": "Ejecuta py -3 .memory/_scripts/metis_mode.py {{flags}} y muestra el modo actual, temperatura sugerida y herramientas recomendadas",
-      "agent": "metis",
-      "subtask": true
-    }
   }
 }
