@@ -557,6 +557,27 @@ def step_done(agent: str) -> str:
             logger.info("Kronos self-eval score: %.2f", _eval_result["score"])
         except ImportError:
             pass
+    elif agent_cap == "Metis":
+        try:
+            from lib.metis_self_eval import metis_self_eval as _metis_self_eval
+            _eval_result = _metis_self_eval("metis", {"content": ""})
+            logger.info("Metis self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
+    elif agent_cap == "Mnemosyne":
+        try:
+            from lib.mnemosyne_self_eval import mnemosyne_self_eval as _mnemosyne_self_eval
+            _eval_result = _mnemosyne_self_eval("mnemosyne", {"content": ""})
+            logger.info("Mnemosyne self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
+    elif agent_cap == "BCG":
+        try:
+            from lib.bcg_self_eval import bcg_self_eval as _bcg_self_eval
+            _eval_result = _bcg_self_eval("bcg", {"content": ""})
+            logger.info("BCG self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
 
     # Send Telegram notification when pipeline completes
     if not next_agent:
