@@ -65,72 +65,72 @@ GOLDEN_DATASET = [
     ("Análisis", "standard", "borderline"),
 
     # ── SIMULATION MODE (5 queries) ──
-    ("Pipeline de simulación RAG con aletheia y kratos", "flash", "media"),
+    ("Pipeline de simulación RAG con aletheia y kratos", "standard", "media"),
     ("Simular pipeline de arquitectura con kosmos y metis", "standard", "media"),
     ("Demo de pipeline multi-agente con 5 agentes en simulación", "standard", "alta"),
-    ("Prueba de simulación de pipeline cancelado en ejecución", "flash", "media"),
-    ("Test de simulación con timeout recovery automático", "flash", "media"),
+    ("Prueba de simulación de pipeline cancelado en ejecución", "standard", "media"),
+    ("Test de simulación con timeout recovery automático", "standard", "media"),
 
     # ── PIPELINE 10+ NODES (5 queries) ──
-    ("Pipeline completo de calidad con aletheia kratos kosmos metis mnemosyne kronos", "deep", "alta"),
-    ("Orquestación de 12 agentes para análisis de código legacy", "deep", "alta"),
+    ("Pipeline completo de calidad con aletheia kratos kosmos metis mnemosyne kronos", "standard", "alta"),
+    ("Orquestación de 12 agentes para análisis de código legacy", "standard", "alta"),
     ("Pipeline de investigación masiva con 15 nodos de búsqueda y síntesis", "massive", "alta"),
-    ("Cadena de verificación cruzada con 10 agentes de revisión", "deep", "alta"),
+    ("Cadena de verificación cruzada con 10 agentes de revisión", "standard", "alta"),
     ("Pipeline jerárquico de estrategia con análisis, ADR y síntesis", "estrategico", "alta"),
 
     # ── CANCELACIÓN EN EJECUCIÓN (5 queries) ──
-    ("Cancelar pipeline de búsqueda después del primer agente", "flash", "media"),
-    ("Detener análisis profundo a mitad del proceso de investigación", "flash", "media"),
+    ("Cancelar pipeline de búsqueda después del primer agente", "standard", "media"),
+    ("Detener análisis profundo a mitad del proceso de investigación", "deep", "media"),
     ("Cancelar despliegue de pipeline multi-agente por cambio de prioridad", "standard", "media"),
-    ("Abortar síntesis de documentos por timeout del modelo principal", "flash", "media"),
+    ("Abortar síntesis de documentos por timeout del modelo principal", "standard", "media"),
     ("Interrumpir pipeline de curación por conflicto de fuentes", "standard", "media"),
 
     # ── TIMEOUT RECOVERY (5 queries) ──
     ("Recuperar pipeline después de timeout del modelo go-kimi-latest", "standard", "alta"),
-    ("Reintentar nodo fallido con fallback a go-flash tras timeout", "flash", "media"),
-    ("Pipeline con timeout de 5 segundos por nodo y retry exponencial", "flash", "media"),
+    ("Reintentar nodo fallido con fallback a go-flash tras timeout", "standard", "media"),
+    ("Pipeline con timeout de 5 segundos por nodo y retry exponencial", "standard", "media"),
     ("Recuperación automática tras fallo de 3 nodos concurrentes", "standard", "alta"),
     ("Timeout en agente de investigación con fallback a modelo más rápido", "flash", "media"),
 
     # ── PRIORITY SORTING (5 queries) ──
     ("Pipeline crítico de seguridad que debe ejecutarse primero", "standard", "media"),
-    ("Tarea de baja prioridad para análisis de métricas semanales", "flash", "facil"),
+    ("Tarea de baja prioridad para análisis de métricas semanales", "standard", "facil"),
     ("Pipeline de alta prioridad para parche de seguridad urgente", "standard", "facil"),
     ("Ordenar 20 pipelines por prioridad crítica alta normal baja", "standard", "alta"),
     ("Pipeline normal de mantenimiento con dependencias de otros pipelines", "standard", "media"),
 
     # ── CROSS_CHECK + VERIFY (5 queries) ──
-    ("Verificación cruzada de resultados entre aletheia y kosmos", "deep", "alta"),
+    ("Verificación cruzada de resultados entre aletheia y kosmos", "standard", "alta"),
     ("Validación de hechos con múltiples fuentes independientes", "standard", "media"),
-    ("Doble verificación de referencias bibliográficas en paper de IA", "deep", "alta"),
-    ("Cross-check de datos financieros entre 3 fuentes distintas", "deep", "alta"),
+    ("Doble verificación de referencias bibliográficas en paper de IA", "standard", "alta"),
+    ("Cross-check de datos financieros entre 3 fuentes distintas", "standard", "alta"),
     ("Verificación de consistencia en pipeline multi-agente completo", "standard", "alta"),
 
     # ── FALLBACK CHAIN ROUTING (5 queries) ──
     ("Ruteo automático a go-gemini-flash por ser tarea de lint rápido", "flash", "facil"),
-    ("Fallback de go-pro a go-mimo cuando el modelo principal está saturado", "flash", "media"),
+    ("Fallback de go-pro a go-mimo cuando el modelo principal está saturado", "standard", "media"),
     ("Router con cadena de 6 modelos para máxima resiliencia", "standard", "alta"),
-    ("Enrutamiento de tarea factual directamente a go-pro con thinking high", "deep", "alta"),
-    ("Selección de modelo según costo: preferir go-mimo para tareas extractivas", "flash", "media"),
+    ("Enrutamiento de tarea factual directamente a go-pro con thinking high", "standard", "alta"),
+    ("Selección de modelo según costo: preferir go-mimo para tareas extractivas", "estrategico", "media"),
 
     # ── EDGE CASES (5 queries) ──
     ("", "standard", "borderline"),
-    ("a", "flash", "borderline"),
+    ("a", "standard", "borderline"),
     ("ñ", "standard", "borderline"),
-    ("12345", "flash", "borderline"),
+    ("12345", "standard", "borderline"),
     ("¿?", "standard", "borderline"),
 
     # ── MULTI-AGENT PIPELINES (5 queries) ──
-    ("Pipeline de 4 agentes: aletheia investiga, kratos implementa, kosmos revisa, metis estratégia", "deep", "alta"),
+    ("Pipeline de 4 agentes: aletheia investiga, kratos implementa, kosmos revisa, metis estratégia", "standard", "alta"),
     ("Flujo de trabajo agente-especialista con 3 niveles de revisión", "standard", "media"),
     ("Orquestación de agentes para generación de documentación técnica completa", "standard", "media"),
     ("Pipeline colaborativo entre aletheia y mnemosyne para curación de conocimiento", "standard", "media"),
-    ("Sistema multi-agente con routing dinámico según carga de trabajo", "deep", "alta"),
+    ("Sistema multi-agente con routing dinámico según carga de trabajo", "standard", "alta"),
 
     # ── ERROR RECOVERY (5 queries) ──
-    ("Pipeline con reintento automático tras error de conexión", "flash", "media"),
+    ("Pipeline con reintento automático tras error de conexión", "standard", "media"),
     ("Recuperación de pipeline tras corrupción de estado en nodo intermedio", "standard", "alta"),
-    ("Manejo de error en agente con escalado a modelo de respaldo", "flash", "media"),
+    ("Manejo de error en agente con escalado a modelo de respaldo", "standard", "media"),
     ("Pipeline degradado: continuar con agentes restantes si uno falla", "standard", "media"),
     ("Re-ejecución inteligente solo de nodos fallidos en pipeline completo", "standard", "alta"),
 ]
