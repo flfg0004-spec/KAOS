@@ -401,9 +401,10 @@ def check_security(code: str) -> list:
 def resolve_kratos_model(state: dict) -> str:
     """Return model key: go-flash default, go-pro if hybrid enabled + alta complexity."""
     if HYBRID_PRO_ENABLED:
-        if complexity_override and complexity_override.lower() == "alta":
-            return "go-pro"
-        if state and state.get("plan", {}).get("complexity", "").lower() == "alta":
+        plan = state.get("plan", {}) if state else {}
+        complexity = plan.get("complexity", "simple") if isinstance(plan, dict) else "simple"
+        profile = state.get("profile", "standard") if state else "standard"
+        if complexity.lower() == "alta" or profile == "produccion":
             return "go-pro"
     return "go-flash"
 

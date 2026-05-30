@@ -75,3 +75,20 @@ agents:
       report: string
       issues: list
       quality_score: float
+
+  kronos:
+    name: "Kronos — Orchestrator Agent"
+    description: "Pipeline orchestration, adaptive routing, error recovery, speed metrics"
+    protocol: "mcp"
+    interface: "stdio"
+    skills: ["pipeline_orchestration", "adaptive_routing", "error_recovery",
+             "speed_analysis", "agent_coordination"]
+    input_schema:
+      pipeline_id: string
+      action: ["status", "run", "cancel", "list"]
+    output_schema:
+      status: string
+      pipeline_state: string
+      nodes: list
+      metrics: object
+      errors: list

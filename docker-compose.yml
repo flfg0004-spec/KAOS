@@ -31,6 +31,7 @@ services:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8888"]
       <<: *tcp-healthcheck
     mem_limit: 256m
+    cpus: "0.5"
     restart: unless-stopped
     logging: *default-logging
 
@@ -44,6 +45,7 @@ services:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:11235/health"]
       <<: *tcp-healthcheck
     mem_limit: 512m
+    cpus: "0.5"
     restart: unless-stopped
     logging: *default-logging
 
@@ -100,6 +102,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U agno"]
       <<: *tcp-healthcheck
     mem_limit: 192m
+    cpus: "0.5"
     restart: unless-stopped
     logging: *default-logging
 

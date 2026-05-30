@@ -227,6 +227,32 @@ class QualityStore:
             "total_calls": len(entries),
         }
 
+    def get_model_score(self, model: str, task_type: str = "", min_samples: int = 3) -> float:
+        """Obtiene score promedio de calidad para un modelo (0-10).
+
+        Args:
+            model: Nombre del modelo a consultar.
+            task_type: Filtrar por task_type (opcional).
+            min_samples: Mínimo de muestras requeridas para considerar el score.
+
+        Returns:
+            float: Score promedio (0-10), o 10.0 si no hay datos suficientes (default trust).
+        """
+        with self._lock:
+            entries = self._data.get("entries", [])
+
+        relevant = [
+            e for e in entries
+            if e.get("model") == model
+            and (not task_type or e.get("task_type") == task_type)
+        ]
+
+        if len(relevant) < min_samples:
+            return 10.0  # default trust — sin datos, asumir calidad
+
+        avg = sum(e.get("weighted_score", 0) for e in relevant) / len(relevant)
+        return round(avg, 2)
+
     def get_recent_entries(self, n: int = 20) -> list:
         """Devuelve las últimas n entradas."""
         with self._lock:

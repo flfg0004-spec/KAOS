@@ -1,0 +1,258 @@
+{
+  "$schema": "https://a2a-protocol.org/schemas/agent-card.json",
+  "title": "A2A Agent Card — KAOS Multi-Agent System",
+  "description": "Schema for Agent-to-Agent (A2A) Protocol v1.0 compliant agent cards for the KAOS multi-agent system. Defines the structure for agent registration, capability discovery, and inter-agent communication.",
+  "type": "object",
+  "required": ["agent_id", "name", "version", "protocol", "capabilities"],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Unique identifier for the agent within the KAOS system",
+      "pattern": "^[a-z]+(-[a-z]+)*$",
+      "examples": ["aletheia", "kosmos", "kratos", "metis", "mnemosyne", "kronos"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name with Greek deity reference",
+      "examples": ["Aletheia — Research Agent", "Kronos — Orchestrator Agent"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the agent card",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0"
+    },
+    "protocol": {
+      "type": "string",
+      "description": "Communication protocol used by the agent",
+      "enum": ["mcp", "a2a", "both"],
+      "default": "mcp"
+    },
+    "interface": {
+      "type": "string",
+      "description": "Interface type for the MCP protocol",
+      "enum": ["stdio", "sse", "http"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Purpose and role of the agent in the KAOS system"
+    },
+    "provider": {
+      "type": "object",
+      "description": "Provider or system that hosts this agent",
+      "properties": {
+        "organization": {
+          "type": "string",
+          "default": "KAOS"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "default": "https://github.com/LeonX/KAOS"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Technical capabilities of the agent (A2A v1.0)",
+      "properties": {
+        "streaming": {
+          "type": "boolean",
+          "description": "Supports streaming responses",
+          "default": false
+        },
+        "push_notifications": {
+          "type": "boolean",
+          "description": "Supports server-initiated push notifications",
+          "default": false
+        },
+        "state_synchronization": {
+          "type": "boolean",
+          "description": "Supports conversation/task state sync across sessions",
+          "default": true
+        },
+        "parallel_execution": {
+          "type": "boolean",
+          "description": "Supports processing multiple tasks concurrently",
+          "default": true
+        },
+        "skill_discovery": {
+          "type": "boolean",
+          "description": "Agent can advertise and discover skills dynamically",
+          "default": true
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "description": "List of skills this agent can perform",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique skill identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable skill name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this skill does"
+          },
+          "input_schema": {
+            "$ref": "#/definitions/json_schema",
+            "description": "JSON Schema for expected input"
+          },
+          "output_schema": {
+            "$ref": "#/definitions/json_schema",
+            "description": "JSON Schema for produced output"
+          }
+        }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "description": "Authentication requirements for invoking this agent",
+      "properties": {
+        "schemes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["none", "api_key", "bearer", "oauth2", "mcp_auth"]
+          },
+          "default": ["none"]
+        },
+        "credentials": {
+          "type": "string",
+          "description": "Reference to credential location (env var, vault path, etc.)"
+        }
+      }
+    },
+    "default_input_modes": {
+      "type": "array",
+      "description": "Default MIME types the agent can receive",
+      "items": {
+        "type": "string",
+        "enum": ["text", "text/prompt", "text/markdown", "application/json", "application/problem+json"]
+      },
+      "default": ["text", "application/json"]
+    },
+    "default_output_modes": {
+      "type": "array",
+      "description": "Default MIME types the agent can produce",
+      "items": {
+        "type": "string",
+        "enum": ["text", "text/markdown", "application/json", "application/problem+json"]
+      },
+      "default": ["text", "application/json"]
+    },
+    "agent_card_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL where the full agent card JSON can be retrieved"
+    },
+    "agent_card_file": {
+      "type": "string",
+      "description": "Local filesystem path to the agent card (for file-based discovery)"
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Runtime configuration for the agent",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["subagent", "agent"],
+          "default": "subagent"
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Model temperature for response generation",
+          "minimum": 0.0,
+          "maximum": 2.0
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex color for UI representation",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "steps": {
+          "type": "integer",
+          "description": "Maximum reasoning steps (opencode specific)",
+          "minimum": 1
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other agents or services this agent depends on",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "description": "ID of the dependency agent"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Why this dependency exists"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this dependency is mandatory",
+            "default": true
+          }
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "description": "Boundary matrix: what the agent does and does not do",
+      "properties": {
+        "includes": {
+          "type": "array",
+          "description": "Responsibilities included in this agent's domain",
+          "items": { "type": "string" }
+        },
+        "excludes": {
+          "type": "array",
+          "description": "Responsibilities explicitly excluded from this agent's domain",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata key-value pairs for extension",
+      "properties": {
+        "created": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when this agent was first registered"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when this agent card was last updated"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "deprecated"]
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tags for discovery and categorization"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "json_schema": {
+      "type": "object",
+      "description": "A JSON Schema object describing the structure of input/output data"
+    }
+  }
+}

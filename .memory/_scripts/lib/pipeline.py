@@ -93,7 +93,7 @@ def save_context(agent: str, data: dict) -> None:
         if "research_context" in data:
             ctx["cross_agent"]["aletheia_to_mnemosyne"] = data["research_context"]
     if agent == "metis" and "strategy_summary" in data:
-        ctx["cross_agent"]["metis_to_kratos"] = data["strategy_summary"]
+        ctx["cross_agent"]["metis_to_kratos"] = {"strategy_summary": data["strategy_summary"], "okrs": [], "risks": [], "confidence": "media", "priority": "high"}
         if "metis_to_aletheia" in data:
             ctx["cross_agent"]["metis_to_aletheia"] = data["metis_to_aletheia"]
     

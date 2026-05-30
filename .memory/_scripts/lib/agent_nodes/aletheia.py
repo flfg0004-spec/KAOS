@@ -333,9 +333,22 @@ def _faithfulness_check(raw: str) -> dict:
     for claim in claims:
         if re.findall(r'https?://[^\s\)\]>\"\']+', claim) or "[[" in claim:
             claims_with_source += 1
+    words = raw.split()
+    urls = re.findall(r'https?://[^\s\)\]>\"\']+', raw)
+    source_density = round(len(urls) / (len(words) / 500), 2) if len(words) > 100 else 0
+    evidential_verbs = r'\b(demuestra|confirma|sugiere|indica|prueba|evidencia|concluye|establece|muestra|revela)\b'
+    sentences = re.split(r'[.!?]+', raw)
+    claims_without_source = 0
+    for s in sentences:
+        s = s.strip()
+        if len(s) > 20 and re.search(evidential_verbs, s, re.IGNORECASE):
+            if not re.findall(r'https?://[^\s\)\]>\"\']+', s):
+                claims_without_source += 1
     return {
         "total_claims": len(claims),
         "claims_with_source": claims_with_source,
         "faithfulness_score": round(claims_with_source / max(len(claims), 1), 2),
+        "source_density": source_density,
+        "claims_without_source": claims_without_source,
     }
 

@@ -202,7 +202,10 @@ class ContractOrchestrator:
 
         # ── 2. KosmosMetisContract: si hay OKRs ──
         cross_agent = state.get("cross_agent", {}) or state.get("context_summary", {}).get("cross_agent", {})
-        metis_okrs = cross_agent.get("metis_to_kratos", {}).get("okrs", []) if isinstance(cross_agent, dict) else []
+        metis_data = cross_agent.get("metis_to_kratos", {}) if isinstance(cross_agent, dict) else {}
+        if not isinstance(metis_data, dict):
+            metis_data = {}
+        metis_okrs = metis_data.get("okrs", [])
         if isinstance(metis_okrs, list) and len(metis_okrs) > 0:
             logger.info("▶️ Running KosmosMetisContract (%d OKRs)...", len(metis_okrs))
             try:

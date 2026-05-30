@@ -20,7 +20,10 @@ def _bcg_evaluator_node_impl(state: dict) -> dict:
         okr_result = {}
         try:
             ctx = load_context()
-            okrs = ctx.get("cross_agent", {}).get("metis_to_kratos", {}).get("okrs", [])
+            metis_data = ctx.get("cross_agent", {}).get("metis_to_kratos", {})
+            if not isinstance(metis_data, dict):
+                metis_data = {}
+            okrs = metis_data.get("okrs", [])
             if okrs:
                 okr_result = evaluate_okrs(okrs)
         except Exception:

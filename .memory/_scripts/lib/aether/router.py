@@ -12,11 +12,13 @@ from lib.aether.config import (
     ETHER_KIMI_ENABLED,
     ETHER_MULTIMODAL_ENABLED,
     MODEL_FALLBACK_CHAIN,
+    QUALITY_ROUTING_ENABLED,
     ModelTaskRule,
     TASK_MODEL_MAP,
 )
 
 _LOG = logging.getLogger(__name__)
+_QUALITY_THRESHOLD = 5.0  # mínimo score 0-10 para considerar un modelo confiable
 
 
 def resolve_model(
@@ -75,7 +77,19 @@ def resolve_model(
     final_model = _apply_budget_downgrade(chosen.model, budget_remaining)
     tier = _model_to_tier(final_model)
 
-    # 9. CB-aware fallback
+    # 9. Quality feedback: skip models with consistently low scores
+    if QUALITY_ROUTING_ENABLED:
+        qf_model = _apply_quality_feedback(final_model, task_type or "general", agent)
+        if qf_model != final_model:
+            _LOG.info("QUALITY_FEEDBACK: skip %s (score < threshold), fallback to %s", final_model, qf_model)
+            return {
+                "model": qf_model,
+                "thinking": None,
+                "tier": _model_to_tier(qf_model),
+                "resolved_by": f"quality_feedback_from_{final_model}",
+            }
+
+    # 10. CB-aware fallback
     if not _ETHER_CIRCUIT_BREAKER.is_available(final_model):
         fallback = _resolve_fallback(task_type, agent)
         return {**fallback, "resolved_by": f"cb_fallback_from_{final_model}"}
@@ -156,6 +170,31 @@ def _apply_budget_downgrade(model_key: str, budget_remaining: float | None) -> s
     if budget_remaining < 0.05 and model_key in ("go-kimi-latest", "go-pro"):
         return "go-flash"
     return model_key
+
+
+def _apply_quality_feedback(model_key: str, task_type: str, agent: str) -> str:
+    """Skip models with consistently low quality scores via fallback chain."""
+    try:
+        qs = _get_qs()
+        score = qs.get_model_score(model_key, task_type)
+        if score >= _QUALITY_THRESHOLD:
+            return model_key
+
+        # Score bajo — probar fallback chain
+        chain = MODEL_FALLBACK_CHAIN.get(model_key, [model_key])
+        for fb in chain:
+            if fb == model_key:
+                continue
+            fb_score = qs.get_model_score(fb, task_type)
+            if fb_score >= _QUALITY_THRESHOLD:
+                _LOG.info("QUALITY_FEEDBACK: %s score=%.2f < %.1f → switch to %s (score=%.2f)",
+                          model_key, score, _QUALITY_THRESHOLD, fb, fb_score)
+                return fb
+
+        # Ninguno pasa el threshold — mantener original
+        return model_key
+    except Exception:
+        return model_key
 
 
 def _model_to_tier(model: str) -> str:

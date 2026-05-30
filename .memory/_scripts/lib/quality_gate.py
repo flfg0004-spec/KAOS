@@ -27,7 +27,8 @@ def _find_file(content: str, language: str) -> Optional[str]:
 
 def _detect_languages(content: str) -> list[str]:
     """Detect programming languages present in code blocks."""
-    return list(set(re.findall(r"```(\w+)\n", content)))
+    from lib.lang_utils import detect_code_languages
+    return detect_code_languages(content)
 
 
 def gate_syntax(content: str, language: str = "python") -> dict:

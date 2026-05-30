@@ -7,15 +7,19 @@ version: 3
 
 # ── Task → Model Routing ─────────────────────────────────────
 task_model_map:
-  lint:         {model: go-flash,       thinking: null, tier: flash}
+  lint:         [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 2}]
   extract:      {model: go-mimo,        thinking: null, tier: mimo}
-  health:       {model: go-flash,       thinking: null, tier: flash}
+  health:       [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 2}]
   hydrate:      {model: go-flash,       thinking: null, tier: flash}
   wikilinks:    {model: go-mimo,        thinking: null, tier: mimo}
   curation:     {model: go-flash,       thinking: null, tier: flash}
   code_gen:     {model: go-flash,       thinking: null, tier: flash}
   code_simple:  {model: go-mimo,        thinking: null, tier: mimo}
-  general:      {model: go-flash,       thinking: null, tier: flash}
+  general:      [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-mimo,        thinking: null, tier: mimo, priority: 2},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 3}]
   research:     {model: go-pro,         thinking: high, tier: pro}
   analyze:      {model: go-pro,         thinking: high, tier: pro}
   adr:          {model: go-pro,         thinking: high, tier: pro}
@@ -34,7 +38,7 @@ agent_default_task:
   metis: strategy
   kratos: code_gen
   mnemosyne: curation
-  kronos: general
+  kronos: general       # → go-mimo (ahora default más barato)
   critic: verify
   planner: general
 
@@ -66,6 +70,7 @@ cost_rates:
   go-mimo:        {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
   mimo-direct:    {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
   go-qwen:        {input: 0.00010,  output: 0.00020,  cache_read: 0.00002}
+  go-gemini-flash: {input: 0.0,     output: 0.0,      cache_read: 0.0}
   flash:          {input: 0.00014,  output: 0.00028,  cache_read: 0.000028}
   pro:            {input: 0.00174,  output: 0.00348,  cache_read: 0.000145}
   mimo:           {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
@@ -90,6 +95,7 @@ fallback_chains:
   mimo-direct:     [mimo-direct, go-kimi-latest, go-pro, go-flash, go-qwen]
   go-mimo:         [go-mimo, go-flash, go-qwen, go-pro, go-kimi-latest]
   go-qwen:         [go-qwen, go-mimo, go-flash, go-pro, go-kimi-latest]
+  go-gemini-flash:  [go-gemini-flash, go-flash, go-mimo, go-qwen, go-pro]
 
 # ── Feature Flags ─────────────────────────────────────────────
 # Env vars override these (e.g., ETHER_MIMO_ENABLED=false)

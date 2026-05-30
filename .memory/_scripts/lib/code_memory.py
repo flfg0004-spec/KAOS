@@ -37,26 +37,10 @@ def _import_ast():
 
 def _detect_language(cwd: str = "") -> str:
     """Detect programming language from directory path or file extension."""
-    cwd_lower = cwd.lower()
-    if any(ext in cwd_lower for ext in [".py", "python"]):
-        return "python"
-    if any(ext in cwd_lower for ext in [".rs", "rust"]):
-        return "rust"
-    if any(ext in cwd_lower for ext in [".js", ".jsx", "javascript", "node"]):
-        return "javascript"
-    if any(ext in cwd_lower for ext in [".ts", ".tsx", "typescript"]):
-        return "typescript"
-    if any(ext in cwd_lower for ext in [".go", "golang"]):
-        return "go"
-    if any(ext in cwd_lower for ext in [".java", "java"]):
-        return "java"
-    if any(ext in cwd_lower for ext in [".c", ".h", "c-language"]):
-        return "c"
-    if any(ext in cwd_lower for ext in [".cpp", ".cc", ".cxx", ".hpp", "c++", "cpp"]):
-        return "cpp"
-    if any(ext in cwd_lower for ext in [".rb", "ruby"]):
-        return "ruby"
-    return "unknown"
+    if not cwd:
+        return "unknown"
+    from lib.lang_utils import detect_code_language
+    return detect_code_language(cwd)
 
 def capture_from_bash(exit_code: int, stderr: str, cmd: str = "", cwd: str = "") -> dict:
     """Capture error from bash execution into CodeExperience.

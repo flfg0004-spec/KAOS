@@ -82,6 +82,41 @@ def detect_code_language(text: str) -> str:
     return "python"
 
 
+def detect_code_language(topic_or_path: str) -> str:
+    """Detect programming language from topic text or path."""
+    tl = topic_or_path.lower()
+    code_map = {
+        ".py": "python", "python": "python",
+        ".rs": "rust", "rust": "rust",
+        ".js": "javascript", ".jsx": "javascript", "javascript": "javascript", "node": "javascript",
+        ".ts": "typescript", ".tsx": "typescript", "typescript": "typescript",
+        ".go": "go", "golang": "go",
+        ".java": "java", "java": "java",
+        ".c": "c", ".h": "c",
+        ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp", ".hpp": "cpp",
+        ".rb": "ruby", "ruby": "ruby",
+        ".kt": "kotlin", "kotlin": "kotlin",
+    }
+    for key, lang in code_map.items():
+        if key in tl:
+            return lang
+    return "unknown"
+
+
+def detect_code_languages(content: str) -> list[str]:
+    """Detect all programming languages present in markdown code blocks."""
+    return list(set(re.findall(r"```(\w+)\n", content)))
+
+
+def detect_code_language_from_blocks(text: str, default: str = "python") -> str:
+    """Detect primary language from code blocks in text."""
+    blocks = re.findall(r"```(\w+)", text)
+    if not blocks:
+        return default
+    lang_map = {"py": "python", "js": "javascript", "ts": "typescript", "rs": "rust"}
+    return lang_map.get(blocks[0], blocks[0])
+
+
 def detect_language(text: str) -> str:
     if not text:
         return "en"

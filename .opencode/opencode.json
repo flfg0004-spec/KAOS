@@ -204,7 +204,7 @@
     },
     "metis": {
       "type": "agent",
-      "description": "Agente de estrategia \u2014 planeaci\u00f3n, OKRs, roadmaps, an\u00e1lisis competitivo, reportes ejecutivos, orquestador de calidad",
+      "description": "Agente de estrategia \u2014 planeaci\u00f3n, OKRs, roadmaps, an\u00e1lisis competitivo, reportes ejecutivos y orquestador de calidad",
       "mode": "subagent",
       "file": ".opencode/agents/metis/SOUL.md",
       "temperature": 0.4,
@@ -235,6 +235,38 @@
         "mcp-roadmap-3h_*": true,
         "mcp-verification-chain_*": true,
         "mcp-session-runner_*": true
+      }
+    },
+    "kronos": {
+      "description": "Orquestador \u2014 an\u00e1lisis de pipelines, routing adaptativo, recuperaci\u00f3n de errores",
+      "mode": "subagent",
+      "color": "#FFD700",
+      "steps": 10,
+      "temperature": 0.2,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "allow",
+        "bash": {
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "task": "allow",
+        "skill": "allow"
+      },
+      "tools": {
+        "vault_*": true,
+        "sequential-thinking_*": true,
+        "mcp-speed_*": true,
+        "mcp-dsol_*": true,
+        "mcp-pipeline_*": true,
+        "lifecycle_*": true,
+        "quality_*": true,
+        "gaps_*": true,
+        "txtai_*": true,
+        "knowledge-graph_*": true
       }
     }
   },

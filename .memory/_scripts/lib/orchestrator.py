@@ -8,7 +8,8 @@ from typing import TypedDict, Optional
 from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
 from lib.file_lock import acquire_lock
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
-from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, reflexion_node, mnemosyne_node, bcg_evaluator_node
+from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, mnemosyne_node, bcg_evaluator_node
+from lib.agent_nodes.kratos import kratos_node
 from lib.agent_nodes.critic import critic_node
 from lib.quality.agent import record as verify_record
 
@@ -563,12 +564,8 @@ def reflexion_node(state: KAOSState) -> dict:
 
 def _detect_language(text: str) -> str:
     """Detect primary language from code blocks in text."""
-    import re
-    blocks = re.findall(r"```(\w+)", text)
-    if not blocks:
-        return "python"
-    lang_map = {"py": "python", "js": "javascript", "ts": "typescript", "rs": "rust"}
-    return lang_map.get(blocks[0], blocks[0])
+    from lib.lang_utils import detect_code_language_from_blocks
+    return detect_code_language_from_blocks(text)
 
 
 def route_after_reflexion(state: KAOSState) -> str:

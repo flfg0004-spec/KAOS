@@ -293,6 +293,14 @@ def _mnemosyne_node_impl(state: dict) -> dict:
         pass
 
     try:
+        from lib.bridge.feedback_consumer import consume_gap_feedback
+        n = consume_gap_feedback()
+        if n:
+            logger.info("Mnemosyne processed %d gap feedback signals", n)
+    except Exception:
+        pass
+
+    try:
         from lib.opa_bridge import check_agent
         gov = check_agent("mnemosyne", report)
         results["governance_allowed"] = gov["allowed"]

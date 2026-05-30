@@ -63,7 +63,7 @@ def get(key: str) -> tuple[str, dict] | None:
         return None
     ttl = entry.get("ttl", 3600)
     age = time.time() - entry.get("stored_at", 0)
-    if age > ttl:
+    if age >= ttl:
         del _persistent_cache[key]
         return None
     _frequency[key] += 1

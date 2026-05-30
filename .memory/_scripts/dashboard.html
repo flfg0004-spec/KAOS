@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAOS · Pipeline Dashboard</title>
+  <!-- vis-timeline CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-timeline/7.7.2/vis-timeline-graph2d.min.css">
+  <style>
+    /* ═══════════════════════════════════════════════
+       ROOT VARIABLES  (dark theme)
+       ═══════════════════════════════════════════════ */
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-surface: #111827;
+      --bg-elevated: #1e293b;
+      --bg-hover: #334155;
+      --border: #1f2937;
+      --border-light: #334155;
+      --text: #e0e7ff;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --orange: #f97316;
+      --grey: #6b7280;
+      --header-h: 56px;
+      --radius: 8px;
+      --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-primary);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════ */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--header-h);
+      padding: 0 20px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-left .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+    .header-left .logo small {
+      font-weight: 400;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-left: 6px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(59,130,246,0.15);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .active-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .active-badge .dot.warning { background: var(--yellow); }
+    .active-badge .dot.off { background: var(--grey); animation: none; }
+
+    /* ═══════════════════════════════════════════════
+       DASHBOARD GRID
+       ═══════════════════════════════════════════════ */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 35% 42% 23%;
+      gap: 0;
+      height: calc(100vh - var(--header-h));
+      overflow: hidden;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      min-height: 44px;
+    }
+    .panel-header h2 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+    .panel-header .sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       LEFT PANEL — Pipeline List
+       ═══════════════════════════════════════════════ */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .filters select {
+      flex: 1;
+      padding: 6px 8px;
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-family: var(--font);
+      font-size: 11px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 24px;
+    }
+    .filters select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .pipeline-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .pipe-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pipe-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-hover);
+    }
+    .pipe-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .pipe-card .row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .pipe-card .topic {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    .pipe-card .row2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .pipe-card .row2 .progress {
+      color: var(--text-dim);
+    }
+    .pipe-card .pipe-id {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-family: var(--font);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-state {
+      --color: var(--grey);
+    }
+    .badge-state.queued   { --color: var(--grey); background: rgba(107,114,128,0.15); color: var(--grey); }
+    .badge-state.running  { --color: var(--yellow); background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .badge-state.completed{ --color: var(--green); background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge-state.failed   { --color: var(--red); background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge-state.cancelled{ --color: var(--orange); background: rgba(249,115,22,0.15); color: var(--orange); }
+    .badge-state.timeout  { --color: var(--orange); background: rgba(249,115,22,0.15); color: var(--orange); }
+
+    .badge-priority {
+      font-size: 8px;
+      padding: 1px 6px;
+    }
+    .badge-priority.critical { background: rgba(239,68,68,0.2); color: var(--red); }
+    .badge-priority.high     { background: rgba(249,115,22,0.2); color: var(--orange); }
+    .badge-priority.normal   { background: rgba(59,130,246,0.15); color: var(--accent); }
+    .badge-priority.low      { background: rgba(107,114,128,0.15); color: var(--grey); }
+
+    .dot-indicator {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-indicator.queued    { background: var(--grey); }
+    .dot-indicator.running   { background: var(--yellow); animation: pulse-dot 1.5s ease-in-out infinite; }
+    .dot-indicator.completed { background: var(--green); }
+    .dot-indicator.failed    { background: var(--red); }
+    .dot-indicator.cancelled { background: var(--orange); }
+    .dot-indicator.timeout   { background: var(--orange); }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 12px;
+      gap: 8px;
+    }
+    .empty-state .icon { font-size: 32px; opacity: 0.3; }
+
+    /* ═══════════════════════════════════════════════
+       CENTER PANEL — Cytoscape DAG
+       ═══════════════════════════════════════════════ */
+    .dag-container {
+      flex: 1;
+      background: var(--bg-primary);
+      position: relative;
+      min-height: 200px;
+    }
+    #cy {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Cytoscape tooltip */
+    .cy-tooltip {
+      position: absolute;
+      padding: 8px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--text);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      max-width: 220px;
+    }
+    .cy-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; }
+    .cy-tooltip .tt-label { color: var(--text-muted); }
+    .cy-tooltip .tt-value { color: var(--text); font-weight: 600; }
+
+    /* ═══════════════════════════════════════════════
+       RIGHT PANEL — vis-timeline
+       ═══════════════════════════════════════════════ */
+    .timeline-container {
+      flex: 1;
+      background: var(--bg-primary);
+      min-height: 200px;
+      overflow: hidden;
+    }
+    #timeline {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── vis-timeline dark overrides ── */
+    .vis-timeline {
+      border: none !important;
+      background: var(--bg-primary) !important;
+      font-family: var(--font) !important;
+    }
+    .vis-foreground { border-left: 1px solid var(--border) !important; }
+    .vis-item {
+      border: none !important;
+      border-radius: 4px !important;
+      font-size: 10px !important;
+      color: #fff !important;
+      padding: 2px 8px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+      cursor: default !important;
+      transition: opacity 0.2s ease;
+    }
+    .vis-item.vis-range { border-radius: 4px !important; }
+    .vis-item.vis-point { border-radius: 50% !important; min-width: 12px !important; min-height: 12px !important; }
+    .vis-item.completed-item { background: var(--green) !important; }
+    .vis-item.running-item   { background: var(--yellow) !important; }
+    .vis-item.failed-item    { background: var(--red) !important; }
+    .vis-item.cancelled-item { background: var(--orange) !important; }
+    .vis-item.timeout-item   { background: var(--orange) !important; }
+    .vis-item.pending-item   { background: var(--grey) !important; opacity: 0.4; }
+
+    .vis-time-axis .vis-text {
+      color: var(--text-muted) !important;
+      font-size: 9px !important;
+      font-family: var(--font) !important;
+    }
+    .vis-grid.vis-minor { border-color: var(--border) !important; }
+    .vis-grid.vis-major { border-color: var(--border-light) !important; }
+    .vis-axis { border-color: var(--border) !important; }
+    .vis-current-time { background: var(--accent) !important; opacity: 0.3; }
+    .vis-group { border-color: var(--border) !important; }
+    .vis-labelset .vis-label {
+      color: var(--text-dim) !important;
+      font-size: 10px !important;
+      font-family: var(--font) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════════ */
+    @media (max-width: 1000px) {
+      .dashboard {
+        grid-template-columns: 100%;
+        grid-template-rows: auto 1fr auto;
+        height: auto;
+      }
+      .panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .panel-left   { max-height: 300px; }
+      .panel-center { min-height: 400px; }
+      .panel-right  { min-height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">⏣ KAOS <small>· Pipeline Dashboard</small></span>
+    </div>
+    <div class="header-right">
+      <span class="active-badge" id="active-badge">
+        <span class="dot" id="active-dot"></span>
+        <span id="active-count">0</span> active
+      </span>
+      <span id="clock" style="font-size:11px;color:var(--text-muted);"></span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ DASHBOARD GRID ═══════════════════ -->
+  <div class="dashboard">
+
+    <!-- ─── LEFT PANEL ─── -->
+    <div class="panel panel-left">
+      <div class="panel-header">
+        <h2>Pipelines</h2>
+        <span class="sub" id="pipe-count">0 total</span>
+      </div>
+      <div class="panel-body">
+        <div class="filters">
+          <select id="filter-state">
+            <option value="">All states</option>
+            <option value="queued">Queued</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <select id="filter-priority">
+            <option value="">All priorities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div id="pipeline-list" class="pipeline-list">
+          <div class="empty-state">
+            <div class="icon">⌛</div>
+            <div>No pipelines yet</div>
+            <div style="font-size:10px;">Create one or wait for simulation...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CENTER PANEL ─── -->
+    <div class="panel panel-center">
+      <div class="panel-header">
+        <h2>DAG · Flow</h2>
+        <span class="sub" id="dag-pipeline-label">Select a pipeline</span>
+      </div>
+      <div class="dag-container">
+        <div id="cy"></div>
+        <div class="cy-tooltip" id="cy-tooltip"></div>
+      </div>
+    </div>
+
+    <!-- ─── RIGHT PANEL ─── -->
+    <div class="panel panel-right">
+      <div class="panel-header">
+        <h2>Timeline</h2>
+        <span class="sub" id="timeline-pipeline-label"></span>
+      </div>
+      <div class="timeline-container">
+        <div id="timeline"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-timeline/7.7.2/vis-timeline-graph2d.min.js"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    // ── State ──────────────────────────────────────
+    let selectedPipelineId = null;
+    let pipelines = [];
+    let pipelineDetail = null;
+    let cy = null;
+    let timeline = null;
+    let timelineItems = null;
+    let eventSource = null;
+    let filterState = '';
+    let filterPriority = '';
+
+    // ── DOM refs ──────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const pipelineListEl = $('pipeline-list');
+    const cyContainer = $('cy');
+    const tooltipEl = $('cy-tooltip');
+    const timelineEl = $('timeline');
+    const activeCountEl = $('active-count');
+    const activeDotEl = $('active-dot');
+    const pipeCountEl = $('pipe-count');
+    const dagLabelEl = $('dag-pipeline-label');
+    const timelineLabelEl = $('timeline-pipeline-label');
+    const filterStateEl = $('filter-state');
+    const filterPriorityEl = $('filter-priority');
+    const clockEl = $('clock');
+
+    // ── Clock ──────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      clockEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── State colour helpers ──────────────────────
+    const STATE_COLORS = {
+      pending:   '#6b7280',
+      running:   '#eab308',
+      completed: '#22c55e',
+      failed:    '#ef4444',
+      cancelled: '#f97316',
+      timeout:   '#f97316',
+    };
+    const STATE_CLASSES = {
+      pending:   'pending',
+      running:   'running',
+      completed: 'completed',
+      failed:    'failed',
+      cancelled: 'cancelled',
+      timeout:   'timeout',
+    };
+
+    // ── Fetch pipelines ──────────────────────────
+    async function fetchPipelines() {
+      const params = new URLSearchParams();
+      if (filterState) params.set('state', filterState);
+      if (filterPriority) params.set('priority', filterPriority);
+      try {
+        const resp = await fetch(`/dashboard/api/pipelines?${params}`);
+        const data = await resp.json();
+        pipelines = data.pipelines || [];
+        renderPipelineList();
+        updateActiveCount();
+        pipeCountEl.textContent = `${data.total || pipelines.length} total`;
+      } catch (err) {
+        console.error('fetchPipelines:', err);
+      }
+    }
+
+    // ── Fetch pipeline detail ────────────────────
+    async function fetchPipelineDetail(id) {
+      try {
+        const resp = await fetch(`/dashboard/api/pipeline/${id}`);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        return data;
+      } catch (err) {
+        console.error('fetchPipelineDetail:', err);
+        return null;
+      }
+    }
+
+    // ── Render pipeline list ─────────────────────
+    function renderPipelineList() {
+      if (!pipelines.length) {
+        pipelineListEl.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⌛</div>
+            <div>No pipelines match filters</div>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      for (const p of pipelines) {
+        const state = p.state || 'pending';
+        const priority = p.priority || 'normal';
+        const progress = `${p.completed_nodes || 0}/${p.total_nodes || 0}`;
+        const selected = p.pipeline_id === selectedPipelineId ? ' selected' : '';
+        html += `
+          <div class="pipe-card${selected}" data-id="${p.pipeline_id}">
+            <div class="row1">
+              <span class="topic">${escHtml(p.topic || 'Untitled')}</span>
+              <span class="badge badge-state ${state}">${state}</span>
+            </div>
+            <div class="row2">
+              <span class="dot-indicator ${state}"></span>
+              <span class="badge badge-priority ${priority}">${priority}</span>
+              <span class="progress">${progress} nodes</span>
+              <span class="pipe-id">${p.pipeline_id || ''}</span>
+            </div>
+          </div>`;
+      }
+      pipelineListEl.innerHTML = html;
+
+      // Click handler via delegation
+      Array.from(pipelineListEl.querySelectorAll('.pipe-card')).forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.dataset.id;
+          if (id) selectPipeline(id);
+        });
+      });
+    }
+
+    // ── Update single pipeline card (SSE) ────────
+    function updatePipelineCard(pid, state) {
+      // Find card
+      const card = pipelineListEl.querySelector(`.pipe-card[data-id="${pid}"]`);
+      if (!card) { fetchPipelines(); return; }
+
+      // Update badge and dot
+      const badge = card.querySelector('.badge-state');
+      const dot = card.querySelector('.dot-indicator');
+      if (badge) { badge.className = `badge badge-state ${state}`; badge.textContent = state; }
+      if (dot) { dot.className = `dot-indicator ${state}`; }
+
+      // Also refresh pipeline in our local list
+      const idx = pipelines.findIndex(p => p.pipeline_id === pid);
+      if (idx !== -1) {
+        pipelines[idx].state = state;
+      }
+    }
+
+    // ── Select pipeline ──────────────────────────
+    async function selectPipeline(id) {
+      selectedPipelineId = id;
+      // Update selection in list
+      Array.from(pipelineListEl.querySelectorAll('.pipe-card')).forEach(el => {
+        el.classList.toggle('selected', el.dataset.id === id);
+      });
+
+      pipelineDetail = await fetchPipelineDetail(id);
+      if (!pipelineDetail) return;
+
+      const label = pipelineDetail.topic || id;
+      dagLabelEl.textContent = label;
+      timelineLabelEl.textContent = label;
+      renderDAG(pipelineDetail);
+      renderTimeline(pipelineDetail);
+    }
+
+    // ── Render DAG (Cytoscape.js) ────────────────
+    function renderDAG(data) {
+      const nodes = data.nodes || {};
+      const agents = Object.keys(nodes);
+      if (!agents.length) {
+        cyContainer.innerHTML = '<div class="empty-state"><div class="icon">⊙</div><div>No nodes</div></div>';
+        return;
+      }
+
+      const elements = [];
+      const spacing = 160;
+      const cyCenterY = 120;
+
+      agents.forEach((agent, i) => {
+        const state = (nodes[agent] && nodes[agent].state) || 'pending';
+        const nodeData = nodes[agent] || {};
+        elements.push({
+          data: {
+            id: agent,
+            label: agent.charAt(0).toUpperCase() + agent.slice(1),
+            state: state,
+            elapsed_ms: nodeData.elapsed_ms || 0,
+            started_at: nodeData.started_at || '',
+            completed_at: nodeData.completed_at || '',
+            error: nodeData.error || '',
+            result: nodeData.result || '',
+            attempt: nodeData.attempt || 0,
+          },
+          classes: state,
+          position: { x: 80 + i * spacing, y: cyCenterY },
+        });
+        if (i > 0) {
+          elements.push({
+            data: {
+              id: agents[i-1] + '→' + agent,
+              source: agents[i-1],
+              target: agent,
+            },
+          });
+        }
+      });
+
+      // Destroy previous instance
+      if (cy) {
+        cy.destroy();
+        cy = null;
+      }
+
+      cy = cytoscape({
+        container: cyContainer,
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': '#6b7280',
+              label: 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              color: '#fff',
+              'font-size': '12px',
+              'font-family': '"JetBrains Mono","Fira Code",monospace',
+              'font-weight': '600',
+              width: 60,
+              height: 60,
+              'border-width': 2,
+              'border-color': '#1f2937',
+              'transition-property': 'background-color, border-color',
+              'transition-duration': '0.3s',
+            },
+          },
+          {
+            selector: 'node.pending',
+            style: { 'background-color': '#6b7280', 'border-color': '#4b5563' },
+          },
+          {
+            selector: 'node.running',
+            style: {
+              'background-color': '#eab308',
+              'border-color': '#facc15',
+              'border-width': 3,
+            },
+          },
+          {
+            selector: 'node.completed',
+            style: { 'background-color': '#22c55e', 'border-color': '#4ade80' },
+          },
+          {
+            selector: 'node.failed',
+            style: { 'background-color': '#ef4444', 'border-color': '#f87171' },
+          },
+          {
+            selector: 'node.timeout',
+            style: { 'background-color': '#f97316', 'border-color': '#fb923c' },
+          },
+          {
+            selector: 'node.cancelled',
+            style: { 'background-color': '#f97316', 'border-color': '#fb923c' },
+          },
+          {
+            selector: 'edge',
+            style: {
+              width: 2,
+              'line-color': '#334155',
+              'target-arrow-color': '#64748b',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'arrow-scale': 1,
+            },
+          },
+          {
+            selector: 'edge.completed-edge',
+            style: { 'line-color': '#22c55e', 'target-arrow-color': '#22c55e' },
+          },
+        ],
+        layout: { name: 'preset' },
+        wheelSensitivity: 0.4,
+        minZoom: 0.4,
+        maxZoom: 2.5,
+      });
+
+      // ── Tooltip on hover ──
+      cy.on('mouseover', 'node', function(evt) {
+        const n = evt.target;
+        const d = n.data();
+        const state = d.state || 'pending';
+        const color = STATE_COLORS[state] || '#6b7280';
+        tooltipEl.style.display = 'block';
+        tooltipEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
+            <strong>${escHtml(d.label)}</strong>
+            <span class="badge badge-state ${state}" style="margin-left:auto;">${state}</span>
+          </div>
+          <div class="tt-row"><span class="tt-label">Attempt</span><span class="tt-value">${d.attempt || 0}</span></div>
+          <div class="tt-row"><span class="tt-label">Elapsed</span><span class="tt-value">${(d.elapsed_ms || 0).toFixed(0)}ms</span></div>
+          ${d.error ? `<div class="tt-row"><span class="tt-label">Error</span><span class="tt-value" style="color:var(--red);">${escHtml(d.error)}</span></div>` : ''}
+          ${d.result ? `<div class="tt-row"><span class="tt-label">Result</span><span class="tt-value">${escHtml(d.result)}</span></div>` : ''}
+        `;
+      });
+      cy.on('mouseout', 'node', function() {
+        tooltipEl.style.display = 'none';
+      });
+      cy.on('mousemove', function(evt) {
+        const pos = evt.originalEvent;
+        tooltipEl.style.left = (pos.clientX + 14) + 'px';
+        tooltipEl.style.top = (pos.clientY - 10) + 'px';
+      });
+    }
+
+    // ── Update single DAG node (SSE fast path) ───
+    function updateDagNode(nodeId, state) {
+      if (!cy) return;
+      const node = cy.getElementById(nodeId);
+      if (!node || !node.length) return;
+
+      // Remove all state classes and add the new one
+      Object.values(STATE_CLASSES).forEach(cls => node.removeClass(cls));
+      node.addClass(state);
+      node.data('state', state);
+
+      // Update style directly for immediate visual feedback
+      const color = STATE_COLORS[state] || '#6b7280';
+      node.style('background-color', color);
+    }
+
+    // ── Render Timeline (vis-timeline) ───────────
+    function renderTimeline(data) {
+      const nodes = data.nodes || {};
+      const agentNames = Object.keys(nodes);
+      if (!agentNames.length) return;
+
+      const items = [];
+      const now = new Date();
+
+      agentNames.forEach((id) => {
+        const node = nodes[id];
+        if (!node) return;
+        const state = node.state || 'pending';
+        if (state === 'pending') return; // skip pending — nothing to show
+
+        const label = id.charAt(0).toUpperCase() + id.slice(1);
+        const startedAt = node.started_at ? new Date(node.started_at) : null;
+        const completedAt = node.completed_at ? new Date(node.completed_at) : null;
+
+        const item = {
+          id: id,
+          content: label,
+          title: `${label}: ${state}${node.elapsed_ms ? ' (' + node.elapsed_ms.toFixed(0) + 'ms)' : ''}`,
+          className: (state === 'completed' ? 'completed-item' :
+                      state === 'running'   ? 'running-item' :
+                      state === 'failed'    ? 'failed-item' :
+                      state === 'cancelled' ? 'cancelled-item' :
+                      state === 'timeout'   ? 'timeout-item' : 'pending-item'),
+        };
+
+        if (startedAt) {
+          item.start = startedAt;
+          if (completedAt) {
+            item.end = completedAt;
+            item.type = 'range';
+          } else if (state === 'running') {
+            item.end = now;
+            item.type = 'range';
+          } else {
+            // Only start, no end → point
+            item.type = 'point';
+          }
+        } else {
+          // No start time — use creation time as approximation
+          item.start = data.created_at ? new Date(data.created_at) : now;
+          item.type = 'point';
+        }
+
+        items.push(item);
+      });
+
+      if (!timeline) {
+        timelineItems = new vis.DataSet(items);
+        timeline = new vis.Timeline(timelineEl, timelineItems, {
+          groupOrder: 'content',
+          moment: function(date) {
+            return vis.moment(date);
+          },
+          zoomMin: 1000,           // 1 second
+          zoomMax: 86400000 * 7,   // 7 days
+          showCurrentTime: true,
+          showMajorLabels: true,
+          showMinorLabels: true,
+          maxHeight: '100%',
+          minHeight: '100%',
+        });
+        timeline.fit();
+      } else {
+        timelineItems.clear();
+        timelineItems.add(items);
+        timeline.fit();
+      }
+    }
+
+    // ── Update timeline item (SSE fast path) ─────
+    function updateTimelineNode(nodeId, state, elapsedMs, error) {
+      if (!timelineItems) return;
+
+      const existing = timelineItems.get(nodeId);
+      if (!existing) {
+        // If not in timeline, re-render full timeline
+        if (pipelineDetail) renderTimeline(pipelineDetail);
+        return;
+      }
+
+      const className = (state === 'completed' ? 'completed-item' :
+                         state === 'running'   ? 'running-item' :
+                         state === 'failed'    ? 'failed-item' :
+                         state === 'cancelled' ? 'cancelled-item' :
+                         state === 'timeout'   ? 'timeout-item' : 'pending-item');
+
+      const updated = {
+        ...existing,
+        className: className,
+        title: existing.title + (elapsedMs ? ` → ${elapsedMs.toFixed(0)}ms` : ''),
+      };
+      if (state === 'running' && !updated.end) {
+        updated.end = new Date();
+        updated.type = 'range';
+      }
+      timelineItems.update(updated);
+    }
+
+    // ── Active count ─────────────────────────────
+    function updateActiveCount() {
+      const active = pipelines.filter(p => p.state === 'running' || p.state === 'queued');
+      const count = active.length;
+      activeCountEl.textContent = count;
+      if (count > 0) {
+        activeDotEl.className = 'dot';
+        activeDotEl.style.background = 'var(--yellow)';
+      } else {
+        activeDotEl.className = 'dot off';
+        activeDotEl.style.background = 'var(--grey)';
+      }
+    }
+
+    // ── SSE connection ───────────────────────────
+    function connectSSE() {
+      if (eventSource) {
+        eventSource.close();
+      }
+
+      eventSource = new EventSource('/dashboard/api/events');
+
+      eventSource.addEventListener('pipeline_update', function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          handleSSEUpdate(data);
+        } catch (err) {
+          console.error('SSE parse error:', err);
+        }
+      });
+
+      eventSource.addEventListener('heartbeat', function() {
+        // keep-alive, no action needed
+      });
+
+      eventSource.onerror = function() {
+        console.warn('SSE connection error, reconnecting in 3s...');
+        eventSource.close();
+        setTimeout(connectSSE, 3000);
+      };
+    }
+
+    // ── Handle SSE update ────────────────────────
+    function handleSSEUpdate(data) {
+      const pid = data.pipeline_id;
+      const state = data.state;
+      const changedNode = data.changed_node;
+      const nodeState = data.node_state;
+
+      // 1. Update pipeline card in list
+      updatePipelineCard(pid, state);
+
+      // 2. Update active count
+      updateActiveCount();
+
+      // 3. If this is the selected pipeline, update DAG and timeline
+      if (pid === selectedPipelineId) {
+        // Update DAG node
+        if (changedNode && nodeState) {
+          updateDagNode(changedNode, nodeState);
+        }
+
+        // Update timeline
+        if (changedNode) {
+          updateTimelineNode(changedNode, nodeState || state, data.elapsed_ms, data.error);
+        }
+
+        // If pipeline completed/failed while selected, refresh detail
+        if (!changedNode && state === 'completed') {
+          fetchPipelineDetail(pid).then(detail => {
+            if (detail) {
+              pipelineDetail = detail;
+              renderDAG(detail);
+              renderTimeline(detail);
+            }
+          });
+        }
+      }
+
+      // 4. If pipeline is newly completed and not selected, just update list
+      if (pid !== selectedPipelineId && state === 'completed') {
+        // Pipeline list already updated above
+      }
+    }
+
+    // ── Utility: escape HTML ─────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // ── Filter handlers ──────────────────────────
+    filterStateEl.addEventListener('change', function() {
+      filterState = this.value;
+      fetchPipelines();
+    });
+    filterPriorityEl.addEventListener('change', function() {
+      filterPriority = this.value;
+      fetchPipelines();
+    });
+
+    // ── Auto-refresh pipeline list every 15s ─────
+    setInterval(fetchPipelines, 15000);
+
+    // ── Init ─────────────────────────────────────
+    async function init() {
+      await fetchPipelines();
+      connectSSE();
+
+      // Auto-select first pipeline if available
+      if (pipelines.length > 0) {
+        await selectPipeline(pipelines[0].pipeline_id);
+      }
+    }
+
+    init();
+
+  })();
+  </script>
+</body>
+</html>
