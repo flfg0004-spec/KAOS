@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
-from lib.config import MAX_TOKENS, TOKEN_RATIO, PRESSURE_THRESHOLDS
+
+from lib.config import MAX_TOKENS, PRESSURE_THRESHOLDS, TOKEN_RATIO
 
 
 def estimate_tokens(text: str) -> int:

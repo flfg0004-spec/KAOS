@@ -2,13 +2,10 @@
 
 Extraído de kosmos_contracts.py (D3).
 """
-import json
 import logging
-import re
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +38,15 @@ class AdherenceReport:
         adr_title: Título del ADR asociado.
     """
     adr_id: str = ""
-    recommendations: List[Dict[str, Any]] = field(default_factory=list)
+    recommendations: list[dict[str, Any]] = field(default_factory=list)
     adherence_score: float = 0.0
-    coverage_by_rec: Dict[str, float] = field(default_factory=dict)
-    deviations: List[str] = field(default_factory=list)
-    kratos_decisions: List[str] = field(default_factory=list)
+    coverage_by_rec: dict[str, float] = field(default_factory=dict)
+    deviations: list[str] = field(default_factory=list)
+    kratos_decisions: list[str] = field(default_factory=list)
     timestamp: str = ""
     adr_title: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     def summary(self) -> str:
@@ -76,12 +73,12 @@ class OKRValidationResult:
     okr_id: str = ""
     viable: bool = False
     viability_score: float = 0.0
-    aligned_adrs: List[str] = field(default_factory=list)
-    risks: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    impact_on_krs: Dict[str, str] = field(default_factory=dict)
+    aligned_adrs: list[str] = field(default_factory=list)
+    risks: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    impact_on_krs: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -98,11 +95,11 @@ class ADRImpactNotification:
     """
     adr_id: str = ""
     adr_title: str = ""
-    affected_okrs: List[str] = field(default_factory=list)
-    kr_status: Dict[str, str] = field(default_factory=dict)
+    affected_okrs: list[str] = field(default_factory=list)
+    kr_status: dict[str, str] = field(default_factory=dict)
     summary: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -122,12 +119,12 @@ class CurationFeedback:
     adr_id: str = ""
     curation_score: float = 0.0
     wikilinks_added: int = 0
-    tags_added: List[str] = field(default_factory=list)
-    issues_found: List[str] = field(default_factory=list)
+    tags_added: list[str] = field(default_factory=list)
+    issues_found: list[str] = field(default_factory=list)
     passed: bool = False
     timestamp: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     def summary(self) -> str:
@@ -149,14 +146,14 @@ class FactualVerification:
         timestamp: ISO timestamp.
     """
     query: str = ""
-    claims: List[str] = field(default_factory=list)
-    sources: List[str] = field(default_factory=list)
+    claims: list[str] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
     confidence: float = 0.0
     verified: bool = False
-    contradictions: List[str] = field(default_factory=list)
+    contradictions: list[str] = field(default_factory=list)
     timestamp: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     def summary(self) -> str:

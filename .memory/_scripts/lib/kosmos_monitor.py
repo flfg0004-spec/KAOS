@@ -17,10 +17,10 @@ import json
 import logging
 import os
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class ArchitectureHealthReport:
     component_count: int = 0
     affected_components: int = 0
     trend: str = "stable"
-    previous_score: Optional[float] = None
+    previous_score: float | None = None
     deltas: dict[str, float] = field(default_factory=dict)
 
 
@@ -102,7 +102,7 @@ class ArchitectureMonitor:
         self._alerts_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Cached previous report
-        self._previous: Optional[ArchitectureHealthReport] = None
+        self._previous: ArchitectureHealthReport | None = None
 
         logger.info("ArchitectureMonitor initialized (db=%s)", self.db_path)
 
@@ -129,7 +129,8 @@ class ArchitectureMonitor:
 
         try:
             # 1. System scan
-            from lib.system_scanner import scan, health_score as ss_health
+            from lib.system_scanner import health_score as ss_health
+            from lib.system_scanner import scan
 
             scan_result = scan()
             report.health_score = ss_health(scan_result)
@@ -441,7 +442,7 @@ class ArchitectureMonitor:
                         for ff in file_findings:
                             ff["file"] = str(py_file)
                         findings.extend(file_findings)
-                    except (OSError, IOError):
+                    except OSError:
                         continue
 
             logger.debug("   smell_pipeline: %d findings from %d dirs",
@@ -656,7 +657,7 @@ class ArchitectureMonitor:
         except (json.JSONDecodeError, OSError):
             return []
 
-    def _load_previous(self) -> Optional[ArchitectureHealthReport]:
+    def _load_previous(self) -> ArchitectureHealthReport | None:
         """Load the most recent report."""
         records = self._load_timeseries()
         if not records:
@@ -674,7 +675,7 @@ class ArchitectureMonitor:
             affected_components=latest.get("affected_components", 0),
         )
 
-    def _load_latest(self) -> Optional[ArchitectureHealthReport]:
+    def _load_latest(self) -> ArchitectureHealthReport | None:
         """Load latest report (prefer cached self._previous)."""
         if self._previous is not None:
             return self._previous

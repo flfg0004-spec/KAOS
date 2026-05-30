@@ -1,0 +1,13 @@
+[
+  {
+    "timestamp": "2026-05-26T00:38:54.762137+00:00",
+    "agent": "metis",
+    "composite": 76.7,
+    "dimensions": {
+      "veracidad": 78,
+      "reproducibilidad": 72,
+      "utilidad": 80
+    },
+    "pipeline_id": "test-pipeline-001"
+  }
+]

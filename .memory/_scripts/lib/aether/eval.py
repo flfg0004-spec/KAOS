@@ -10,8 +10,9 @@ EvalPipeline class con judge_model, sample_size, auto_interval, metrics.
 import json
 import logging
 import os
+import random
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from lib.aether.config import (
@@ -23,6 +24,23 @@ from lib.aether.config import (
 from lib.aether.tracker import EtherTracker
 
 _LOG = logging.getLogger(__name__)
+
+# ── Sampling config ──────────────────────────────────────────
+_SAMPLE_RATES = {
+    "pro": 0.5,
+    "kimi": 0.5,
+    "flash": 0.2,
+    "mimo": 0.05,
+}
+_SAMPLE_QUALITY_FEEDBACK = True
+_SAMPLE_HIGH_SCORE_THRESHOLD = 8.0
+_SAMPLE_REDUCTION_FACTOR = 0.5
+_SAMPLE_FAILURE_BOOST = 2.0
+_SAMPLE_MIN_SAMPLES = 5
+_SAMPLE_MAX_DAILY_JUDGE_USD = 0.05
+
+_DAILY_JUDGE_COST = 0.0
+_DAILY_JUDGE_DATE = date.today()
 
 # ── Counter para auto-evaluación ─────────────────────────────
 _AUTO_EVAL_COUNTER = 0
@@ -66,17 +84,61 @@ class EvalPipeline:
         self._results_path = _DEEPEVAL_LATEST_PATH
         self._results_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # ── Sampling Control ────────────────────────────────────
+
+    def should_sample(self, task_type: str = "general", tier: str = "flash") -> bool:
+        """Decide if a session should be sampled for evaluation.
+
+        Uses tier-based sample rates, QualityStore feedback,
+        and a daily budget cap for judge calls.
+        """
+        global _DAILY_JUDGE_COST, _DAILY_JUDGE_DATE
+
+        if not EVAL_ENABLED_V2:
+            return False
+
+        rate = _SAMPLE_RATES.get(tier, 0.2)
+
+        # Quality feedback: high sustained scores → reduce sampling
+        if _SAMPLE_QUALITY_FEEDBACK:
+            try:
+                from lib.aether.quality_store import QualityStore
+
+                qs = QualityStore()
+                task_scores = qs.get_task_scores(task_type)
+                if task_scores:
+                    recent = list(task_scores.values())[-_SAMPLE_MIN_SAMPLES:]
+                    if recent:
+                        avg = sum(r.get("avg_score", 0) for r in recent if isinstance(r, dict)) / len(recent)
+                        if avg > _SAMPLE_HIGH_SCORE_THRESHOLD:
+                            rate *= _SAMPLE_REDUCTION_FACTOR
+                        elif avg < 4.0:
+                            rate *= _SAMPLE_FAILURE_BOOST
+            except Exception:
+                pass
+
+        # Daily budget check
+        today = date.today()
+        if today != _DAILY_JUDGE_DATE:
+            _DAILY_JUDGE_COST = 0.0
+            _DAILY_JUDGE_DATE = today
+        if _DAILY_JUDGE_COST >= _SAMPLE_MAX_DAILY_JUDGE_USD:
+            _LOG.debug("Daily judge budget reached ($%.2f)", _SAMPLE_MAX_DAILY_JUDGE_USD)
+            return False
+
+        return random.random() < rate
+
     # ── Session Evaluation ───────────────────────────────────
 
     def evaluate_session(
         self,
         session: dict,
         judge_model: str | None = None,
-    ) -> dict:
+    ) -> dict | None:
         """Evalúa una sesión individual usando LLM-as-judge.
 
-        Envía ``prompt`` + ``response`` al modelo judge y pide un
-        score 1-10 en cada dimensión definida en ``self.metrics``.
+        Si la sesión no es ``critical`` y no pasa el sampling,
+        retorna ``None`` (sin evaluar).
 
         Args:
             session: Dict con al menos ``prompt``, ``response`` y
@@ -84,31 +146,31 @@ class EvalPipeline:
             judge_model: Override del modelo judge para esta llamada.
 
         Returns:
-            dict con:
-            - scores: dict[str, float] — score por dimensión
-            - weighted_score: float — promedio ponderado
-            - verdict: "pass" | "warn" | "fail"
-            - dimensions: list con detalles de cada dimensión
+            dict con scores o None si no se evaluó.
         """
         judge = judge_model or self.judge_model
         prompt = session.get("prompt", "")
         response = session.get("response", "")
+        self._current_task_type = session.get("task_type", "general")
+        tier = session.get("tier", "flash")
 
         if not response:
-            return {
-                "scores": {m: 0.0 for m in self.metrics},
-                "weighted_score": 0.0,
-                "verdict": "fail",
-                "dimensions": [],
-                "error": "empty_response",
-            }
+            return {"scores": {m: 0.0 for m in self.metrics}, "weighted_score": 0.0, "verdict": "fail", "dimensions": [], "error": "empty_response"}
+
+        # Sampling: critical sessions always evaluate; others sampled by tier
+        if not session.get("critical") and not self.should_sample(task_type=self._current_task_type, tier=tier):
+            return None
+
+        # Track judge cost
+        global _DAILY_JUDGE_COST
+        _DAILY_JUDGE_COST += 0.001  # ~$0.001 estimated per judge call
 
         # Intentar DeepEval primero
         result = self._eval_with_deepeval(prompt, response, judge)
         if result is not None:
             return result
 
-        # Fallback: LLM-as-judge directo
+        # Fallback: EtherJudge
         return self._eval_with_llm_judge(prompt, response, judge)
 
     def _eval_with_deepeval(self, prompt: str, response: str, judge: str) -> dict | None:
@@ -141,43 +203,27 @@ class EvalPipeline:
             return None
 
     def _eval_with_llm_judge(self, prompt: str, response: str, judge: str) -> dict:
-        """Evalúa usando una llamada LLM directa como judge (fallback).
-
-        Construye un prompt de evaluación estructurado y parsea la
-        respuesta del modelo judge para extraer scores 1-10.
-        """
-        dims_str = ", ".join(self.metrics)
-
-        eval_prompt = (
-            f"You are an expert judge evaluating LLM responses.\n\n"
-            f"## Input (original prompt)\n{prompt}\n\n"
-            f"## Response to evaluate\n{response}\n\n"
-            f"## Task\n"
-            f"Rate the response on these dimensions (1-10 scale, "
-            f"where 10 is perfect):\n{dims_str}\n\n"
-            f"Return ONLY a JSON object like:\n"
-            f'{{"scores": {{"{self.metrics[0]}": 8, '
-            f'"{self.metrics[1]}": 7}}, '
-            f'"weighted_score": 7.5}}\n'
-        )
-
+        """Evalúa usando EtherJudge (LLM-as-judge) en lugar del inline prompt."""
         try:
-            from lib.llm import agent_llm_call as llm_call
+            from lib.aether.judge import EtherJudge
 
-            raw = llm_call(
-                agent="eval_judge",
-                prompt=eval_prompt,
-                model_override=judge,
-                task_type="evaluation",
-                temperature=0.1,
-            )
-            scores, weighted = self._parse_judge_response(raw)
+            ej = EtherJudge(judge_model=judge)
+            task_type = getattr(self, '_current_task_type', 'general')
+            result = ej.evaluate(prompt=prompt, response=response, task_type=task_type)
+
+            scores = result.get("scores", {m: 5.0 for m in self.metrics})
+            weighted = result.get("weighted_score", 5.0)
+
+            out = self._build_result(scores=scores, weighted_score=weighted)
+            out["explanation"] = result.get("explanation", "")
+            out["strengths"] = result.get("strengths", [])
+            out["weaknesses"] = result.get("weaknesses", [])
+            return out
         except Exception as e:
-            _LOG.debug("LLM judge call failed: %s", e)
+            _LOG.debug("EtherJudge evaluation failed: %s", e)
             scores = {m: 5.0 for m in self.metrics}
             weighted = 5.0
-
-        return self._build_result(scores=scores, weighted_score=weighted)
+            return self._build_result(scores=scores, weighted_score=weighted)
 
     # ── Helpers ──────────────────────────────────────────────
 
@@ -606,11 +652,15 @@ def run_eval_pipeline(sample_size=None, output_path=None) -> dict:
     return results
 
 
-def auto_eval_if_needed() -> dict | None:
+def auto_eval_if_needed(task_type: str = None, tier: str = None) -> dict | None:
     """Auto-evalúa si se alcanzó el intervalo.
 
     Incrementa un contador global; cada N llamadas ejecuta
-    ``trigger_eval``.
+    ``trigger_eval`` con sampling por tier.
+
+    Args:
+        task_type: Tipo de tarea para sampling adaptativo.
+        tier: Tier del modelo para sampling estratificado.
 
     Returns:
         dict con resultados si se ejecutó, None si no.
@@ -620,8 +670,13 @@ def auto_eval_if_needed() -> dict | None:
 
     if _AUTO_EVAL_COUNTER >= _AUTO_EVAL_INTERVAL:
         _AUTO_EVAL_COUNTER = 0
-        _LOG.info("Auto-eval triggered (interval=%d)", _AUTO_EVAL_INTERVAL)
-        return trigger_eval()
+        _LOG.info("Auto-eval triggered (interval=%d, task=%s, tier=%s)", _AUTO_EVAL_INTERVAL, task_type, tier)
+        sample_size = EVAL_SAMPLE_SIZE_V2
+        # Tier-based sample size override
+        if tier:
+            rate = _SAMPLE_RATES.get(tier, 0.2)
+            sample_size = max(5, int(sample_size * rate))
+        return trigger_eval(sample_size=sample_size)
 
     return None
 

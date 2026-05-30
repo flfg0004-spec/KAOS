@@ -1,0 +1,149 @@
+{
+  "timestamp": "2026-05-25 17:17:06",
+  "session_analytics": {
+    "total_sessions": 20,
+    "total_messages": 890,
+    "avg_duration_min": 65.3,
+    "feedback_avg": 0,
+    "feedback_count": 0
+  },
+  "vault": {
+    "total_md": 268,
+    "by_directory": {
+      "wiki": 132,
+      "schema": 26,
+      "raw": 26,
+      "_scripts": 184,
+      "_pipeline": 3
+    },
+    "total_scripts": 184
+  },
+  "health": {
+    "git_clean": false,
+    "lint_issues": 1,
+    "overall": "warning"
+  },
+  "cache": {
+    "entries": 4,
+    "max_entries": 30,
+    "pressure": "unknown"
+  },
+  "pipeline": {
+    "status": "complete",
+    "profile": "standard"
+  },
+  "ingest": {
+    "total_ingested": 3,
+    "total_deduped": 482
+  },
+  "synapse": {
+    "concepts": 0,
+    "wikilinks": 0
+  },
+  "activity": {
+    "recent_commits": [
+      "13a888a session: mnemosyne - curation-cycle",
+      "a4a5ed7 session: mnemosyne - curation-cycle",
+      "6ebfc5d session: mnemosyne - curation-cycle",
+      "7989949 session: mnemosyne - curation-cycle",
+      "138a74f session: mnemosyne - curation-cycle"
+    ],
+    "recent_logs": [
+      [
+        "2026-05-25",
+        "session",
+        "test_agent session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ],
+      [
+        "2026-05-25",
+        "session",
+        "mnemosyne session completed"
+      ]
+    ]
+  },
+  "wikilinks": {
+    "valid": 469,
+    "broken": 1
+  },
+  "deepseek": {
+    "total_calls": 0,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cache_hit_tokens": 0,
+    "total_cache_miss_tokens": 0,
+    "total_reasoning_tokens": 0,
+    "total_cost_usd": 0,
+    "daily_breakdown": {},
+    "per_agent": {},
+    "cache_hit_rate": 0.0
+  },
+  "token_usage": {
+    "total_calls": 0,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cache_hit_tokens": 0,
+    "total_cache_miss_tokens": 0,
+    "total_reasoning_tokens": 0,
+    "total_cost_usd": 0,
+    "daily_breakdown": {},
+    "per_agent": {},
+    "cache_hit_rate": 0.0
+  },
+  "quality": {
+    "score": 168.1,
+    "connectivity": 4.3,
+    "freshness": 10.0,
+    "embeddings": 13.1,
+    "confidence_matrix": 23.1,
+    "completeness": 168.1
+  },
+  "lifecycle": {
+    "tiers": {
+      "new": 132
+    },
+    "total": 132,
+    "avg_confidence": 0.991,
+    "flagged": 132
+  },
+  "contradictions": {
+    "total": 0,
+    "contradictions": 0,
+    "complements": 0
+  },
+  "strategy": {
+    "total_sessions": 7,
+    "latest_bcg": 4.2,
+    "latest_okr": 10.7,
+    "avg_bcg_30d": 4.7,
+    "trend": "declining",
+    "delta_30d": -3.3,
+    "data_points_30d": 7,
+    "recommendation": "BCG score bajo. Revisar calidad de outputs estratégicos."
+  },
+  "agents": {
+    "total": 4,
+    "active": [
+      "aletheia",
+      "kosmos",
+      "metis",
+      "mnemosyne"
+    ],
+    "mcp_issues": 0
+  },
+  "pipeline_executions": []
+}

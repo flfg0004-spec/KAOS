@@ -1,5 +1,5 @@
 """HyDE — Hypothetical Document Embeddings para búsqueda mejorada."""
-from lib.vectorstore import _import_model, query
+from lib.vectorstore import _import_model
 
 HYDE_PROMPT = """Generate a short technical document that would comprehensively answer the following question.
 Format as a markdown document with sections.
@@ -33,7 +33,8 @@ def hyde_search(query: str, top_k: int = 5) -> list[dict]:
     hyde_vec = model.encode([hyde_text[:2000]])[0]
     
     # Custom search by vector (bypasses chunk_text)
-    import sqlite3, struct
+    import sqlite3
+    import struct
     from pathlib import Path
     DB_FILE = Path(__file__).resolve().parent.parent.parent / ".memory" / "cache" / "vectors.db"
     conn = sqlite3.connect(str(DB_FILE))
@@ -59,7 +60,8 @@ def hyde_search(query: str, top_k: int = 5) -> list[dict]:
     ]
 
 if __name__ == "__main__":
-    import json, sys
+    import json
+    import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from lib.vectorstore import status as vs
     print(f"Vector store: {vs()}")

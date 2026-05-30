@@ -7,12 +7,12 @@ Router de modelos vía DSOL:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
+ROUTING_TABLE: dict[str, dict[str, Any]] = {
     "discover": {
         "model": "go-flash",
         "thinking": None,
@@ -56,7 +56,7 @@ ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
 }
 
 
-def resolve_routing(node_name: str, state: dict = None) -> Dict[str, Any]:
+def resolve_routing(node_name: str, state: dict = None) -> dict[str, Any]:
     """Resolve DSOL routing for a pipeline node (Fase 3 — Aether integration).
 
     Priority:
@@ -78,7 +78,7 @@ def resolve_routing(node_name: str, state: dict = None) -> Dict[str, Any]:
     # Intent 2: Aether router (budget/quality-aware, para nodos no mapeados)
     try:
         from lib.aether.router import resolve_model as aether_resolve
-        task_type_map: Dict[str, str] = {
+        task_type_map: dict[str, str] = {
             "discover": "lint", "model": "analyze", "analyze": "analyze",
             "quality": "verify", "visualize": "lint", "document": "adr",
             "govern": "lint", "validate": "verify",
@@ -129,7 +129,6 @@ def auto_tune(dry_run: bool = True) -> dict:
 
     # 1. Cache hit rate
     try:
-        from lib.kosmos.cache import PipelineCache
         from lib.kosmos._state import get_pipeline_cache
         stats = get_pipeline_cache().stats()
         if stats.get("hit_rate", 100) < 30:

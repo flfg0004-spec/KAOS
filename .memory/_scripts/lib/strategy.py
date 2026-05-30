@@ -7,11 +7,11 @@ Provides structured methodology for strategic analysis:
   - StrategyReport: complete structured strategy output
 """
 
-import re
 import json
+import re
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from collections import Counter
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 
@@ -21,7 +21,7 @@ def _extract_keywords(text: str, top_n: int = 20) -> list[str]:
     words = re.findall(r"\w{4,}", text.lower())
     stop = {"este", "esta", "esto", "para", "como", "entre", "sobre", "tiene",
             "puede", "debe", "muy", "son", "han", "era", "ser", "del", "los",
-            "las", "con", "por", "que", "una", "los"}
+            "las", "con", "por", "que", "una"}
     filtered = [w for w in words if w not in stop]
     return [w for w, _ in Counter(filtered).most_common(top_n)]
 
@@ -113,9 +113,9 @@ class OKREngine:
 
             if not key_results:
                 key_results = [
-                    f"Implementar solución con cobertura ≥80%",
-                    f"Reducir incidentes en 50%",
-                    f"Lograr adopción del equipo ≥70%",
+                    "Implementar solución con cobertura ≥80%",
+                    "Reducir incidentes en 50%",
+                    "Lograr adopción del equipo ≥70%",
                 ]
 
             okrs.append({
@@ -197,8 +197,8 @@ class RiskMatrix:
         if not self._risks:
             lines.append("Sin riesgos identificados.\n")
             return "\n".join(lines)
-        lines.append(f"| Riesgo | Probabilidad | Impacto | Score | Nivel | Mitigación |")
-        lines.append(f"|--------|-------------|---------|-------|-------|------------|")
+        lines.append("| Riesgo | Probabilidad | Impacto | Score | Nivel | Mitigación |")
+        lines.append("|--------|-------------|---------|-------|-------|------------|")
         for r in self._risks:
             lines.append(
                 f"| {r['risk'][:40]} | {r['probability']} | {r['impact']} | "

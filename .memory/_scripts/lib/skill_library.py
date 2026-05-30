@@ -7,11 +7,9 @@ Inspired by PYTHALAB-MERA (arXiv 2605.08468):
   - Skills indexed in separate code_skills.db for fast retrieval
 """
 
-import sqlite3
 import json
-import hashlib
 import re
-from datetime import datetime
+import sqlite3
 from pathlib import Path
 
 DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")

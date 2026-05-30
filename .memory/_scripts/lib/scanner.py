@@ -1,8 +1,8 @@
 """Scanner: detect dead refs, duplicates, orphans, stale files."""
 
 import re
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
 
 VAULT = (Path(__file__).resolve().parent.parent.parent)
 

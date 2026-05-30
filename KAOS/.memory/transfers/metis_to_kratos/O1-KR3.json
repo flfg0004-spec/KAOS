@@ -1,0 +1,21 @@
+{
+  "type": "strategy_feedback",
+  "session_id": "bc0e5c97",
+  "generated_at": "2026-05-29T14:09:46.348661",
+  "okr_id": "O1-KR3",
+  "initiative_id": "I-O1-KR3",
+  "initiative_title": "Test Initiative",
+  "completion": {
+    "percentage": 0,
+    "status": "not_started"
+  },
+  "success_criteria": [
+    {
+      "criterion": "latency",
+      "met": false,
+      "actual_value": ""
+    }
+  ],
+  "status": "dispatched",
+  "source": "metis"
+}

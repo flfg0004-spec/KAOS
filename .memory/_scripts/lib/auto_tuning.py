@@ -12,7 +12,7 @@ Mecanismo:
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger("auto_tuning")

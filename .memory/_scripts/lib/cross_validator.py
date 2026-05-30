@@ -5,8 +5,8 @@ Flash critica el output → si discrepancia > umbral, Opus arbitra.
 """
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent.parent
 
@@ -115,12 +115,12 @@ def run(output_path: str = "", profile: str = "standard") -> str:
         avg_score = sum(scores.get(k, 0) for k in ("veracidad", "completitud", "coherencia", "utilidad")) / 4
 
         lines = [
-            f"# Cross-Validation Report",
+            "# Cross-Validation Report",
             f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*",
             f"*Output: {output_path}*",
             f"*Profile: {profile}*",
             "",
-            f"## Scores (Gemini Flash)",
+            "## Scores (Gemini Flash)",
             f"- Veracidad: {scores.get('veracidad', '?')}/100",
             f"- Completitud: {scores.get('completitud', '?')}/100",
             f"- Coherencia: {scores.get('coherencia', '?')}/100",

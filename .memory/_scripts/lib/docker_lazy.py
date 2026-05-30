@@ -1,7 +1,7 @@
-import os
-import subprocess
-import socket
 import logging
+import os
+import socket
+import subprocess
 import time
 
 logger = logging.getLogger("docker_lazy")
@@ -26,7 +26,7 @@ def _port_open(port: int, host: str = "127.0.0.1") -> bool:
     try:
         with socket.create_connection((host, port), timeout=2):
             return True
-    except (ConnectionRefusedError, OSError, socket.timeout):
+    except (TimeoutError, ConnectionRefusedError, OSError):
         return False
 
 
@@ -48,7 +48,7 @@ def ensure_service(profile: str, service_name: str, port: int) -> bool:
 
     try:
         from lib.feature_flags import is_enabled
-        if not is_enabled("ether_{}_enabled".format(service_name)):
+        if not is_enabled(f"ether_{service_name}_enabled"):
             logger.info(
                 "Feature flag ether_%s_enabled=false — using native fallback",
                 service_name,

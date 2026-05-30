@@ -7,18 +7,17 @@ Contiene 4 contratos independientes + orchestrator:
 4. KosmosAletheiaContract  — Factual grounding
 """
 
+from .aletheia import KosmosAletheiaContract
+from .kratos import ADHERENCE_CRITERIA, KosmosKratosContract
+from .metis import KosmosMetisContract
+from .mnemosyne import KosmosMnemosyneContract
 from .models import (
     AdherenceReport,
-    OKRValidationResult,
     ADRImpactNotification,
     CurationFeedback,
     FactualVerification,
+    OKRValidationResult,
 )
-
-from .kratos import KosmosKratosContract, ADHERENCE_CRITERIA
-from .metis import KosmosMetisContract
-from .mnemosyne import KosmosMnemosyneContract
-from .aletheia import KosmosAletheiaContract
 from .orchestrator import ContractOrchestrator
 
 __all__ = [

@@ -9,7 +9,7 @@ Uso:
     cache = get_pipeline_cache()
 """
 
-from typing import Any, Dict
+from typing import Any
 
 _PIPELINE_CACHE: Any = None
 
@@ -25,7 +25,7 @@ def get_pipeline_cache() -> Any:
     return _PIPELINE_CACHE
 
 
-def pipeline_cache_stats() -> Dict[str, Any]:
+def pipeline_cache_stats() -> dict[str, Any]:
     """Get cache stats, or empty dict if not initialized."""
     cache = get_pipeline_cache()
     if cache is not None and hasattr(cache, 'stats'):

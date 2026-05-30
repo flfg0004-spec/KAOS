@@ -7,16 +7,14 @@ Each node function accepts ``self`` so it can be assigned as a method of
 KosmosPipelineV2 and work correctly with instance state.
 """
 
-import glob
 import json
 import logging
-import os
 import re
 import shlex
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +32,7 @@ _CACHE_DIR = _MEMORY_DIR / "cache"
 # Helper: filesystem scanning
 # ═══════════════════════════════════════════════════════════════════════
 
-def _depwire_scan(paths: List[str]) -> Dict[str, Any]:
+def _depwire_scan(paths: list[str]) -> dict[str, Any]:
     """Attempt to run depwire scan via MCP or subprocess.
 
     Gracefully degrades to a filesystem-level dependency scan using
@@ -46,7 +44,7 @@ def _depwire_scan(paths: List[str]) -> Dict[str, Any]:
     Returns:
         Dict with keys: files, imports, structure, tool_available.
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "files": [],
         "imports": {},
         "graph": {"nodes": [], "edges": []},
@@ -76,7 +74,7 @@ def _depwire_scan(paths: List[str]) -> Dict[str, Any]:
 
     # Fallback: filesystem-level scan
     logger.info("depwire not available — using filesystem scan fallback")
-    py_files: List[Path] = []
+    py_files: list[Path] = []
     for p in paths:
         base = Path(p)
         if base.is_dir():
@@ -91,14 +89,14 @@ def _depwire_scan(paths: List[str]) -> Dict[str, Any]:
     py_files = py_files[:200]
 
     # Extract imports from Python files (simple regex, not ast for speed)
-    import_re: Dict[str, int] = {}
+    import_re: dict[str, int] = {}
     for f in py_files[:100]:  # limit to 100 files
         try:
             text = f.read_text(encoding="utf-8", errors="replace")
             for m in re.finditer(r'^(?:from|import)\s+(\S+)', text, re.MULTILINE):
                 module = m.group(1).split(".")[0]
                 import_re[module] = import_re.get(module, 0) + 1
-        except (OSError, IOError):
+        except OSError:
             pass
 
     result["files"] = [str(f) for f in py_files]
@@ -108,7 +106,7 @@ def _depwire_scan(paths: List[str]) -> Dict[str, Any]:
     return result
 
 
-def _depwire_health_score(paths: List[str]) -> Dict[str, Any]:
+def _depwire_health_score(paths: list[str]) -> dict[str, Any]:
     """Compute health score for a codebase.
 
     Args:
@@ -117,7 +115,7 @@ def _depwire_health_score(paths: List[str]) -> Dict[str, Any]:
     Returns:
         Dict with health_score, metrics, and tool_available flag.
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "health_score": 0.0,
         "metrics": {},
         "tool_available": False,
@@ -154,7 +152,7 @@ def _depwire_health_score(paths: List[str]) -> Dict[str, Any]:
                 try:
                     lines = len(f.read_text(encoding="utf-8", errors="replace").splitlines())
                     total_lines += lines
-                except (OSError, IOError):
+                except OSError:
                     pass
 
     # Heuristic health score based on file/line distribution
@@ -186,7 +184,7 @@ def _depwire_health_score(paths: List[str]) -> Dict[str, Any]:
     return result
 
 
-def _depwire_simulate_change(paths: List[str], change_desc: str = "") -> Dict[str, Any]:
+def _depwire_simulate_change(paths: list[str], change_desc: str = "") -> dict[str, Any]:
     """Simulate the impact of a change on the codebase.
 
     Args:
@@ -196,7 +194,7 @@ def _depwire_simulate_change(paths: List[str], change_desc: str = "") -> Dict[st
     Returns:
         Dict with impact analysis.
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "impacted_files": [],
         "impact_score": 0.0,
         "suggestions": [],
@@ -241,7 +239,7 @@ def _depwire_simulate_change(paths: List[str], change_desc: str = "") -> Dict[st
 # Helper: Structurizr DSL generation
 # ═══════════════════════════════════════════════════════════════════════
 
-def _generate_structurizr_dsl(architecture: Dict[str, Any]) -> str:
+def _generate_structurizr_dsl(architecture: dict[str, Any]) -> str:
     """Generate Structurizr DSL from an architecture description.
 
     Args:
@@ -256,7 +254,7 @@ def _generate_structurizr_dsl(architecture: Dict[str, Any]) -> str:
     tags = architecture.get("tags", "")
 
     dsl = f'workspace "{system_name}" {{\n'
-    dsl += f'    model {{\n'
+    dsl += '    model {\n'
     dsl += f'        {system_name} = softwareSystem "{system_name}" {{\n'
     dsl += f'            tags "{tags}"\n' if tags else ""
 
@@ -274,10 +272,10 @@ def _generate_structurizr_dsl(architecture: Dict[str, Any]) -> str:
         desc = container.get("description", "")
         dsl += f'            {name} = container "{name}" "{desc}" "{tech}"\n'
 
-    dsl += f'        }}\n'
+    dsl += '        }\n'
 
     # Relationships between containers
-    rel_map: Dict[Tuple[str, str], str] = {}
+    rel_map: dict[tuple[str, str], str] = {}
     for rel in relationships:
         src = rel.get("source", "")
         dst = rel.get("destination", "")
@@ -319,7 +317,7 @@ def _generate_structurizr_dsl(architecture: Dict[str, Any]) -> str:
     return dsl
 
 
-def _generate_mermaid_diagram(diagram_type: str, data: Dict[str, Any]) -> str:
+def _generate_mermaid_diagram(diagram_type: str, data: dict[str, Any]) -> str:
     """Generate a Mermaid diagram from structured data.
 
     Args:
@@ -411,7 +409,7 @@ def _generate_mermaid_diagram(diagram_type: str, data: Dict[str, Any]) -> str:
 # Helper: ADR template generation
 # ═══════════════════════════════════════════════════════════════════════
 
-def _generate_adr_template(state: Dict[str, Any]) -> str:
+def _generate_adr_template(state: dict[str, Any]) -> str:
     """Generate a complete ADR document from pipeline state.
 
     Uses L0 memory for cross-references if available.
@@ -543,7 +541,7 @@ def _generate_adr_template(state: Dict[str, Any]) -> str:
 # Helper: RDF triple generation
 # ═══════════════════════════════════════════════════════════════════════
 
-def _generate_rdf_triples(adr_data: Dict[str, Any]) -> List[str]:
+def _generate_rdf_triples(adr_data: dict[str, Any]) -> list[str]:
     """Generate RDF triples (as NT-like strings) for the Architecture KG.
 
     Args:
@@ -595,7 +593,7 @@ def _generate_rdf_triples(adr_data: Dict[str, Any]) -> List[str]:
 
 def _validate_cross_references(
     adr_text: str, memory: Any
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Validate cross-references in an ADR against L0 memory.
 
     Args:
@@ -650,7 +648,7 @@ def _validate_cross_references(
 # Static helpers for diagram validation
 # ═══════════════════════════════════════════════════════════════════════
 
-def _validate_diagram(diagram_text: str, diagram_name: str) -> Dict[str, Any]:
+def _validate_diagram(diagram_text: str, diagram_name: str) -> dict[str, Any]:
     """Validate a Mermaid diagram for minimum quality requirements.
 
     Checks:
@@ -668,7 +666,7 @@ def _validate_diagram(diagram_text: str, diagram_name: str) -> Dict[str, Any]:
         Dict con keys: passed (bool), node_count (int), edge_count (int),
         issues (list).
     """
-    issues: List[str] = []
+    issues: list[str] = []
     lines = diagram_text.strip().split("\n")
 
     # Check 1: Has proper Mermaid header
@@ -687,9 +685,7 @@ def _validate_diagram(diagram_text: str, diagram_name: str) -> Dict[str, Any]:
         stripped = line.strip()
         if "-->" in stripped or "---" in stripped:
             edge_count += 1
-        elif "[" in stripped and "]" in stripped:
-            node_count += 1
-        elif "(" in stripped and ")" in stripped:
+        elif "[" in stripped and "]" in stripped or "(" in stripped and ")" in stripped:
             node_count += 1
 
     # Check 3: Has a title or legend
@@ -775,7 +771,7 @@ def _generate_fallback_diagram(diagram_type: str, topic: str) -> str:
 # Node 1: Discover
 # ═══════════════════════════════════════════════════════════════════════
 
-def discover(self) -> Dict[str, Any]:
+def discover(self) -> dict[str, Any]:
     """Nodo 1: Discover — escanea el código base.
 
     Ejecuta depwire_scan (o fallback) sobre paths relevantes.
@@ -785,7 +781,7 @@ def discover(self) -> Dict[str, Any]:
         Dict with keys: files, imports, graph, problems, paths_scanned.
     """
     logger.info("▶️ Nodo 1: Discover")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "files": [],
         "imports": {},
         "graph": {"nodes": [], "edges": []},
@@ -838,7 +834,7 @@ def discover(self) -> Dict[str, Any]:
 # Node 2: Model
 # ═══════════════════════════════════════════════════════════════════════
 
-def model(self) -> Dict[str, Any]:
+def model(self) -> dict[str, Any]:
     """Nodo 2: Model — genera modelo C4 (Contexto + Contenedor).
 
     Produce Structurizr DSL válido a partir del estado del pipeline.
@@ -848,7 +844,7 @@ def model(self) -> Dict[str, Any]:
         external_systems.
     """
     logger.info("▶️ Nodo 2: Model")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "dsl": "",
         "system_name": "KAOS System",
         "containers": [],
@@ -939,7 +935,7 @@ def model(self) -> Dict[str, Any]:
 # Node 3: Analyze
 # ═══════════════════════════════════════════════════════════════════════
 
-def analyze(self) -> Dict[str, Any]:
+def analyze(self) -> dict[str, Any]:
     """Nodo 3: Analyze — análisis de impacto y health score.
 
     Ejecuta depwire health + simulate (o fallback) sobre el código base.
@@ -948,7 +944,7 @@ def analyze(self) -> Dict[str, Any]:
         Dict with keys: health, impact, suggestions.
     """
     logger.info("▶️ Nodo 3: Analyze")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "health": {},
         "impact": {},
         "suggestions": [],
@@ -1002,7 +998,7 @@ def analyze(self) -> Dict[str, Any]:
 # Node 4: Quality
 # ═══════════════════════════════════════════════════════════════════════
 
-def quality(self) -> Dict[str, Any]:
+def quality(self) -> dict[str, Any]:
     """Nodo 4: Quality — evaluación dimensional del output.
 
     Evalúa el output arquitectónico en 5 dimensiones usando
@@ -1014,7 +1010,7 @@ def quality(self) -> Dict[str, Any]:
         Dict with keys: scores, weighted_score, passed, evidences.
     """
     logger.info("▶️ Nodo 4: Quality")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "scores": {},
         "weighted_score": 0.0,
         "passed": False,
@@ -1090,7 +1086,7 @@ def quality(self) -> Dict[str, Any]:
 # K3 helper: standalone diagram generation (ex-Visualize core logic)
 # ═══════════════════════════════════════════════════════════════════════
 
-def _generate_c4_diagrams(self) -> Dict[str, Any]:
+def _generate_c4_diagrams(self) -> dict[str, Any]:
     """Core C4 diagram generation — extracted for reuse by document() (K3).
 
     Generates C4 Context and Container diagrams in Mermaid format,
@@ -1100,7 +1096,7 @@ def _generate_c4_diagrams(self) -> Dict[str, Any]:
     Returns:
         Dict with keys: mermaid_diagrams, diagram_paths, visualization, fallback_used.
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "mermaid_diagrams": [],
         "diagram_paths": [],
         "visualization": {"passed": False, "checks": [], "fallback_used": False},
@@ -1214,7 +1210,7 @@ def _generate_c4_diagrams(self) -> Dict[str, Any]:
 # Node 5: Visualize (K3 wrapper — delegates to Document or standalone)
 # ═══════════════════════════════════════════════════════════════════════
 
-def visualize(self) -> Dict[str, Any]:
+def visualize(self) -> dict[str, Any]:
     """Nodo 5: Visualize — wrapper K3 (K3 fusion).
 
     Si Document ya fue ejecutado, retorna los diagramas desde alli.
@@ -1255,7 +1251,7 @@ def visualize(self) -> Dict[str, Any]:
 # Node 6: Document
 # ═══════════════════════════════════════════════════════════════════════
 
-def document(self) -> Dict[str, Any]:
+def document(self) -> dict[str, Any]:
     """Nodo 6: Document — ADR + diagramas + triples (K3 fusion).
 
     Ahora incluye:
@@ -1269,7 +1265,7 @@ def document(self) -> Dict[str, Any]:
         triples_filepath, arch_graph_nodes_added, arch_graph_edges_added.
     """
     logger.info("▶️ Nodo 6: Document (K3: ADR + Diagrams + KG)")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "adr_text": "",
         "adr_id": "ADR-XXX",
         "filepath": "",
@@ -1305,7 +1301,7 @@ def document(self) -> Dict[str, Any]:
         result["adr_id"] = adr_id
 
         # Gather references from L0
-        refs: List[str] = []
+        refs: list[str] = []
         if self.memory is not None:
             related = self.memory.search(topic, limit=5)
             for r in related:
@@ -1447,7 +1443,7 @@ def document(self) -> Dict[str, Any]:
 # Node 7: Govern
 # ═══════════════════════════════════════════════════════════════════════
 
-def govern(self) -> Dict[str, Any]:
+def govern(self) -> dict[str, Any]:
     """Nodo 7: Govern — wrapper K3 (K3 fusion).
 
     Si Document ya fue ejecutado, retorna los triples/KG desde alli.
@@ -1474,7 +1470,7 @@ def govern(self) -> Dict[str, Any]:
 
     # Standalone mode (backward compatibility — if Document hasn't run yet)
     logger.info("▶️ Nodo 7: Govern (K3 standalone)")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "triples": [],
         "triple_count": 0,
         "filepath": "",
@@ -1549,7 +1545,7 @@ def govern(self) -> Dict[str, Any]:
 # Node 8: Validate
 # ═══════════════════════════════════════════════════════════════════════
 
-def validate(self) -> Dict[str, Any]:
+def validate(self) -> dict[str, Any]:
     """Nodo 8: Validate — verificación cross-referencia + reflexión + contratos F2.
 
     Valida el ADR contra ADRs existentes en L0, ejecuta el
@@ -1560,7 +1556,7 @@ def validate(self) -> Dict[str, Any]:
         Dict with keys: validation, reflection, contracts, suggestions.
     """
     logger.info("▶️ Nodo 8: Validate (Fase 2)")
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "validation": {},
         "reflection": {},
         "contracts": {},

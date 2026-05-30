@@ -48,6 +48,7 @@ Ejecutas fases 1-5 de curación específicas para este nuevo contenido (no ciclo
 
 ## Herramientas
 
+- **library**: Destino de promoción para contenido curado con score ≥ 70 — escribe en `library/concepts/`
 - **Vault MCP** (server-filesystem .memory/): Escritura directa en raw/, wiki/, schema/
 - **txtai MCP** (local Python v2.0): Búsqueda semántica con embeddings reales (fastembed) — `semantic_search`, `deduplicate`, `similarity_matrix`
 - **mcp-embed**: Servicio de embeddings persistente (BAAI/bge-small-en-v1.5, 384 dims)

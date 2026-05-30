@@ -1,8 +1,10 @@
 """Error Daemon — watchdog + tree-sitter + ErrorCatalog + auto-fix pipeline."""
-import json, os, re, sqlite3, time, hashlib
-from datetime import datetime, timedelta
+import hashlib
+import json
+import sqlite3
+import time
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 CACHE = ROOT / ".memory" / "cache"

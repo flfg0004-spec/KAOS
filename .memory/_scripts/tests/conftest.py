@@ -1,4 +1,4 @@
-"""Pytest conftest — CircuitBreaker isolation + env setup."""
+"""Pytest conftest — CircuitBreaker isolation + vectorstore mock + env setup."""
 
 import os
 
@@ -20,3 +20,29 @@ def reset_circuit_breaker():
     _ETHER_CIRCUIT_BREAKER.reset()
     yield
     _ETHER_CIRCUIT_BREAKER.reset()
+
+
+class FakeVectorStore:
+    """Fake vector store that returns empty results — no txtai dependency."""
+
+    def hybrid_search(self, text, top_k=5):
+        return []
+
+    def embed_strategy(self, sid, ctx, content):
+        return f"strategy::{sid}"
+
+
+@pytest.fixture
+def mock_vectorstore(monkeypatch):
+    """Mock _get_vectorstore to return a working fake — isolates tests from txtai."""
+
+    def _fake_get_vectorstore():
+        return {
+            "hybrid_search": FakeVectorStore().hybrid_search,
+            "embed_strategy": FakeVectorStore().embed_strategy,
+        }
+
+    import strategy_memory
+
+    monkeypatch.setattr(strategy_memory, "_get_vectorstore", _fake_get_vectorstore)
+    return FakeVectorStore()

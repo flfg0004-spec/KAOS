@@ -1,7 +1,9 @@
 """Auditor: pre/post snapshots, regression checks."""
 
 from datetime import datetime
-from lib import scanner, quality as quality_mod
+
+from lib import quality as quality_mod
+from lib import scanner
 
 
 def _count_md() -> int:

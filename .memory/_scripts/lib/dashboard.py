@@ -3,8 +3,8 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 KAOS_ROOT = BASE.parent

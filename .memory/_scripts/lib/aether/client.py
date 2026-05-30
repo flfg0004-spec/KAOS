@@ -1,10 +1,7 @@
 """Ether client — API calls, chat, prompt building, structured generation."""
 
 import json
-import logging
-import os
 import time
-from pathlib import Path
 
 from lib.aether.circuit import _ETHER_CIRCUIT_BREAKER
 from lib.aether.config import (
@@ -32,7 +29,10 @@ def build_optimized_context(agent: str, task: str, existing_context: dict = None
 
 def configure_thinking(level: str | None) -> dict:
     """Configura thinking level. Retorna {} si level es None."""
-    return {}
+    if level is None or level not in THINKING_CONFIG:
+        return {}
+    budget = 4096 if level == "high" else 16384
+    return {"thinking": {"budget_tokens": budget, "type": "enabled"}}
 
 
 def get_output_config(use_json: bool, thinking: str | None) -> dict:
@@ -199,30 +199,13 @@ def chat(
         error=result if not success else None,
     )
 
-    # Post-chat: QualityStore logging (sampling ~10%)
+    # Post-chat: auto-eval sampling by tier
     if success:
         try:
-            import random
-            if random.random() < 0.1:
-                from lib.aether.quality_store import QualityStore
-                qs = QualityStore()
-                qs.record(
-                    model=model_key,
-                    task_type=task_type or "general",
-                    agent=agent or "",
-                    scores={"correctness": 7.0, "coherence": 7.0},
-                    weighted_score=7.0,
-                    verdict="pass",
-                )
-        except Exception:
-            logger.warning("EtherTracker status failed")
-
-        # Post-chat: auto-eval sampling
-        try:
             from lib.aether.eval import auto_eval_if_needed
-            auto_eval_if_needed()
+            auto_eval_if_needed(task_type=task_type, tier=resolved.get("tier"))
         except Exception:
-            logger.warning("EtherTracker reset failed")
+            logger.warning("auto_eval_if_needed failed")
 
     return result
 

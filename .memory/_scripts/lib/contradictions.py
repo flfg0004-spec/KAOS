@@ -7,10 +7,8 @@ Pipeline:
 """
 
 import json
-import re
-from pathlib import Path
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from pathlib import Path
 
 import lib.llm as llm
 from lib.wikilinks import build_graph
@@ -32,7 +30,8 @@ def _get_embedding(text: str) -> list[float] | None:
     import os
     if os.environ.get("KAOS_TESTING") == "1":
         return None
-    import subprocess, sys as _sys
+    import subprocess
+    import sys as _sys
     mcp_embed = BASE / "_scripts" / "mcp_embed.py"
     req = json.dumps({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",

@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from lib.aether.config import ETHER_LANGFUSE_ENABLED
+from lib.aether.tier import resolve_tier
 
 _LOG = logging.getLogger(__name__)
 LANGFUSE_PUBLIC_KEY = os.environ.get("LANGFUSE_PUBLIC_KEY", "")
@@ -113,14 +114,7 @@ def _should_sample(model: str, tier: str | None = None) -> bool:
     import random
 
     if tier is None:
-        if "mimo" in model:
-            tier = "mimo"
-        elif "kimi" in model:
-            tier = "kimi"
-        elif model in ("go-pro",):
-            tier = "pro"
-        else:
-            tier = "flash"
+        tier = resolve_tier(model)
 
     rate = SAMPLE_RATES.get(tier, 0.1)
     return random.random() < rate
@@ -173,16 +167,8 @@ def observe(
     # Asegurar que agent nunca está vacío
     agent = agent or "unknown"
 
-    # Inferir tier si no se proporcionó
     if tier is None:
-        if "mimo" in model:
-            tier = "mimo"
-        elif "kimi" in model:
-            tier = "kimi"
-        elif model in ("go-pro",):
-            tier = "pro"
-        else:
-            tier = "flash"
+        tier = resolve_tier(model)
 
     # Construir payload completo del trace
     trace_data = {

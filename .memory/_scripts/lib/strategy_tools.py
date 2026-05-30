@@ -4,7 +4,6 @@ Decomposes OKRs into executable initiatives with dependencies,
 effort estimates, and critical path mapping for Kratos.
 """
 
-import re
 from datetime import datetime
 
 

@@ -5,11 +5,11 @@ Extraído de kosmos_contracts.py (D3).
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from .models import (
-    OKRValidationResult,
     ADRImpactNotification,
+    OKRValidationResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class KosmosMetisContract:
             memory_l0: Optional ArchitectureMemoryL0 instance for ADR lookups.
         """
         self._memory_l0 = memory_l0
-        self._status: Dict[str, Any] = {
+        self._status: dict[str, Any] = {
             "active": True,
             "last_run": "",
             "last_score": 0.0,
@@ -56,10 +56,10 @@ class KosmosMetisContract:
         try:
             mem = memory_l0 or self._memory_l0
             okr_id = self._extract_okr_id(okr_text)
-            risks: List[str] = []
-            aligned_adrs: List[str] = []
-            impact_on_krs: Dict[str, str] = {}
-            recommendations: List[str] = []
+            risks: list[str] = []
+            aligned_adrs: list[str] = []
+            impact_on_krs: dict[str, str] = {}
+            recommendations: list[str] = []
 
             # Extract key results from OKR text
             krs = self._extract_key_results(okr_text)
@@ -138,7 +138,7 @@ class KosmosMetisContract:
                 risks=[f"Error en validación: {exc}"],
             )
 
-    def notify_adr_impact(self, adr_text: str, existing_okrs: List[str]) -> ADRImpactNotification:
+    def notify_adr_impact(self, adr_text: str, existing_okrs: list[str]) -> ADRImpactNotification:
         """Analyze impact of a new ADR on existing OKRs.
 
         Examina el ADR y lo compara con los OKRs existentes para determinar
@@ -161,9 +161,9 @@ class KosmosMetisContract:
             title_match = re.search(r'^#\s+(.+)$', adr_text, re.MULTILINE)
             adr_title = title_match.group(1).strip() if title_match else ""
 
-            affected_okrs: List[str] = []
-            kr_status: Dict[str, str] = {}
-            impact_details: List[str] = []
+            affected_okrs: list[str] = []
+            kr_status: dict[str, str] = {}
+            impact_details: list[str] = []
 
             # Extract key topics from ADR
             adr_topics = set(re.findall(r'\b\w{4,}\b', adr_lower))
@@ -221,7 +221,7 @@ class KosmosMetisContract:
                 summary=f"Error analyzing impact: {exc}",
             )
 
-    def sync_with_strategy(self, strategy_text: str) -> Dict[str, Any]:
+    def sync_with_strategy(self, strategy_text: str) -> dict[str, Any]:
         """Sync ADRs with current strategy, detecting gaps and contradictions.
 
         Args:
@@ -232,7 +232,7 @@ class KosmosMetisContract:
             aligned (list), recommendations (list).
         """
         try:
-            result: Dict[str, Any] = {
+            result: dict[str, Any] = {
                 "gaps": [],
                 "contradictions": [],
                 "aligned": [],
@@ -306,7 +306,7 @@ class KosmosMetisContract:
             self._status["errors"] += 1
             return {"gaps": [], "contradictions": [], "aligned": [], "recommendations": [f"Error: {exc}"]}
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Return contract status."""
         return dict(self._status)
 
@@ -323,7 +323,7 @@ class KosmosMetisContract:
             return f"OKR-{abs(hash(lines[0])) % 1000:03d}"
         return "OKR-000"
 
-    def _extract_key_results(self, text: str) -> List[str]:
+    def _extract_key_results(self, text: str) -> list[str]:
         """Extract Key Results from OKR text."""
         if not text:
             return []

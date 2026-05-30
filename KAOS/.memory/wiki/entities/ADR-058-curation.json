@@ -1,0 +1,15 @@
+{
+  "id": "ADR-058",
+  "title": "ADR-058: e2e architecture",
+  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\e2e-architecture-adr.md",
+  "type": "adr",
+  "tags": [
+    "adr",
+    "architecture",
+    "e2e-architectur"
+  ],
+  "existing_wikilinks": [],
+  "needs_curation": true,
+  "requested_at": "2026-05-30T09:42:49.158658",
+  "priority": "medium"
+}

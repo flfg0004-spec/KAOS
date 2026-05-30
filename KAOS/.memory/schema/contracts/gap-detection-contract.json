@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Gap Detection Contract",
+  "description": "Contrato formal Metis→Aletheia para detección e investigación de knowledge gaps durante análisis estratégico",
+  "type": "object",
+  "definitions": {
+    "gap_detection": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["gap_detection"] },
+        "session_id": { "type": "string", "description": "UUID de la sesión de análisis" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string", "minLength": 10 },
+              "context": { "type": "string" },
+              "priority": { "type": "string", "enum": ["alta", "media", "baja"] },
+              "suggested_source": { "type": "string" }
+            },
+            "required": ["question", "priority"]
+          },
+          "minItems": 1
+        },
+        "request": { "type": "string" }
+      },
+      "required": ["type", "session_id", "gaps"]
+    },
+    "gap_detection_response": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["gap_detection_response"] },
+        "session_id": { "type": "string" },
+        "responses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "answer": { "type": "string", "minLength": 1 },
+              "sources": { "type": "array", "items": { "type": "string" } },
+              "confidence": { "type": "string", "enum": ["alta", "media", "baja"] }
+            },
+            "required": ["question", "answer"]
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "session_id", "responses"]
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/gap_detection" },
+    { "$ref": "#/definitions/gap_detection_response" }
+  ]
+}

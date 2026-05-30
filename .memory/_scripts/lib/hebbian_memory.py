@@ -12,10 +12,8 @@ Inspirado en ZenBrain y Mnemoria:
   - Asociaciones transitivas (amigo de mi amigo)
 """
 
-import sqlite3
 import json
-import math
-from datetime import datetime, timedelta
+import sqlite3
 from pathlib import Path
 
 DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")
@@ -341,5 +339,5 @@ if __name__ == "__main__":
     for a in assoc:
         print(f"  [{a['association_type']}] {a['experience']['error'][:50]} (strength={a['hebbian_strength']})")
     
-    print(f"\n=== Stats ===")
+    print("\n=== Stats ===")
     print(json.dumps(get_graph_stats(), indent=2))

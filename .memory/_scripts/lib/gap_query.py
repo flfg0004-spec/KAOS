@@ -9,12 +9,12 @@ Provides a query_gaps(topic) interface that Aletheia calls before research:
 """
 
 import re
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from lib.gaps import GapDetector
-from lib.memory_lifecycle import evaluate as lifecycle_evaluate, _get_md_files as get_wiki_files
-from lib.config import VAULT_ROOT
+from lib.memory_lifecycle import _get_md_files as get_wiki_files
+from lib.memory_lifecycle import evaluate as lifecycle_evaluate
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 

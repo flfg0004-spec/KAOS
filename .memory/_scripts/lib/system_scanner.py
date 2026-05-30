@@ -1,5 +1,9 @@
 """System Scanner — inspecciona 10 subsistemas de KAOS, produce health report."""
-import json, os, re, sqlite3, subprocess, sys
+import json
+import os
+import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent  # KAOS root
@@ -104,7 +108,7 @@ def scan_pipeline() -> dict:
     """Scan LangGraph pipeline status."""
     try:
         sys.path.insert(0, str(SCRIPTS))
-        from lib.orchestrator import build_graph, route_after_strategy, route_after_kratos
+        from lib.orchestrator import build_graph
         g = build_graph(with_parallel=False)
         g2 = build_graph(with_parallel=True)
         nodes = list(g.nodes.keys())

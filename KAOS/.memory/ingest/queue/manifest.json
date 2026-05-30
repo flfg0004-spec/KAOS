@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "sha256": "6c21f2f41283bd8bc30010fad2ab68a647e4c6b2687507c9f1a07f0109e981f5",
+      "path": ".memory\\raw\\test-dedup-2.md",
+      "source_type": "text",
+      "original_ref": "test-dedup",
+      "ingested_at": "2026-05-23T13:35:15.349582",
+      "profile": "standard"
+    },
+    {
+      "sha256": "bc156c8fe9fa91e625ed81e3e4bb4ecebc41e3cee8371c0f60198c5d86078906",
+      "path": ".memory\\raw\\test-ingest.md",
+      "source_type": "text",
+      "original_ref": "test-ingest",
+      "ingested_at": "2026-05-23T13:35:15.368978",
+      "profile": "standard"
+    },
+    {
+      "sha256": "7ea91e925fd8d6af24231f434a1ea16a207228d9f2895a89bda6ca698d85f882",
+      "path": ".memory\\raw\\test-telegram.md",
+      "source_type": "test",
+      "original_ref": "manual",
+      "ingested_at": "2026-05-24T23:40:19.156158",
+      "profile": "standard"
+    }
+  ],
+  "total_ingested": 3,
+  "total_deduped": 488,
+  "last_updated": "2026-05-29T18:51:49.458304"
+}

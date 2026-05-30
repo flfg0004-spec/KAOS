@@ -8,13 +8,14 @@ Identifies missing notes by analyzing:
 """
 
 import re
-from pathlib import Path
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 
 import networkx as nx
-from lib.wikilinks import build_graph
+
 from lib.graph_analysis import VaultGraph
+from lib.wikilinks import build_graph
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 

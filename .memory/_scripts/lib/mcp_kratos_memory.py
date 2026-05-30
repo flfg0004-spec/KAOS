@@ -11,18 +11,18 @@ Other agents (Aletheia, Kosmos, Metis) can call these tools via MCP.
 Protocol: JSON-RPC 2.0 over stdio (standard MCP transport).
 """
 
-import sys
 import json
-import hashlib
 import sqlite3
+import sys
 from pathlib import Path
-from typing import Any
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS.parent))
 
-from lib.code_memory import search as ce_search, feedback as ce_feedback, status as ce_status, DB
-from lib.code_memory import capture_from_bash
+from lib.code_memory import DB
+from lib.code_memory import feedback as ce_feedback
+from lib.code_memory import search as ce_search
+from lib.code_memory import status as ce_status
 
 SKILL_DB = DB.parent / "code_skills.db"
 

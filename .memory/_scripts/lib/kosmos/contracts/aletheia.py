@@ -5,7 +5,7 @@ Extraído de kosmos_contracts.py (D3).
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from .models import (
     FactualVerification,
@@ -33,7 +33,7 @@ class KosmosAletheiaContract:
         self.real_mode = real_mode
         self.real_calls = 0
         self.fallback_calls = 0
-        self._status: Dict[str, Any] = {
+        self._status: dict[str, Any] = {
             "active": True,
             "last_run": "",
             "last_score": 0.0,
@@ -60,9 +60,9 @@ class KosmosAletheiaContract:
         """
         try:
             claim_lower = claim.lower()
-            sources: List[str] = []
-            contradictions: List[str] = []
-            all_claims: List[str] = [claim]
+            sources: list[str] = []
+            contradictions: list[str] = []
+            all_claims: list[str] = [claim]
 
             # Heuristic verification
             # Check for evidence patterns in the claim itself
@@ -205,7 +205,7 @@ class KosmosAletheiaContract:
                 timestamp=datetime.now().isoformat(),
             )
 
-    def detect_uncertain_claims(self, adr_text: str) -> List[str]:
+    def detect_uncertain_claims(self, adr_text: str) -> list[str]:
         """Scan ADR text and detect claims that need factual verification.
 
         Identifica claims basados en patrones como:
@@ -225,7 +225,7 @@ class KosmosAletheiaContract:
         if not adr_text:
             return []
 
-        claims: List[str] = []
+        claims: list[str] = []
         text_lines = adr_text.split("\n")
 
         # Pattern 1: Explicit references (según, basado en, fuente, etc.)
@@ -325,12 +325,12 @@ class KosmosAletheiaContract:
             "You are Aletheia, the factual grounding agent. Verify the following claim",
             "using web search and your knowledge base. Provide sources and confidence.",
             "",
-            f"## Claim to Verify",
+            "## Claim to Verify",
             f"{claim}",
             "",
         ]
         if context:
-            prompt_parts.append(f"## Context")
+            prompt_parts.append("## Context")
             prompt_parts.append(f"{context}")
             prompt_parts.append("")
 
@@ -389,7 +389,7 @@ class KosmosAletheiaContract:
             fallback_result.query = claim
             return fallback_result
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Return contract status (includes G4 real_mode metrics)."""
         status_dict = dict(self._status)
         status_dict["real_mode"] = self.real_mode

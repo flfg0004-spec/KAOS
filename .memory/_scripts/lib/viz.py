@@ -5,8 +5,8 @@ automatically in GitHub, VS Code, GitLab, and Obsidian.
 """
 
 import re
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent.parent
 WIKI = BASE / "wiki"
@@ -34,7 +34,7 @@ def _wikilinks_to_mermaid(graph_name: str = "knowledge-graph") -> str:
     if not pages:
         return "graph TD\n  N[No pages found]"
 
-    lines = [f"graph TD"]
+    lines = ["graph TD"]
     for name, data in pages.items():
         safe_id = re.sub(r"[^a-zA-Z0-9]", "_", name)[:30]
         display = data["label"][:40]

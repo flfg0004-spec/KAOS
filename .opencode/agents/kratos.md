@@ -6,4 +6,5 @@
 - **Framework**: APEX-EM PRGII (Plan -> Retrieve -> Generate -> Iterate -> Ingest)
 - **Memoria**: CodeExperience (FTS5 + vector + AST signature, contextual bandit feedback)
 - **Outputs**: code review, diffs, PRs, test suites, CodeExperience entries
+- **library**: Biblioteca de conocimiento curado — lectura para contexto
 - **Tags**: #kratos #codigo #code-agent

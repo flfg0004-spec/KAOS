@@ -14,8 +14,8 @@ Flujo:
   4. Cada N=10 ejecuciones: analiza → genera variantes → elige mejor
 """
 
-import json
 import hashlib
+import json
 import re
 from datetime import datetime
 from pathlib import Path

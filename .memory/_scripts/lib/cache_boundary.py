@@ -1,18 +1,17 @@
 """Cache Boundary — Anthropic 7+13 sections pattern with SQLite hit tracking."""
 
+import hashlib
 import json
 import sqlite3
 import threading
 import time
-import hashlib
-from pathlib import Path
-from functools import wraps
 from datetime import datetime
+from functools import wraps
 
 from lib.config import VAULT_ROOT
 
 CACHE_DB = VAULT_ROOT / "cache" / "cache_boundary.db"
-_lock = threading.Lock()
+_lock = threading.RLock()
 
 # ── Static sections (always cached, ~90% hit rate) ──
 
@@ -44,7 +43,8 @@ def _init_db():
                 hits INTEGER DEFAULT 0,
                 misses INTEGER DEFAULT 0,
                 last_access REAL,
-                created_at REAL
+                created_at REAL,
+                result TEXT
             )
         """)
         conn.execute("""
@@ -55,6 +55,11 @@ def _init_db():
                 tokens_saved INTEGER DEFAULT 0
             )
         """)
+        # Migration: add result column if missing
+        try:
+            conn.execute("ALTER TABLE cache_hits ADD COLUMN result TEXT")
+        except Exception:
+            pass
         conn.commit()
 
 
@@ -64,22 +69,28 @@ def _hash_key(section: str, content: str) -> str:
 
 def track_hit(section: str, tokens_saved: int = 0):
     with _lock, sqlite3.connect(str(CACHE_DB)) as conn:
-        conn.execute(
+        cur = conn.execute(
             "UPDATE section_stats SET hits = hits + 1, tokens_saved = tokens_saved + ? WHERE section = ?",
             (tokens_saved, section)
         )
-        if conn.total_changes == 0:
+        if cur.rowcount == 0:
             conn.execute(
                 "INSERT INTO section_stats (section, hits, tokens_saved) VALUES (?, 1, ?)",
                 (section, tokens_saved)
             )
+        conn.commit()
 
 
 def track_miss(section: str):
     with _lock, sqlite3.connect(str(CACHE_DB)) as conn:
-        conn.execute("UPDATE section_stats SET misses = misses + 1 WHERE section = ?", (section,))
-        if conn.total_changes == 0:
-            conn.execute("INSERT INTO section_stats (section, misses) VALUES (?, 1)", (section,))
+        cur = conn.execute(
+            "UPDATE section_stats SET misses = misses + 1 WHERE section = ?", (section,)
+        )
+        if cur.rowcount == 0:
+            conn.execute(
+                "INSERT INTO section_stats (section, misses) VALUES (?, 1)", (section,)
+            )
+        conn.commit()
 
 
 def build_prompt(
@@ -116,23 +127,47 @@ def build_prompt(
     return result
 
 
+def _update_section_stats(conn, section: str, is_hit: bool, tokens: int = 0):
+    """Update section stats using an existing connection."""
+    if is_hit:
+        cur = conn.execute(
+            "UPDATE section_stats SET hits = hits + 1, tokens_saved = tokens_saved + ? WHERE section = ?",
+            (tokens, section)
+        )
+        if cur.rowcount == 0:
+            conn.execute(
+                "INSERT INTO section_stats (section, hits, tokens_saved) VALUES (?, 1, ?)",
+                (section, tokens)
+            )
+    else:
+        cur = conn.execute(
+            "UPDATE section_stats SET misses = misses + 1 WHERE section = ?", (section,)
+        )
+        if cur.rowcount == 0:
+            conn.execute(
+                "INSERT INTO section_stats (section, misses) VALUES (?, 1)", (section,)
+            )
+    conn.commit()
+
+
 def cached_boundary(ttl: int = 3600):
     """Decorator: caches function output keyed by section + args.
     
     Uses SQLite for hit tracking. Returns cached result if within TTL.
+    Cache check happens BEFORE function execution to avoid wasted work.
     """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             section = kwargs.get("section", func.__name__)
-            content = func(*args, **kwargs)
-
-            key = _hash_key(section, str(content)[:200])
             now = time.time()
+
+            preview = f"{args}:{kwargs}" if args or kwargs else section
+            key = _hash_key(section, preview)
 
             with _lock, sqlite3.connect(str(CACHE_DB)) as conn:
                 row = conn.execute(
-                    "SELECT hits, last_access FROM cache_hits WHERE key = ?", (key,)
+                    "SELECT result, last_access FROM cache_hits WHERE key = ?", (key,)
                 ).fetchone()
 
                 if row and (now - row[1]) < ttl:
@@ -140,20 +175,27 @@ def cached_boundary(ttl: int = 3600):
                         "UPDATE cache_hits SET hits = hits + 1, last_access = ? WHERE key = ?",
                         (now, key)
                     )
-                    track_hit(section, len(str(content)))
-                    return content
+                    cached_result = json.loads(row[0])
+                    _update_section_stats(conn, section, is_hit=True, tokens=len(str(cached_result)))
+                    return cached_result
 
+            content = func(*args, **kwargs)
+
+            with _lock, sqlite3.connect(str(CACHE_DB)) as conn:
+                row = conn.execute(
+                    "SELECT hits FROM cache_hits WHERE key = ?", (key,)
+                ).fetchone()
                 if row:
                     conn.execute(
-                        "UPDATE cache_hits SET misses = misses + 1, last_access = ? WHERE key = ?",
-                        (now, key)
+                        "UPDATE cache_hits SET misses = misses + 1, last_access = ?, result = ? WHERE key = ?",
+                        (now, json.dumps(content, default=str), key)
                     )
                 else:
                     conn.execute(
-                        "INSERT INTO cache_hits (key, section, hits, misses, last_access, created_at) VALUES (?, ?, 0, 0, ?, ?)",
-                        (key, section, now, now)
+                        "INSERT INTO cache_hits (key, section, hits, misses, last_access, created_at, result) VALUES (?, ?, 0, 0, ?, ?, ?)",
+                        (key, section, now, now, json.dumps(content, default=str))
                     )
-                track_miss(section)
+                _update_section_stats(conn, section, is_hit=False)
 
             return content
         return wrapper

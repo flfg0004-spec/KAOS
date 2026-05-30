@@ -1,6 +1,7 @@
 """Garbage orchestrator: scan → clean → report."""
 
-from lib import scanner, cleaner, lint as lint_mod
+from lib import cleaner, scanner
+from lib import lint as lint_mod
 
 
 def report() -> str:

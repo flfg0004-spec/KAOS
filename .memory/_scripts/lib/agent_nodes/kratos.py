@@ -1,24 +1,81 @@
+import logging
 import re
+import time
 from datetime import datetime
+from typing import Any
 
-from lib.config import LLM_DIRECT_ENABLED
+logger = logging.getLogger(__name__)
+
 from lib.agent_tools import (
-    slugify, load_context, save_context,
-    llm_or_executor_call, notify_step,
-    is_complete_code, check_security, resolve_kratos_model,
     RAW_DIR,
+    check_security,
+    is_complete_code,
+    llm_or_executor_call,
+    load_context,
+    notify_step,
+    resolve_kratos_model,
+    save_context,
+    slugify,
 )
+from lib.config import KRATOS_PRUNE_ENABLED, KRATOS_PRUNE_THRESHOLD, KRATOS_SLEEP_ENABLED, LLM_DIRECT_ENABLED
 from lib.feature_flags import is_enabled
+from lib.kratos_decision import KratosDecision
+from lib.kratos_telemetry import CircuitBreaker, record_invocation
 from lib.lang_utils import detect_code_language as _detect_code_language
 
 
-def kratos_node(state: dict) -> dict:
+
+
+def kratos_node(state: dict[str, Any]) -> dict[str, Any]:
     if is_enabled("use_new_agent_executor"):
         return _kratos_node_v2(state)
     return _kratos_node_impl(state)
 
 
-def _kratos_node_impl(state: dict) -> dict:
+def _run_post_processing(content: str, state: dict[str, Any], prompt: str) -> dict[str, Any]:
+    """Run governance check, viz orchestration, and sleep cycle after generation.
+    
+    Shared by both LLM-on and LLM-off paths to avoid duplication.
+    """
+    try:
+        from lib.opa_bridge import check_agent
+        governance = check_agent("kratos", content)
+        gov_allowed = governance["allowed"]
+        gov_denials = governance["denials"]
+    except Exception as e:
+        if is_enabled("opa_strict_mode"):
+            gov_allowed = False
+            gov_denials = [f"OPA check failed (strict mode): {e}"]
+            logger.warning("OPA strict mode: denying due to check failure: %s", e)
+        else:
+            gov_allowed = True
+            gov_denials = []
+            logger.warning("OPA check failed (permissive mode): %s", e)
+
+    try:
+        from lib.viz_orchestrator import orchestrate as _viz
+        _viz("kratos", {"code_flow": content})
+    except Exception:
+        pass
+
+    if KRATOS_SLEEP_ENABLED:
+        try:
+            from lib.sleep_cycle import status as _sleep_status
+            _sleep_status()
+        except Exception:
+            pass
+
+    return {
+        "governance_allowed": gov_allowed,
+        "governance_denials": gov_denials,
+    }
+
+
+def _kratos_node_impl(state: dict[str, Any]) -> dict[str, Any]:
+    _start_time = time.time()
+    from lib.kratos_telemetry import CircuitBreaker
+    _cb = CircuitBreaker(failure_threshold=3, recovery_timeout=300)
+    _iteration = 0
     topic = state.get("topic", "")
     slug = slugify(topic)
 
@@ -39,6 +96,22 @@ def _kratos_node_impl(state: dict) -> dict:
     execution_plan = strategy.get("execution_plan", {})
     kr_assignment = strategy.get("kr_assignment", {})
     model_key = resolve_kratos_model(state)
+
+    # ── Auto-pruning: keep DB under threshold ──
+    if KRATOS_PRUNE_ENABLED:
+        try:
+            from lib.code_memory import prune as _ce_prune
+            from lib.code_memory import status as _ce_status
+            db_stat = _ce_status()
+            total = db_stat.get("total_experiences", 0) if isinstance(db_stat, dict) else 0
+            if total > KRATOS_PRUNE_THRESHOLD:
+                pruned = _ce_prune(dry_run=False)
+                if pruned.get("archived_now", 0) > 0 or pruned.get("deleted_now", 0) > 0:
+                    import logging
+                    _LOG = logging.getLogger(__name__)
+                    _LOG.info("Kratos auto-pruned DB: %s", pruned)
+        except Exception:
+            pass
 
     experiences_section = ""
     detected_lang = _detect_code_language(topic)
@@ -113,7 +186,18 @@ def _kratos_node_impl(state: dict) -> dict:
 
     if LLM_DIRECT_ENABLED:
         notify_step(state, "Kratos Implementation", "in_progress")
-        raw = llm_or_executor_call("kratos", prompt, model_override=model_key)
+        try:
+            raw = llm_or_executor_call("kratos", prompt, model_override=model_key)
+        except Exception as e:
+            logger.warning("Kratos LLM call failed: %s", e)
+            return {
+                **state,
+                "kratos_output": "",
+                "kratos_prompt": prompt,
+                "kratos_decision": KratosDecision.NEEDS_CURATION,
+                "governance_allowed": True,
+                "governance_denials": [],
+            }
         max_iterations = 3
         iteration = 0
         iteration_log = []
@@ -142,17 +226,23 @@ def _kratos_node_impl(state: dict) -> dict:
                 f"Revisa este código en busca de errores lógicos, edge cases o problemas de diseño.\n\n"
                 f"## Código\n{raw[:4000]}\n\n"
                 f"## Issues de Herramientas\n" + ("\n".join(f"- {i}" for i in tool_issues[:5]) if tool_issues else "Ninguno") + "\n\n"
-                f'Responde SOLO con JSON:\n'
-                f'{{"has_errors": true|false, "issues": ["descripción del error lógico"], '
-                f'"severity": "critical|minor|none"}}'
+                'Responde SOLO con JSON:\n'
+                '{"has_errors": true|false, "issues": ["descripción del error lógico"], '
+                '"severity": "critical|minor|none"}'
             )
             try:
-                from lib.llm import agent_llm_call
                 import json as _json
-                review = agent_llm_call("critic", review_prompt)
+
+                from lib.llm import agent_llm_call
+                if is_enabled("use_circuit_breaker"):
+                    review = _cb(lambda: agent_llm_call("critic", review_prompt))()
+                else:
+                    review = agent_llm_call("critic", review_prompt)
                 review_data = _json.loads(review.strip().strip("```json").strip("```").strip())
                 if review_data.get("has_errors", False):
                     llm_issues = review_data.get("issues", [])
+            except RuntimeError:
+                logger.warning("Circuit breaker OPEN — skipping critic review")
             except Exception:
                 pass
 
@@ -166,7 +256,7 @@ def _kratos_node_impl(state: dict) -> dict:
                 f"## Tarea Original\n{topic}\n\n"
                 f"## Código Actual (con errores)\n```\n{raw[:4000]}\n```\n\n"
                 f"## Errores Detectados\n" + "\n".join(f"- {i}" for i in all_issues[:5]) + "\n\n"
-                f"Corrige el código. SOLO el código corregido, sin explicación."
+                "Corrige el código. SOLO el código corregido, sin explicación."
             )
             raw = llm_or_executor_call("kratos", repair_prompt, model_override=model_key)
             iteration_log.append(f"🔄 Iteración {iteration}: reparado — {', '.join(all_issues[:2])}")
@@ -176,7 +266,7 @@ def _kratos_node_impl(state: dict) -> dict:
         ctx["agents"].append("kratos")
         ctx["context_summary"]["kratos"] = {"started_at": datetime.now().isoformat()}
 
-        decision = "complete" if is_complete_code(raw) else "needs_curation"
+        decision = KratosDecision.COMPLETE if is_complete_code(raw) else KratosDecision.NEEDS_CURATION
         ctx["cross_agent"]["kratos_decision"] = decision
         ctx["cross_agent"]["kratos_iterations"] = iteration_log
         save_context(ctx)
@@ -193,57 +283,40 @@ def _kratos_node_impl(state: dict) -> dict:
         except Exception:
             pass
 
-        try:
-            from lib.opa_bridge import check_agent
-            governance = check_agent("kratos", raw)
-            gov_allowed = governance["allowed"]
-            gov_denials = governance["denials"]
-        except Exception:
-            gov_allowed = True
-            gov_denials = []
-
-        try:
-            from lib.viz_orchestrator import orchestrate as _viz
-            _viz("kratos", {"code_flow": raw})
-        except Exception:
-            pass
+        # ── Post-processing: governance, viz, sleep ──
+        post = _run_post_processing(raw, state, prompt)
+        # ── Telemetry recording (feature-flagged) ──
+        if is_enabled("use_kratos_telemetry"):
+            record_invocation(
+                decision=str(decision),
+                quality_score=0.0,  # placeholder until quality integration
+                language=detected_lang,
+                flags_active={k: is_enabled(k) for k in ["use_kratos_v2", "use_real_coverage", "use_rust_gates", "use_ts_gates", "use_go_gates", "use_early_exit"]},
+                duration_ms=(time.time() - _start_time) * 1000,
+                iteration=_iteration,
+            )
 
         return {
             **state, "kratos_output": raw, "kratos_prompt": prompt,
             "kratos_decision": decision,
-            "governance_allowed": gov_allowed,
-            "governance_denials": gov_denials,
+            **post,
         }
 
     ctx["agents"].append("kratos")
     ctx["context_summary"]["kratos"] = {"started_at": datetime.now().isoformat()}
-    ctx["cross_agent"]["kratos_decision"] = "needs_curation"
+    ctx["cross_agent"]["kratos_decision"] = KratosDecision.NEEDS_CURATION
     save_context(ctx)
 
-    try:
-        from lib.opa_bridge import check_agent
-        governance = check_agent("kratos", prompt)
-        gov_allowed = governance["allowed"]
-        gov_denials = governance["denials"]
-    except Exception:
-        gov_allowed = True
-        gov_denials = []
-
-    try:
-        from lib.viz_orchestrator import orchestrate as _viz
-        _viz("kratos", {"code_flow": prompt})
-    except Exception:
-        pass
-
+    # ── Post-processing: governance, viz, sleep ──
+    post = _run_post_processing(prompt, state, prompt)
     return {
         **state,
         "kratos_output": f"Code prompt written to {output_path}",
         "kratos_prompt": prompt,
-        "kratos_decision": "needs_curation",
-        "governance_allowed": gov_allowed,
-        "governance_denials": gov_denials,
+        "kratos_decision": KratosDecision.NEEDS_CURATION,
+        **post,
     }
 
 
-def _kratos_node_v2(state: dict) -> dict:
-    return _kratos_node_impl(state)
+def _kratos_node_v2(state: dict[str, Any]) -> dict[str, Any]:
+    raise NotImplementedError("Kratos 2.0 parallel pipeline")

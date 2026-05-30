@@ -1,13 +1,11 @@
-import os
-import json
-from pathlib import Path
-from typing import Dict, Any, Optional
 
-from crewai import Agent, Task, Crew, LLM
+from crewai import LLM, Agent, Crew, Task
 from crewai.memory.unified_memory import Memory
-from lib.config import OPENCODE_GO_ENDPOINT, OPENCODE_GO_KEY, VAULT_ROOT
-from lib.crew_memory import KAOSStorageBackend
+
 from lib.aether.tracker import EtherTracker as TokenTracker
+from lib.config import OPENCODE_GO_ENDPOINT, OPENCODE_GO_KEY
+from lib.crew_memory import KAOSStorageBackend
+
 
 class KAOSEmbeddingFunction:
     """

@@ -7,10 +7,9 @@ Confidence decays exponentially: confidence *= exp(-0.02 * days_since_modificati
 """
 
 import re
-import json
 import shutil
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timedelta
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 ARCHIVE = BASE / "_archive"

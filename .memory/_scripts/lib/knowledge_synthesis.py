@@ -14,9 +14,8 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-from lib.config import KNOWLEDGE_SYNTHESIS_MAX_DIFF_RATIO, KNOWLEDGE_SYNTHESIS_MAX_ATTEMPTS
+from lib.config import KNOWLEDGE_SYNTHESIS_MAX_DIFF_RATIO
 from lib.frontmatter_utils import extract_frontmatter
 from lib.knowledge_levels import needs_synthesis
 
@@ -304,7 +303,7 @@ def estimate_diff_ratio(original: str, modified: str) -> float:
     return round(min(1.0, ratio), 4)
 
 
-def create_backup(path: Path) -> Optional[Path]:
+def create_backup(path: Path) -> Path | None:
     """Create .bak backup before modifying."""
     try:
         backup_path = path.with_suffix(path.suffix + ".bak")
@@ -333,7 +332,7 @@ def _extract_keywords(content: str, top_n: int = 5) -> list[str]:
         "y", "e", "o", "u", "pero", "sino", "porque", "como",
         "que", "de", "en", "a", "al", "del", "con", "por",
         "para", "es", "son", "su", "sus", "se", "no", "lo",
-        "le", "les", "este", "esta", "esto", "esta", "entre",
+        "le", "les", "este", "esta", "esto", "entre",
         "ser", "estar", "haber", "tener", "hacer", "poder",
         "más", "muy", "tan", "tanto", "todo", "cada", "sin",
         "sobre", "tras", "durante", "mediante", "excepto",
@@ -543,7 +542,7 @@ def main():
     if args.write:
         args.dry_run = False
 
-    from lib.knowledge_scorer import score_document, score_directory
+    from lib.knowledge_scorer import score_directory, score_document
 
     if args.path and Path(args.path).is_dir():
         results = score_directory(args.path)

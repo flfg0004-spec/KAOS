@@ -8,18 +8,18 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .models import (
-    AdherenceReport,
     _CONTRACTS_DIR,
+    AdherenceReport,
 )
 
 logger = logging.getLogger(__name__)
 
 # ── Adherence Criteria ──
 
-ADHERENCE_CRITERIA: Dict[str, Dict[str, Any]] = {
+ADHERENCE_CRITERIA: dict[str, dict[str, Any]] = {
     "refactor": {"metric": "coupling", "target": "< 0.4", "description": "Acoplamiento entre módulos menor a 0.4"},
     "migration": {"metric": "migration_rate", "target": "> 80%", "description": "Tasa de migración superior al 80%"},
     "pattern_intro": {"metric": "pattern_usage", "target": "> 1", "description": "Patrón usado en más de 1 lugar"},
@@ -47,7 +47,7 @@ class KosmosKratosContract:
         """
         self._memory_l0 = memory_l0
         self._use_real_api = use_real_api
-        self._status: Dict[str, Any] = {
+        self._status: dict[str, Any] = {
             "active": True,
             "last_run": "",
             "last_score": 0.0,
@@ -79,7 +79,7 @@ class KosmosKratosContract:
 
     # ── Public API ──
 
-    def generate_brief(self, adr_text: str, adr_id: str) -> Dict[str, Any]:
+    def generate_brief(self, adr_text: str, adr_id: str) -> dict[str, Any]:
         """Generate a recommendation brief from ADR text with adherence criteria.
 
         Extrae recomendaciones del ADR y las asigna criterios de adherencia
@@ -115,7 +115,7 @@ class KosmosKratosContract:
                     "criteria": criteria,
                 })
 
-            brief: Dict[str, Any] = {
+            brief: dict[str, Any] = {
                 "adr_id": adr_id,
                 "recommendations": enriched,
                 "timestamp": datetime.now().isoformat(),
@@ -203,7 +203,7 @@ class KosmosKratosContract:
             adherence_score = max(0.0, min(100.0, base_score - deviation_penalty))
 
             # Per-rec coverage (heuristic)
-            coverage_by_rec: Dict[str, float] = {}
+            coverage_by_rec: dict[str, float] = {}
             for rec_match in re.finditer(r'(?:REC-\d+|[Rr]ecommendation\s+\d+)', report_text):
                 rec_key = rec_match.group(0)
                 surrounding = report_text[
@@ -309,7 +309,7 @@ class KosmosKratosContract:
             logger.error("update_adr_with_adherence failed: %s", exc)
             return f"ERROR: {exc}"
 
-    def check_if_implemented(self, recommendation_id: str, codebase_path: str) -> Dict[str, Any]:
+    def check_if_implemented(self, recommendation_id: str, codebase_path: str) -> dict[str, Any]:
         """Heuristic check if a recommendation was implemented in the codebase.
 
         Scans Python files for patterns matching the recommendation criteria.
@@ -340,7 +340,7 @@ class KosmosKratosContract:
                     if match_count >= 2:
                         rel_path = f.relative_to(base_path) if base_path in f.parents else f
                         evidence.append(str(rel_path))
-                except (OSError, IOError):
+                except OSError:
                     continue
 
             confidence = min(1.0, len(evidence) / max(len(keywords), 1))
@@ -404,9 +404,9 @@ class KosmosKratosContract:
                 )
 
             # 2. For each recommendation, search CodeExperience
-            coverage_by_rec: Dict[str, float] = {}
-            deviations: List[str] = []
-            kratos_decisions: List[str] = []
+            coverage_by_rec: dict[str, float] = {}
+            deviations: list[str] = []
+            kratos_decisions: list[str] = []
             implemented_count = 0
             total = len(recommendations)
             ce = self._code_memory
@@ -499,7 +499,7 @@ class KosmosKratosContract:
                 adr_title=self._extract_title(adr_text),
             )
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Return contract status.
 
         K1: Includes real_api_available and code_experience_available flags.
@@ -516,7 +516,7 @@ class KosmosKratosContract:
 
     # ── Internal helpers ──
 
-    def _extract_recommendations(self, text: str) -> List[str]:
+    def _extract_recommendations(self, text: str) -> list[str]:
         """Extract recommendation statements from ADR text."""
         if not text:
             return []
@@ -557,7 +557,7 @@ class KosmosKratosContract:
             return "security"
         return "refactor"  # default
 
-    def _extract_kratos_decisions(self, text: str) -> List[str]:
+    def _extract_kratos_decisions(self, text: str) -> list[str]:
         """Extract decisions Kratos made during implementation."""
         if not text:
             return []
@@ -575,7 +575,7 @@ class KosmosKratosContract:
 
         return decisions[:5]
 
-    def _extract_deviations(self, text: str) -> List[str]:
+    def _extract_deviations(self, text: str) -> list[str]:
         """Extract deviations or changes from the original plan."""
         if not text:
             return []
@@ -601,13 +601,13 @@ class KosmosKratosContract:
         match = re.search(r'^#\s+(.+)$', text or "", re.MULTILINE)
         return match.group(1).strip() if match else ""
 
-    def _save_brief(self, brief: Dict[str, Any]) -> None:
+    def _save_brief(self, brief: dict[str, Any]) -> None:
         """Persist a recommendation brief."""
         try:
             fname = f"brief-{brief.get('adr_id', 'unknown')}.json"
             path = self._contracts_dir / fname
             path.write_text(json.dumps(brief, indent=2, ensure_ascii=False), encoding="utf-8")
-        except (OSError, IOError) as exc:
+        except OSError as exc:
             logger.warning("Failed to save brief: %s", exc)
 
     def _save_report(self, report: AdherenceReport) -> None:
@@ -616,14 +616,14 @@ class KosmosKratosContract:
             fname = f"adherence-{report.adr_id or 'unknown'}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
             path = self._contracts_dir / fname
             path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
-        except (OSError, IOError) as exc:
+        except OSError as exc:
             logger.warning("Failed to save adherence report: %s", exc)
 
     # ── K1 Helpers ──────────────────────────────────────────────
 
     def _gather_code_experience_evidence(
-        self, recommendations: List[str]
-    ) -> List[Dict[str, Any]]:
+        self, recommendations: list[str]
+    ) -> list[dict[str, Any]]:
         """Search CodeExperience for each recommendation and gather evidence.
 
         Args:

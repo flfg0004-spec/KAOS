@@ -5,7 +5,7 @@ import threading
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class PipelineCache:
@@ -26,7 +26,7 @@ class PipelineCache:
         self._maxsize = maxsize
         self._ttl = ttl_seconds
         self._cache: OrderedDict[str, Any] = OrderedDict()
-        self._timestamps: Dict[str, float] = {}
+        self._timestamps: dict[str, float] = {}
         self._lock = threading.Lock()
         self._persist_path = Path(persist_path) if persist_path else None
         self._hits = 0
@@ -63,7 +63,7 @@ class PipelineCache:
         except Exception:
             pass
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         with self._lock:
             if key not in self._cache:
                 self._misses += 1
@@ -97,7 +97,7 @@ class PipelineCache:
             self._misses = 0
         self._save()
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         with self._lock:
             total = self._hits + self._misses
             return {

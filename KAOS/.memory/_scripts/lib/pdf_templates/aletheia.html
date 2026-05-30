@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        /* ── Executive Summary Box ── */
+        .exec-summary {
+            background: {{ brand_colors.secondary }};
+            border-left: 4px solid {{ agent_color }};
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .exec-summary h3 {
+            color: {{ agent_color }};
+            margin-bottom: 10px;
+            font-family: {{ fonts.heading }};
+        }
+
+        /* ── Finding Cards ── */
+        .finding-card {
+            background: {{ brand_colors.secondary }};
+            border: 1px solid {{ brand_colors.primary }};
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 8px 0;
+        }
+        .finding-card h4 {
+            color: {{ agent_color }};
+            font-size: 15px;
+            margin-bottom: 4px;
+            font-family: {{ fonts.heading }};
+        }
+        .finding-card p {
+            font-size: 13px;
+            color: {{ brand_colors.text }};
+        }
+
+        /* ── Source Type Badges ── */
+        .source-filter {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .source-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .source-badge.web       { background: #dbeafe; color: #1e40af; }
+        .source-badge.arxiv     { background: #ede9fe; color: #5b21b6; }
+        .source-badge.blog      { background: #dcfce7; color: #166534; }
+        .source-badge.academic  { background: #fef3c7; color: #92400e; }
+        .source-badge.github    { background: #fce4ec; color: #9a1f3c; }
+        .source-badge.docs      { background: #e0f2fe; color: #075985; }
+        .source-badge.unknown   { background: #f1f5f9; color: #475569; }
+
+        /* ── Source Cards ── */
+        .source-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .source-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: {{ brand_colors.secondary }};
+            border: 1px solid {{ brand_colors.primary }};
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+        .type-pill {
+            flex-shrink: 0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .type-pill.web       { background: #dbeafe; color: #1e40af; }
+        .type-pill.arxiv     { background: #ede9fe; color: #5b21b6; }
+        .type-pill.blog      { background: #dcfce7; color: #166534; }
+        .type-pill.academic  { background: #fef3c7; color: #92400e; }
+        .type-pill.github    { background: #fce4ec; color: #9a1f3c; }
+        .type-pill.docs      { background: #e0f2fe; color: #075985; }
+        .type-pill.unknown   { background: #f1f5f9; color: #475569; }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section">
+        <h2>{{ section.title }}</h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>{% for col in section.table.headers %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if findings %}
+    <div class="exec-summary">
+        <h3>Detailed Findings</h3>
+        {% for f in findings %}
+        <div class="finding-card">
+            <h4>{{ f.title }}</h4>
+            <p>{{ f.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if sources %}
+    <h2>Sources</h2>
+    <div class="source-filter">
+        {% set seen = namespace(types=[]) %}
+        {% for s in sources %}
+            {% if s.type not in seen.types %}{% set _ = seen.types.append(s.type) %}{% endif %}
+        {% endfor %}
+        {% for t in seen.types %}
+            {% set ns = namespace(count=0) %}
+            {% for s in sources %}{% if s.type == t %}{% set ns.count = ns.count + 1 %}{% endif %}{% endfor %}
+            <span class="source-badge {{ t }}">{{ t }} × {{ ns.count }}</span>
+        {% endfor %}
+    </div>
+    <div class="source-grid">
+        {% for s in sources %}
+        <div class="source-card">
+            <span class="type-pill {{ s.type }}">{{ s.type }}</span>
+            <span>{{ s.title }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

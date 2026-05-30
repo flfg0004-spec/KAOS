@@ -1,13 +1,18 @@
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from lib.agent_tools import (
-    slugify, load_context, save_context,
     RAW_DIR,
+    load_context,
+    save_context,
+    slugify,
 )
+from lib.config import PHASE_B_WORKERS
 from lib.feature_flags import is_enabled
 from lib.file_lock import acquire_lock
-from lib.config import PHASE_B_WORKERS
+
+logger = logging.getLogger("mnemosyne")
 
 
 def mnemosyne_node(state: dict) -> dict:
@@ -19,6 +24,7 @@ def _get_modified_files() -> list:
         from lib.incremental import get_modified_files
         return get_modified_files()
     except Exception:
+        logger.warning("_get_modified_files failed, returning empty list")
         return []
 
 
@@ -86,6 +92,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             s = suggest(topic)
             return ("wikilinks", len(s) if isinstance(s, list) else 0)
         except Exception:
+            logger.warning("_run_wikilinks failed, returning 0")
             return ("wikilinks", 0)
 
     def _run_crystallize():
@@ -94,6 +101,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             c = find_candidates()
             return ("crystallize", len(c) if isinstance(c, list) else 0)
         except Exception:
+            logger.warning("_run_crystallize failed, returning 0")
             return ("crystallize", 0)
 
     def _run_lint_worker():
@@ -102,6 +110,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             issues, _ = lint_run([])
             return ("lint", len(issues) if isinstance(issues, list) else 0)
         except Exception:
+            logger.warning("_run_lint_worker failed, returning 0")
             return ("lint", 0)
 
     def _run_tagger_worker():
@@ -110,6 +119,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             t = suggest_tags(topic)
             return ("tagger", len(t) if isinstance(t, list) else 0)
         except Exception:
+            logger.warning("_run_tagger_worker failed, returning 0")
             return ("tagger", 0)
 
     def _run_gap_detection():
@@ -126,6 +136,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
                     gap_descriptions.append(str(g))
             return ("gaps", len(gaps), gap_descriptions)
         except Exception:
+            logger.warning("_run_gap_detection failed, returning 0 gaps")
             return ("gaps", 0, [])
 
     if is_enabled("use_enhanced_parallelism"):
@@ -215,7 +226,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
             results["errors"].append(f"graph: {e}")
 
         try:
-            from lib.crossref import verify_bidirectional, suggest_backlinks
+            from lib.crossref import suggest_backlinks, verify_bidirectional
             unidirectional = verify_bidirectional()
             backlink_suggestions = suggest_backlinks()
             results["crossref_unidirectional"] = len(unidirectional)
@@ -279,7 +290,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
         f"- Governance denials: {len(results.get('governance_denials', []))}\n"
         f"- Viz paths: {len(results.get('viz_paths', []))}\n\n"
         f"## Phases\n" + "\n".join(f"- {p}" for p in results["phases"]) + "\n\n"
-        f"## Errors\n" + ("\n".join(f"- {e}" for e in results["errors"]) if results["errors"] else "None") + "\n"
+        "## Errors\n" + ("\n".join(f"- {e}" for e in results["errors"]) if results["errors"] else "None") + "\n"
     )
 
     output_path = RAW_DIR / f"{slug}-curation.md"

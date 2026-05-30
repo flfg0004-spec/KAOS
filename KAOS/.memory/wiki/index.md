@@ -1,0 +1,265 @@
+# KAOS Memory Vault - Index
+
+*Auto-generated: 2026-05-30 11:09*
+
+## Agentes
+
+- [agentes](entities/agentes.md) - -
+- [aletheia](entities/aletheia.md) - Agente de investigación — búsqueda web, papers, noticias, investigación profunda
+- [analisis-incremental](entities/analisis-incremental.md) - -
+- [cloud-research-report](entities/cloud-research-report.md) - -
+- [deepseek-v4-flash](entities/deepseek-v4-flash.md) - -
+- [domain-mapper](entities/domain-mapper.md) - -
+- [DSOL](entities/DSOL.md) - DeepSeek Optimization Layer v2 — API client, token tracking, multi-model routing, circuit breaker, rate limiting, and cache optimization
+- [ecosistema](entities/ecosistema.md) - -
+- [Ether-Kimi-Strategy](entities/Ether-Kimi-Strategy.md) - -
+- [ether](entities/ether.md) - Capa de routing inteligente — conexión agentes ↔ modelos con routing adaptativo, cost-awareness, circuit breaker y soporte multimodal
+- [hermes-agent](entities/hermes-agent.md) - Hermes Agent v0.15.2 — gateway LLM, sistema de mensajería, kanban, y orquestación de tickets del ecosistema KAOS
+- [hermes-workspace-integration](entities/hermes-workspace-integration.md) - -
+- [Hybrid-Attention](entities/Hybrid-Attention.md) - Arquitectura de atención híbrida SWA+GA (Sliding Window + Global Attention) con attention sink bias — optimizada para contexto largo eficiente en modelos MoE
+- [hyperos](entities/hyperos.md) - -
+- [investigacion](entities/investigacion.md) - -
+- [kimi](entities/kimi.md) - Modelo LLM de Moonshot AI — HLE #1, multimodal nativo, 262K contexto, costo inferior a DeepSeek Pro
+- [knowledge-tour](entities/knowledge-tour.md) - -
+- [kosmos](entities/kosmos.md) - Agente de arquitectura — análisis de código, C4, ADRs, gobernanza OPA, calidad real
+- [kratos](entities/kratos.md) - Agente de codigo con memoria experiencial estructurada basada en APEX-EM
+- [metis](entities/metis.md) - Agente de estrategia — planeación, OKRs, roadmaps, reportes ejecutivos, orquestador de calidad
+- [metis_ether_kimi_strategy](entities/metis_ether_kimi_strategy.md) - -
+- [Miclaw](entities/Miclaw.md) - Agente autónomo AI de HyperOS — asistente inteligente integrado en el ecosistema Xiaomi, potenciado por modelos MiMo
+- [MiMo-Embodied](entities/MiMo-Embodied.md) - Sub-familia de modelos MiMo especializados en robótica y vehículos — percepción, planificación motora, navegación autónoma y control en tiempo real
+- [MiMo-V2-Flash](entities/MiMo-V2-Flash.md) - Modelo MoE 309B/15B activos, licencia MIT, arquitectura híbrida SWA+GA con attention sink bias — modelo de razonamiento general rápido de Xiaomi
+- [MiMo-V2-Omni](entities/MiMo-V2-Omni.md) - Modelo multimodal de Xiaomi — procesa texto, imagen, video y audio simultáneamente — integrado en HyperOS y SU7
+- [MiMo-V2-TTS](entities/MiMo-V2-TTS.md) - Modelo de síntesis de voz de Xiaomi — generación de voz natural y expresiva para HyperOS y asistentes
+- [MiMo-V2.5-Pro](entities/MiMo-V2.5-Pro.md) - Modelo flagship MoE 1.02T/42B activos, #1 open-source en benchmarks de agente — entrena con MOPD + MTP, licencia MIT
+- [MiMo](entities/MiMo.md) - Familia de modelos fundacionales de IA de Xiaomi — abarca desde modelos de lenguaje livianos (Flash) hasta flagships multimodales (V2.5-Pro, V2-Omni), pasando por TTS, conducción autónoma y robótica
+- [mnemosyne](entities/mnemosyne.md) - Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault, knowledge scoring, síntesis automática
+- [MOPD](entities/MOPD.md) - Multi-Teacher On-Policy Distillation — técnica de destilación donde múltiples modelos teacher guían el entrenamiento on-policy, permitiendo que el modelo estudiante supere a sus teachers individuales
+- [Multi-Token-Prediction-MTP](entities/Multi-Token-Prediction-MTP.md) - Técnica de speculative decoding nativa — el modelo predice múltiples tokens futuros simultáneamente, acelerando la generación sin pérdida de calidad
+- [ua-inspiracion](entities/ua-inspiracion.md) - -
+- [xiaomi-su7](entities/xiaomi-su7.md) - -
+- [xiaomi](entities/xiaomi.md) - -
+- [XLA-Cognitive-Model](entities/XLA-Cognitive-Model.md) - Modelo de conducción autónoma para Xiaomi SU7 — sistema cognitivo de percepción, planificación y control basado en MiMo-Embodied
+
+## Conceptos
+
+- [add-only-extraction](concepts/add-only-extraction.md) - -
+- [ADR-013](concepts/ADR-013.md) - -
+- [adr](concepts/adr.md) - -
+- [aether-routing-v3](concepts/aether-routing-v3.md) - -
+- [agentes-inteligentes](concepts/agentes-inteligentes.md) - -
+- [alcance-temporal](concepts/alcance-temporal.md) - -
+- [arquitectura-integracion-herramientas](concepts/arquitectura-integracion-herramientas.md) - -
+- [arquitectura-software](concepts/arquitectura-software.md) - -
+- [arquitectura](concepts/arquitectura.md) - -
+- [bcg-evaluator](concepts/bcg-evaluator.md) - -
+- [brecha](concepts/brecha.md) - -
+- [c4-model](concepts/c4-model.md) - -
+- [cache](concepts/cache.md) - -
+- [cadena-verificacion](concepts/cadena-verificacion.md) - -
+- [chain-of-thought-cot](concepts/chain-of-thought-cot.md) - -
+- [checkpoint](concepts/checkpoint.md) - -
+- [claude-kaos-integration](concepts/claude-kaos-integration.md) - Claude Sonnet — balanced quality/cost", target_pct: 3}
+- [cloud-computing](concepts/cloud-computing.md) - -
+- [cloud-storage-strategy](concepts/cloud-storage-strategy.md) - -
+- [cobertura-completa](concepts/cobertura-completa.md) - -
+- [code-nivel-4](concepts/code-nivel-4.md) - -
+- [coherencia](concepts/coherencia.md) - -
+- [compile-then-query](concepts/compile-then-query.md) - -
+- [completitud](concepts/completitud.md) - -
+- [component-nivel-3](concepts/component-nivel-3.md) - -
+- [confianza-general](concepts/confianza-general.md) - -
+- [conflicto-de-escritura](concepts/conflicto-de-escritura.md) - -
+- [container-nivel-2](concepts/container-nivel-2.md) - -
+- [context-nivel-1](concepts/context-nivel-1.md) - -
+- [corporizado](concepts/corporizado.md) - -
+- [dependencia-externa](concepts/dependencia-externa.md) - -
+- [duplicidad-de-funcionalidad](concepts/duplicidad-de-funcionalidad.md) - -
+- [embebido](concepts/embebido.md) - -
+- [embeddings](concepts/embeddings.md) - -
+- [espiral-seci](concepts/espiral-seci.md) - -
+- [estado-memoria-sesion](concepts/estado-memoria-sesion.md) - -
+- [evaluacion](concepts/evaluacion.md) - -
+- [fuentes-consultadas](concepts/fuentes-consultadas.md) - -
+- [gestion-conocimiento](concepts/gestion-conocimiento.md) - -
+- [github-mcp-oficial](concepts/github-mcp-oficial.md) - -
+- [gpu-pricing](concepts/gpu-pricing.md) - -
+- [hallazgos-clave](concepts/hallazgos-clave.md) - -
+- [herramientas-utilizadas](concepts/herramientas-utilizadas.md) - -
+- [herramientas](concepts/herramientas.md) - -
+- [hybrid-cloud-strategy](concepts/hybrid-cloud-strategy.md) - -
+- [hyperscaler-comparison](concepts/hyperscaler-comparison.md) - -
+- [idiomas](concepts/idiomas.md) - -
+- [initiatives](concepts/initiatives.md) - -
+- [json-output](concepts/json-output.md) - -
+- [key-results](concepts/key-results.md) - -
+- [kosmos--deepeval](concepts/kosmos--deepeval.md) - -
+- [kosmos--langfuse](concepts/kosmos--langfuse.md) - -
+- [llm-wiki](concepts/llm-wiki.md) - -
+- [lucidity-mcp](concepts/lucidity-mcp.md) - -
+- [lucidity](concepts/lucidity.md) - -
+- [memory-blocks](concepts/memory-blocks.md) - -
+- [metricas-calidad](concepts/metricas-calidad.md) - -
+- [multi-shot-few-shot](concepts/multi-shot-few-shot.md) - -
+- [neoclouds](concepts/neoclouds.md) - -
+- [objective](concepts/objective.md) - -
+- [obsidian-optimization-strategy](concepts/obsidian-optimization-strategy.md) - -
+- [obsidian](concepts/obsidian.md) - -
+- [okr-framework](concepts/okr-framework.md) - -
+- [orquestacion-agentes](concepts/orquestacion-agentes.md) - -
+- [para-metis-estrategia](concepts/para-metis-estrategia.md) - -
+- [per-agent-mcp-restriction](concepts/per-agent-mcp-restriction.md) - -
+- [perfil](concepts/perfil.md) - -
+- [pipeline-conocimiento-raw-wiki](concepts/pipeline-conocimiento-raw-wiki.md) - -
+- [pipeline-maid](concepts/pipeline-maid.md) - -
+- [planeacion-estrategica](concepts/planeacion-estrategica.md) - -
+- [postgresql-mcp-oficial](concepts/postgresql-mcp-oficial.md) - -
+- [precio](concepts/precio.md) - -
+- [prompt-engineering](concepts/prompt-engineering.md) - -
+- [rag-architecture](concepts/rag-architecture.md) - -
+- [reproducibilidad](concepts/reproducibilidad.md) - -
+- [retrieval-augmented-generation](concepts/retrieval-augmented-generation.md) - -
+- [role-assignment](concepts/role-assignment.md) - -
+- [score-engine](concepts/score-engine.md) - -
+- [self-consistency](concepts/self-consistency.md) - -
+- [sentry-mcp](concepts/sentry-mcp.md) - -
+- [sistemas-multiagente](concepts/sistemas-multiagente.md) - -
+- [software-testing](concepts/software-testing.md) - -
+- [spot-compute-strategy](concepts/spot-compute-strategy.md) - -
+- [structurizr-mcp](concepts/structurizr-mcp.md) - -
+- [structurizr](concepts/structurizr.md) - -
+- [test](concepts/test.md) - -
+- [thinking](concepts/thinking.md) - -
+- [tool-calling](concepts/tool-calling.md) - -
+- [tree-of-thought-tot](concepts/tree-of-thought-tot.md) - -
+- [txtai](concepts/txtai.md) - -
+- [utilidad](concepts/utilidad.md) - -
+- [vault](concepts/vault.md) - -
+- [vector-store](concepts/vector-store.md) - -
+- [veracidad](concepts/veracidad.md) - -
+- [veredicto](concepts/veredicto.md) - -
+
+## Fuentes
+
+- [arxiv-2310-08560-memgpt](sources/arxiv-2310-08560-memgpt.md) - -
+- [arxiv-2504-19413-mem0](sources/arxiv-2504-19413-mem0.md) - -
+- [awesome-mcp-servers](sources/awesome-mcp-servers.md) - -
+- [evaluacion-plugins-ecosistema-ecosystemplugins](sources/evaluacion-plugins-ecosistema-ecosystemplugins.md) - -
+- [evaluacion-plugins-ecosistema-opencode-background](sources/evaluacion-plugins-ecosistema-opencode-background.md) - -
+- [evaluacion-plugins-ecosistema-opencode-firecrawl](sources/evaluacion-plugins-ecosistema-opencode-firecrawl.md) - -
+- [evaluacion-plugins-ecosistema-opencode-supermemory](sources/evaluacion-plugins-ecosistema-opencode-supermemory.md) - -
+- [evaluacion-plugins-ecosistema-sdk](sources/evaluacion-plugins-ecosistema-sdk.md) - -
+- [gist-karpathy-llm-wiki](sources/gist-karpathy-llm-wiki.md) - -
+- [investigacion-configuracion-opencode-agents](sources/investigacion-configuracion-opencode-agents.md) - -
+- [investigacion-configuracion-opencode-config.json](sources/investigacion-configuracion-opencode-config.json.md) - -
+- [investigacion-configuracion-opencode-configjson](sources/investigacion-configuracion-opencode-configjson.md) - -
+- [investigacion-configuracion-opencode-lsp](sources/investigacion-configuracion-opencode-lsp.md) - -
+- [investigacion-configuracion-opencode-permissions](sources/investigacion-configuracion-opencode-permissions.md) - -
+- [investigacion-configuracion-opencode-tools](sources/investigacion-configuracion-opencode-tools.md) - -
+- [investigacion-mejoras-mcp-ecosistema-awesome-mcp-s](sources/investigacion-mejoras-mcp-ecosistema-awesome-mcp-s.md) - -
+- [investigacion-mejoras-mcp-ecosistema-ecosystem](sources/investigacion-mejoras-mcp-ecosistema-ecosystem.md) - -
+- [investigacion-mejoras-mcp-ecosistema-github-mcp-se](sources/investigacion-mejoras-mcp-ecosistema-github-mcp-se.md) - -
+- [investigacion-mejoras-mcp-ecosistema-mcp](sources/investigacion-mejoras-mcp-ecosistema-mcp.md) - -
+- [investigacion-mejoras-mcp-ecosistema-mcp.so](sources/investigacion-mejoras-mcp-ecosistema-mcp.so.md) - -
+- [investigacion-mejoras-mcp-ecosistema-mcp`](sources/investigacion-mejoras-mcp-ecosistema-mcp`.md) - -
+- [investigacion-mejoras-mcp-ecosistema-mcpso](sources/investigacion-mejoras-mcp-ecosistema-mcpso.md) - -
+- [investigacion-modelos-agentes-memoria-](sources/investigacion-modelos-agentes-memoria-.md) - -
+- [investigacion-modelos-agentes-memoria-4-persistenc](sources/investigacion-modelos-agentes-memoria-4-persistenc.md) - -
+- [investigacion-modelos-agentes-memoria-checkpoints](sources/investigacion-modelos-agentes-memoria-checkpoints.md) - -
+- [investigacion-modelos-agentes-memoria-langgraph-lo](sources/investigacion-modelos-agentes-memoria-langgraph-lo.md) - -
+- [investigacion-modelos-agentes-memoria-langgraph-pe](sources/investigacion-modelos-agentes-memoria-langgraph-pe.md) - -
+- [investigacion-modelos-agentes-memoria](sources/investigacion-modelos-agentes-memoria.md) - -
+- [investigacion-orquesta-agentes-hermes-2026-01-12-a](sources/investigacion-orquesta-agentes-hermes-2026-01-12-a.md) - -
+- [investigacion-orquesta-agentes-hermes](sources/investigacion-orquesta-agentes-hermes.md) - -
+- [opencode-ecosystem-plugins](sources/opencode-ecosystem-plugins.md) - -
+
+## Investigaciones (raw/)
+
+- [aletheia-quality-report-20260529](../raw/aletheia-quality-report-20260529.md) - 2026-05-30
+- [analisis-arquitectonico-anthropic-kaos](../raw/analisis-arquitectonico-anthropic-kaos.md) - 2026-05-30
+- [arquitectura-anthropic-claude-ecosistema](../raw/arquitectura-anthropic-claude-ecosistema.md) - 2026-05-30
+- [arquitectura-gemini-kaos-integracion](../raw/arquitectura-gemini-kaos-integracion.md) - 2026-05-30
+- [data-farming-codeexperience](../raw/data-farming-codeexperience.md) - 2026-05-30
+- [deep-reinforcement-learning](../raw/deep-reinforcement-learning.md) - 2026-05-30
+- [deepseek-v4-flash-test](../raw/deepseek-v4-flash-test.md) - 2026-05-30
+- [diagrama-arquitectura-claude-kaos](../raw/diagrama-arquitectura-claude-kaos.md) - 2026-05-30
+- [dossier-anthropic-kaos](../raw/dossier-anthropic-kaos.md) - 2026-05-30
+- [estrategia-anthropic-kaos](../raw/estrategia-anthropic-kaos.md) - 2026-05-30
+- [estrategia-openai-kaos](../raw/estrategia-openai-kaos.md) - 2026-05-30
+- [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-30
+- [investigacion-anthropic-gaps](../raw/investigacion-anthropic-gaps.md) - 2026-05-30
+- [investigacion-c4-model-arquitectura](../raw/investigacion-c4-model-arquitectura.md) - 2026-05-30
+- [investigacion-configuracion-opencode](../raw/investigacion-configuracion-opencode.md) - 2026-05-30
+- [investigacion-gestion-conocimiento](../raw/investigacion-gestion-conocimiento.md) - 2026-05-30
+- [investigacion-herramientas-test-estrategia](../raw/investigacion-herramientas-test-estrategia.md) - 2026-05-30
+- [investigacion-mejora-metis-agente-estrategia](../raw/investigacion-mejora-metis-agente-estrategia.md) - 2026-05-30
+- [investigacion-mejoras-mcp-ecosistema](../raw/investigacion-mejoras-mcp-ecosistema.md) - 2026-05-30
+- [investigacion-modelos-agentes-memoria](../raw/investigacion-modelos-agentes-memoria.md) - 2026-05-30
+- [investigacion-obsidian-vault-alternativas](../raw/investigacion-obsidian-vault-alternativas.md) - 2026-05-30
+- [investigacion-okr-estrategia](../raw/investigacion-okr-estrategia.md) - 2026-05-30
+- [investigacion-orquesta-agentes-hermes](../raw/investigacion-orquesta-agentes-hermes.md) - 2026-05-30
+- [investigacion-pipeline-conocimiento](../raw/investigacion-pipeline-conocimiento.md) - 2026-05-30
+- [investigacion-prompt-engineering](../raw/investigacion-prompt-engineering.md) - 2026-05-30
+- [investigacion-rag-arquitectura](../raw/investigacion-rag-arquitectura.md) - 2026-05-30
+- [investigacion-sistemas-memoria](../raw/investigacion-sistemas-memoria.md) - 2026-05-30
+- [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-30
+- [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-30
+- [investigacion-token-tracking-telegram-sessions](../raw/investigacion-token-tracking-telegram-sessions.md) - 2026-05-30
+- [MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026](../raw/MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026.md) - 2026-05-30
+- [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-30
+- [plan-gemini-kaos-implementacion](../raw/plan-gemini-kaos-implementacion.md) - 2026-05-30
+- [test-telegram](../raw/test-telegram.md) - 2026-05-24
+- [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-30
+- [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-30
+- [wiki-wiki-timeline-of-quantum-computing-and-communication](../raw/wiki-wiki-timeline-of-quantum-computing-and-communication.md) - 2026-05-30
+
+## ADRs (schema/)
+
+- [adr-001-sistema-memoria](../schema/adr-001-sistema-memoria.md) - Arquitectura de Memoria de KAOS
+- [adr-002-aislamiento-memoria](../schema/adr-002-aislamiento-memoria.md) - Aislamiento del Vault de Memoria para OpenCode
+- [adr-002-sistema-scores](../schema/adr-002-sistema-scores.md) - adr-002-sistema-scores
+- [adr-003-protocolo-verificacion](../schema/adr-003-protocolo-verificacion.md) - adr-003-protocolo-verificacion
+- [adr-003-zonas-autonomia](../schema/adr-003-zonas-autonomia.md) - Zonas de Autonomía del Vault
+- [adr-004-deepseek-optimization-layer](../schema/adr-004-deepseek-optimization-layer.md) - DeepSeek Optimization Layer para Agentes KAOS
+- [adr-005-vector-store](../schema/adr-005-vector-store.md) - Vector Store para Búsqueda Semántica
+- [adr-006-sleep-time-compute](../schema/adr-006-sleep-time-compute.md) - Sleep-Time Compute para Consolidación de Memoria
+- [adr-007-optimizacion-arquitectura](../schema/adr-007-optimizacion-arquitectura.md) - Optimización de Arquitectura KAOS — MCPs, Configuración y Pipeline
+- [adr-008-plugin-decision](../schema/adr-008-plugin-decision.md) - Plugin Architecture Decision
+- [adr-009-arquitectura-kratos](../schema/adr-009-arquitectura-kratos.md) - Arquitectura del Code Agent Kratos
+- [adr-009-migracion-scraping-stack](../schema/adr-009-migracion-scraping-stack.md) - Migración de Stack de Scraping y Nuevo Pipeline de Investigación
+- [adr-010-integracion-dsol-langgraph](../schema/adr-010-integracion-dsol-langgraph.md) - Integracion Ether (DSOL) ↔ LangGraph Orchestrator
+- [adr-011-hermes-integration-strategy](../schema/adr-011-hermes-integration-strategy.md) - Hermes Integration Strategy
+- [adr-011-kratos-2.0-production](../schema/adr-011-kratos-2.0-production.md) - Kratos 2.0 Production — Pipeline Paralelo Multi-Lenguaje con Feature Flags
+- [adr-011-memory-matrix](../schema/adr-011-memory-matrix.md) - Memory Matrix — Modelo Jerarquico de Memoria L0-L3
+- [adr-012-integracion-deerflow-agno](../schema/adr-012-integracion-deerflow-agno.md) - Integracion KAOS + DeerFlow + Agno
+- [adr-013-estrategia-consolidada-deerflow-agno-owui](../schema/adr-013-estrategia-consolidada-deerflow-agno-owui.md) - Estrategia Consolidada — DeerFlow + Agno + Open Web UI + KAOS
+- [adr-015-estrategia-multi-modelo](../schema/adr-015-estrategia-multi-modelo.md) - Estrategia Multi-Modelo para Reducción de Sesgo Cognitivo
+- [adr-017-ua-inspiracion-fase1](../schema/adr-017-ua-inspiracion-fase1.md) - Adopción de Patrones UA en KAOS
+- [adr-018-consolidacion-arquitectura-routing](../schema/adr-018-consolidacion-arquitectura-routing.md) - Consolidación de la Arquitectura de Routing
+- [adr-019-quality-testing-strategy](../schema/adr-019-quality-testing-strategy.md) - Quality Testing Strategy
+- [adr-020-windows-service-strategy](../schema/adr-020-windows-service-strategy.md) - Windows Service Strategy
+- [adr-022-agente-gateway-strategy](../schema/adr-022-agente-gateway-strategy.md) - Estrategia de Gateway de Agentes — Extender Hermes vs Integrar AIephant
+- [adr-023-framework-agentes-mastra-patterns](../schema/adr-023-framework-agentes-mastra-patterns.md) - Framework de Agentes — Adoptar Patrones de Mastra sin Migrar
+- [adr-024-harness-engineering](../schema/adr-024-harness-engineering.md) - Harness Engineering en KAOS
+- [adr-025-horizon-news-mcp](../schema/adr-025-horizon-news-mcp.md) - Integración de Horizon AI News Aggregator como Fuente de Investigación
+- [adr-anth-001-claude-tier-premium](../schema/adr-anth-001-claude-tier-premium.md) - adr-anth-001-claude-tier-premium
+
+## Schema
+
+- [arquitectura-estrategica-total-kaos](../schema/arquitectura-estrategica-total-kaos.md)
+- [auditoria-estrategia-orquesta-kosmos](../schema/auditoria-estrategia-orquesta-kosmos.md)
+- [compression-strategy](../schema/compression-strategy.md)
+- [estrategia-orquesta-agentes-hermes-strategy](../schema/estrategia-orquesta-agentes-hermes-strategy.md)
+- [health-report](../schema/health-report.md)
+- [integracion-7-recursos-evaluacion-arquitectonica](../schema/integracion-7-recursos-evaluacion-arquitectonica.md)
+- [KAOS](../schema/KAOS.md)
+- [kosmosv3-consolidacion-final](../schema/kosmosv3-consolidacion-final.md)
+- [lint-report](../schema/lint-report.md)
+- [mcp-security-audit](../schema/mcp-security-audit.md)
+- [metis-kronos-boundary](../schema/metis-kronos-boundary.md)
+- [metis-mnemosyne-boundary](../schema/metis-mnemosyne-boundary.md)
+- [orphan-report](../schema/orphan-report.md)
+- [plan-estrategico-tactico-paralelo-2026](../schema/plan-estrategico-tactico-paralelo-2026.md)
+- [vault-policy](../schema/vault-policy.md)
+
+---
+*Ultima actualizacion: 2026-05-30 11:09*

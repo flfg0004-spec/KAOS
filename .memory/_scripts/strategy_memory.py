@@ -1,12 +1,32 @@
 import argparse
 import hashlib
 import json
+import logging
 import os
 import re
 import sqlite3
-import sys
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_VECTORSTORE = None
+
+
+def _get_vectorstore():
+    global _VECTORSTORE
+    if _VECTORSTORE is None:
+        try:
+            from lib.strategy_vectorstore import hybrid_search, embed_strategy
+            _VECTORSTORE = {
+                "hybrid_search": hybrid_search,
+                "embed_strategy": embed_strategy,
+            }
+        except Exception as e:
+            logger.warning("Vectorstore unavailable: %s", e)
+            _VECTORSTORE = False
+    return _VECTORSTORE
+
 
 STOPWORDS = {
     "el", "la", "los", "las", "de", "del", "en", "un", "una", "y", "e", "o",
@@ -61,7 +81,10 @@ class StrategicMemoryBank:
                 created_at TEXT NOT NULL
             )
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_strategies_context_hash ON strategies(context_hash)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_strategies_context_hash "
+            "ON strategies(context_hash)"
+        )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_strategies_plan_type ON strategies(plan_type)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_patterns_plan_type ON patterns(plan_type)")
         conn.commit()
@@ -93,18 +116,41 @@ class StrategicMemoryBank:
         union = sig_a | sig_b
         return len(intersection) / len(union) if union else 0.0
 
-    def store(self, context: dict, content: dict, plan_type: str, outcome_score: float = None, feedback: str = None) -> int:
+    def store(
+        self, context: dict, content: dict, plan_type: str,
+        outcome_score: float = None, feedback: str = None,
+    ) -> int:
         conn = self._get_conn()
         context_hash = self._hash_context(context)
         now = datetime.now().isoformat()
         cur = conn.execute(
-            "INSERT INTO strategies (timestamp, plan_type, context_hash, context_json, content_json, outcome_score, feedback) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (now, plan_type, context_hash, json.dumps(context, ensure_ascii=False), json.dumps(content, ensure_ascii=False), outcome_score, feedback)
+            "INSERT INTO strategies "
+            "(timestamp, plan_type, context_hash, context_json, "
+            "content_json, outcome_score, feedback) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                now, plan_type, context_hash,
+                json.dumps(context, ensure_ascii=False),
+                json.dumps(content, ensure_ascii=False),
+                outcome_score, feedback,
+            ),
         )
         conn.commit()
-        return cur.lastrowid
+        strategy_id = cur.lastrowid
+        vs = _get_vectorstore()
+        if vs:
+            try:
+                vs["embed_strategy"](strategy_id, context, content)
+            except Exception as e:
+                logger.warning("Failed to embed strategy %d: %s", strategy_id, e)
+        else:
+            logger.warning(
+                "Vectorstore unavailable, strategy %d "
+                "stored without vector embedding", strategy_id
+            )
+        return strategy_id
 
-    def recall_similar(self, context: dict, top_k: int = 5, min_similarity: float = 0.3) -> list[dict]:
+    def _recall_legacy(self, context, top_k=5, min_similarity=0.3):
         conn = self._get_conn()
         context_hash = self._hash_context(context)
         rows = conn.execute(
@@ -140,7 +186,10 @@ class StrategicMemoryBank:
             if sim >= min_similarity:
                 scored.append((sim, r))
         scored.sort(key=lambda x: -x[0])
-        combined = exact + [{"similarity": round(s, 3), **r} for s, r in scored[:top_k - len(exact)]]
+        remaining = top_k - len(exact)
+        combined = exact + [
+            {"similarity": round(s, 3), **r} for s, r in scored[:remaining]
+        ]
         if not combined:
             rows = conn.execute(
                 "SELECT * FROM strategies ORDER BY timestamp DESC LIMIT ?",
@@ -149,9 +198,136 @@ class StrategicMemoryBank:
             combined = [dict(r) for r in rows]
         return combined[:top_k]
 
-    def recall_semantic(self, context: dict, top_k: int = 5, min_similarity: float = 0.3) -> list[dict]:
+    def _enrich_vector_results(self, vector_results, conn, exact, top_k):
+        seen_ids = {r["id"] for r in exact}
+        enriched = list(exact)
+        for r in vector_results:
+            sid = r.get("strategy_id")
+            if sid is not None and sid not in seen_ids:
+                row = conn.execute("SELECT * FROM strategies WHERE id = ?", (sid,)).fetchone()
+                if row:
+                    d = dict(row)
+                    d["similarity"] = round(r.get("score", 0), 3)
+                    enriched.append(d)
+                    seen_ids.add(sid)
+                if len(enriched) >= top_k:
+                    break
+        return enriched[:top_k]
+
+    def _rrf_fusion(self, rankings, k=60, top_k=5):
+        scores = {}
+        for rank_list in rankings:
+            for pos, item in enumerate(rank_list):
+                sid = item.get("id") or item.get("strategy_id")
+                if sid is None:
+                    continue
+                try:
+                    sid_int = int(sid)
+                except (ValueError, TypeError):
+                    import re as _re
+                    m = _re.search(r'\d+$', str(sid))
+                    sid_int = int(m.group()) if m else None
+                if sid_int is None:
+                    continue
+                key = str(sid_int)
+                scores[key] = scores.get(key, 0) + 1 / (k + pos + 1)
+        ranked = sorted(scores.items(), key=lambda x: -x[1])
         conn = self._get_conn()
-        all_rows = conn.execute("SELECT * FROM strategies ORDER BY timestamp DESC LIMIT 100").fetchall()
+        results = []
+        for sid_str, score in ranked[:top_k]:
+            row = conn.execute("SELECT * FROM strategies WHERE id = ?", (int(sid_str),)).fetchone()
+            if row:
+                results.append({"rrf_score": round(score, 4), **dict(row)})
+        return results
+
+    def recall_similar(self, context, top_k=5, min_similarity=0.3, mode="exact"):
+        if mode == "exact":
+            return self._recall_legacy(context, top_k, min_similarity)
+        conn = self._get_conn()
+        context_hash = self._hash_context(context)
+        exact = [dict(r) for r in conn.execute(
+            "SELECT * FROM strategies WHERE context_hash = ? ORDER BY timestamp DESC LIMIT ?",
+            (context_hash, top_k)
+        ).fetchall()]
+        if mode == "vector":
+            vs = _get_vectorstore()
+            if vs:
+                text = json.dumps(context, sort_keys=True, ensure_ascii=False)
+                vector_results = vs["hybrid_search"](text, top_k=top_k)
+                return self._enrich_vector_results(vector_results, conn, exact, top_k)
+            return exact[:top_k]
+        rankings = []
+        if exact:
+            rankings.append(exact)
+        vs = _get_vectorstore()
+        vs_results = []
+        if vs:
+            try:
+                text = json.dumps(context, sort_keys=True, ensure_ascii=False)
+                vs_results = vs["hybrid_search"](text, top_k=top_k)
+                if vs_results:
+                    rankings.append(vs_results)
+            except Exception as e:
+                logger.warning("Vector search failed in recall_similar (hybrid mode): %s", e)
+        plan_type = context.get("plan_type")
+        plan_results = []
+        if plan_type:
+            plan_rows = conn.execute(
+                "SELECT * FROM strategies WHERE plan_type = ? ORDER BY timestamp DESC LIMIT ?",
+                (plan_type, top_k * 2)
+            ).fetchall()
+            plan_results = [dict(r) for r in plan_rows]
+            if plan_results:
+                rankings.append(plan_results)
+        combined = []
+        if rankings:
+            combined = self._rrf_fusion(rankings, top_k=top_k)
+            if len(combined) < top_k and plan_results:
+                seen_ids = {r["id"] for r in combined}
+                for r in plan_results:
+                    if r["id"] not in seen_ids:
+                        combined.append(r)
+                        seen_ids.add(r["id"])
+                    if len(combined) >= top_k:
+                        break
+        if not combined:
+            rows = conn.execute(
+                "SELECT * FROM strategies ORDER BY timestamp DESC LIMIT ?",
+                (top_k,)
+            ).fetchall()
+            combined = [dict(r) for r in rows]
+        return combined[:top_k]
+
+    def recall_semantic(
+        self, context: dict, top_k: int = 5,
+        min_similarity: float = 0.3,
+    ) -> list[dict]:
+        vs = _get_vectorstore()
+        if vs:
+            try:
+                query_text = json.dumps(context, sort_keys=True, ensure_ascii=False)
+                results = vs["hybrid_search"](query_text, top_k=top_k)
+                if results:
+                    conn = self._get_conn()
+                    enriched = []
+                    for r in results:
+                        sid = r.get("strategy_id")
+                        if sid is not None:
+                            row = conn.execute(
+                                "SELECT * FROM strategies WHERE id = ?", (sid,)
+                            ).fetchone()
+                            if row:
+                                d = dict(row)
+                                d["similarity"] = round(r.get("score", 0), 3)
+                                enriched.append(d)
+                    if enriched:
+                        return enriched[:top_k]
+            except Exception as e:
+                logger.warning("Vector search failed in recall_semantic: %s", e)
+        conn = self._get_conn()
+        all_rows = conn.execute(
+            "SELECT * FROM strategies ORDER BY timestamp DESC LIMIT 100"
+        ).fetchall()
         sig_query = self._context_to_signature(context)
         scored = []
         for r in all_rows:
@@ -168,7 +344,9 @@ class StrategicMemoryBank:
         rows = conn.execute("""
             SELECT plan_type,
                    COUNT(*) as total,
-                   SUM(CASE WHEN outcome_score IS NOT NULL AND outcome_score < 5.0 THEN 1 ELSE 0 END) as failures
+                   SUM(CASE WHEN outcome_score IS NOT NULL
+                       AND outcome_score < 5.0 THEN 1 ELSE 0 END
+                   ) as failures
             FROM strategies
             GROUP BY plan_type
             HAVING total > 0
@@ -188,8 +366,20 @@ class StrategicMemoryBank:
                 }
                 results.append(entry)
                 conn.execute(
-                    "INSERT INTO patterns (plan_type, pattern_name, description, total_count, fail_count, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                    (plan_type, f"high_failure_{plan_type}", f"Plan type {plan_type} has {failure_rate:.0%} failure rate ({failures}/{total})", total, failures, datetime.now().isoformat())
+                    "INSERT INTO patterns "
+                    "(plan_type, pattern_name, description, "
+                    "total_count, fail_count, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        plan_type,
+                        f"high_failure_{plan_type}",
+                        f"Plan type {plan_type} has "
+                        f"{failure_rate:.0%} failure rate "
+                        f"({failures}/{total})",
+                        total,
+                        failures,
+                        datetime.now().isoformat(),
+                    ),
                 )
         conn.commit()
         return results
@@ -199,9 +389,15 @@ class StrategicMemoryBank:
         total_strategies = conn.execute("SELECT COUNT(*) as c FROM strategies").fetchone()["c"]
         total_patterns = conn.execute("SELECT COUNT(*) as c FROM patterns").fetchone()["c"]
         by_type = {}
-        for r in conn.execute("SELECT plan_type, COUNT(*) as c FROM strategies GROUP BY plan_type").fetchall():
+        for r in conn.execute(
+            "SELECT plan_type, COUNT(*) as c "
+            "FROM strategies GROUP BY plan_type"
+        ).fetchall():
             by_type[r["plan_type"]] = r["c"]
-        avg_score = conn.execute("SELECT AVG(outcome_score) as a FROM strategies WHERE outcome_score IS NOT NULL").fetchone()["a"]
+        avg_score = conn.execute(
+            "SELECT AVG(outcome_score) as a "
+            "FROM strategies WHERE outcome_score IS NOT NULL"
+        ).fetchone()["a"]
         return {
             "total_strategies": total_strategies,
             "total_patterns": total_patterns,
@@ -212,8 +408,12 @@ class StrategicMemoryBank:
     def add_pattern(self, plan_type: str, pattern_name: str, description: str) -> int:
         conn = self._get_conn()
         cur = conn.execute(
-            "INSERT INTO patterns (plan_type, pattern_name, description, total_count, fail_count, created_at) VALUES (?, ?, ?, 0, 0, ?)",
-            (plan_type, pattern_name, description, datetime.now().isoformat())
+            "INSERT INTO patterns "
+            "(plan_type, pattern_name, description, "
+            "total_count, fail_count, created_at) "
+            "VALUES (?, ?, ?, 0, 0, ?)",
+            (plan_type, pattern_name, description,
+             datetime.now().isoformat()),
         )
         conn.commit()
         return cur.lastrowid
@@ -230,7 +430,11 @@ class StrategicMemoryBank:
     }
 
     def predict_outcome(self, context: dict, plan_type: str = None) -> dict:
-        similar = self.recall_similar(context, top_k=10)
+        similar = self.recall_semantic(context, top_k=10)
+        if plan_type:
+            similar = [s for s in similar if s.get("plan_type") == plan_type]
+        if not similar:
+            similar = self.recall_similar(context, top_k=10)
         if not similar:
             return {"probability_success": None, "message": "No hay estrategias similares previas para basar una predicción."}
         scores = [s["outcome_score"] for s in similar if s["outcome_score"] is not None]
@@ -291,7 +495,6 @@ class StrategicMemoryBank:
         return suggestions
 
     def calibrate(self, feedback_file: str) -> dict:
-        import random, math
         data = json.loads(Path(feedback_file).read_text(encoding="utf-8"))
         entries = data if isinstance(data, list) else data.get("feedback", [])
         adjustments = {}
@@ -367,6 +570,8 @@ def main():
     recall_parser = subparsers.add_parser("recall", help="Recall similar strategies by context")
     recall_parser.add_argument("--context", required=True, help="Context JSON string or file path")
     recall_parser.add_argument("--top-k", type=int, default=5, help="Number of results (default: 5)")
+    recall_parser.add_argument("--mode", choices=["hybrid", "vector", "exact"], default="hybrid",
+        help="Recall mode: hybrid (RRF fusion), vector (semantic only), exact (hash + jaccard)")
 
     recall_sem_parser = subparsers.add_parser("recall-semantic", help="Recall semantically similar strategies (no hash dependency)")
     recall_sem_parser.add_argument("--context", required=True, help="Context JSON string or file path")
@@ -378,7 +583,7 @@ def main():
     patterns_parser.add_argument("--add", nargs=3, metavar=("PLAN_TYPE", "NAME", "DESC"), help="Add a pattern manually")
     patterns_parser.add_argument("--list", nargs="?", const=True, metavar="PLAN_TYPE", help="List patterns (optionally filter by plan_type)")
 
-    stats_parser = subparsers.add_parser("stats", help="Show strategy memory statistics")
+    subparsers.add_parser("stats", help="Show strategy memory statistics")
 
     predict_parser = subparsers.add_parser("predict", help="Predict outcome based on similar past strategies")
     predict_parser.add_argument("--context", required=True, help="Context JSON string or file path")
@@ -391,7 +596,7 @@ def main():
     calibrate_parser = subparsers.add_parser("calibrate", help="Calibrate beta priors from feedback data")
     calibrate_parser.add_argument("--feedback", required=True, help="Path to feedback JSON file")
 
-    cal_report_parser = subparsers.add_parser("calibration-report", help="Show calibration report")
+    subparsers.add_parser("calibration-report", help="Show calibration report")
 
     args = parser.parse_args()
     bank = StrategicMemoryBank()
@@ -404,14 +609,18 @@ def main():
 
     elif args.command == "recall":
         context = _parse_json_arg(args.context)
-        results = bank.recall_similar(context, args.top_k)
+        results = bank.recall_similar(context, args.top_k, mode=args.mode)
         if not results:
             print("No similar strategies found.")
             return
-        print(f"Found {len(results)} similar strategies:")
+        print(f"Found {len(results)} similar strategies (mode={args.mode}):")
         for r in results:
-            sim_label = f" sim={r['similarity']}" if "similarity" in r else ""
-            print(f"  id={r['id']} type={r['plan_type']} ts={r['timestamp'][:19]} score={r['outcome_score']}{sim_label}")
+            score_label = ""
+            if "rrf_score" in r:
+                score_label = f" rrf={r['rrf_score']}"
+            elif "similarity" in r:
+                score_label = f" sim={r['similarity']}"
+            print(f"  id={r['id']} type={r['plan_type']} ts={r['timestamp'][:19]} score={r['outcome_score']}{score_label}")
 
     elif args.command == "recall-semantic":
         context = _parse_json_arg(args.context)

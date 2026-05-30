@@ -89,7 +89,7 @@ class SelfHealingGraph:
 
     def record_success(self, name: str):
         self.get(name).record_success()
-        _log_event(name, f"circuit CLOSED (recovered)")
+        _log_event(name, "circuit CLOSED (recovered)")
 
     def record_failure(self, name: str) -> bool:
         breaker = self.get(name)

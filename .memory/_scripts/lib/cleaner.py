@@ -1,7 +1,7 @@
 """Cleaner: fix dead refs, duplicates, remove pycache, remove deprecated PS."""
 
-import shutil
 import re
+import shutil
 from pathlib import Path
 
 VAULT = (Path(__file__).resolve().parent.parent.parent)

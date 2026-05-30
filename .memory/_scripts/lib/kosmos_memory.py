@@ -11,12 +11,11 @@ Dependencias L1: txtai (v9.9.0+), vectorstore.py (existente)
 
 import json
 import logging
-import os
 import re
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ _RE_DATE = re.compile(r'\*\*Fecha\*\*\s*:?\s*(\d{4}-\d{2}-\d{2})', re.UNICODE)
 _RE_TAGS_INLINE = re.compile(r'(?:tags|Tags|Tags):\s*(.+)$', re.MULTILINE)
 
 
-def _parse_frontmatter(text: str) -> Dict[str, Any]:
+def _parse_frontmatter(text: str) -> dict[str, Any]:
     """Extract YAML-like frontmatter from ADR text without pyyaml.
 
     Handles both:
@@ -52,7 +51,7 @@ def _parse_frontmatter(text: str) -> Dict[str, Any]:
     Returns:
         dict with keys: title, content, status, tags (list), date, id
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "title": "",
         "content": text,
         "status": "proposed",
@@ -167,7 +166,7 @@ class ArchitectureMemoryL0:
             db_path = str(DEFAULT_DB_PATH)
         self._db_path = Path(db_path)
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._initialized = False
         self.initialize_schema()
         logger.info("ArchitectureMemoryL0 initialized at %s", self._db_path)
@@ -234,7 +233,7 @@ class ArchitectureMemoryL0:
         self._initialized = True
         logger.debug("Schema initialized with FTS5 on adrs table")
 
-    def index_adr(self, adr_path: str) -> Dict[str, Any]:
+    def index_adr(self, adr_path: str) -> dict[str, Any]:
         """Read an ADR markdown file, parse it, and index it in FTS5.
 
         Args:
@@ -306,7 +305,7 @@ class ArchitectureMemoryL0:
             logger.warning("ADRs directory not found: %s", base)
             return 0
 
-        md_files: List[Path] = []
+        md_files: list[Path] = []
         md_files.extend(base.glob("*.md"))
         adr_subdir = base / "ADRs"
         if adr_subdir.exists():
@@ -326,7 +325,7 @@ class ArchitectureMemoryL0:
         logger.info("Indexed %d/%d ADRs from %s", count, len(md_files), base)
         return count
 
-    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def search(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         """Full-text search over ADRs using FTS5.
 
         Supports FTS5 query syntax:
@@ -395,7 +394,7 @@ class ArchitectureMemoryL0:
 
         return results
 
-    def search_by_tag(self, tag: str) -> List[Dict[str, Any]]:
+    def search_by_tag(self, tag: str) -> list[dict[str, Any]]:
         """Filter ADRs by tag (case-insensitive substring match).
 
         Args:
@@ -432,7 +431,7 @@ class ArchitectureMemoryL0:
 
         return results
 
-    def search_by_status(self, status: str) -> List[Dict[str, Any]]:
+    def search_by_status(self, status: str) -> list[dict[str, Any]]:
         """Filter ADRs by status.
 
         Args:
@@ -462,7 +461,7 @@ class ArchitectureMemoryL0:
             for row in rows
         ]
 
-    def get_adr(self, adr_id: int) -> Dict[str, Any]:
+    def get_adr(self, adr_id: int) -> dict[str, Any]:
         """Get a full ADR record by its database ID.
 
         Args:
@@ -498,7 +497,7 @@ class ArchitectureMemoryL0:
             "status": row["status"],
         }
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return statistics about the ADR knowledge base.
 
         Returns:
@@ -512,11 +511,11 @@ class ArchitectureMemoryL0:
         status_rows = conn.execute(
             "SELECT LOWER(status) AS st, COUNT(*) AS cnt FROM adrs GROUP BY st"
         ).fetchall()
-        por_status: Dict[str, int] = {r["st"]: r["cnt"] for r in status_rows}
+        por_status: dict[str, int] = {r["st"]: r["cnt"] for r in status_rows}
 
         # Per-tag counts (parse JSON tags)
         all_tags_rows = conn.execute("SELECT tags FROM adrs").fetchall()
-        por_tag: Dict[str, int] = {}
+        por_tag: dict[str, int] = {}
         for row in all_tags_rows:
             try:
                 tags = json.loads(row["tags"]) if isinstance(row["tags"], str) else row["tags"]
@@ -566,7 +565,7 @@ class ArchitectureMemoryL0:
         ).fetchone()
         return row is not None
 
-    def get_related_adrs(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_related_adrs(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         """Find semantically related ADRs using FTS5 rank-based search.
 
         This is a simple relevance search using FTS5's BM25 ranking. For proper
@@ -685,7 +684,8 @@ class ArchitectureMemoryL1:
             total_adrs = stats.get("total_adrs", 0)
 
             # Use vectorstore.build_index to index all markdown files
-            from lib.vectorstore import build_index, status as vs_status
+            from lib.vectorstore import build_index
+            from lib.vectorstore import status as vs_status
 
             # Build index incrementally (full=False adds only new content)
             result = build_index(full=False)
@@ -705,7 +705,7 @@ class ArchitectureMemoryL1:
             logger.error("Failed to index ADRs to txtai: %s", exc)
             return 0
 
-    def semantic_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def semantic_search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         """Perform semantic search over indexed ADRs.
 
         Uses txtai's hybrid search (BM25 + vector + RRF) via the existing
@@ -749,7 +749,7 @@ class ArchitectureMemoryL1:
             logger.error("Semantic search failed: %s", exc)
             return []
 
-    def find_related_adrs(self, adr_id: int, top_k: int = 3) -> List[Dict[str, Any]]:
+    def find_related_adrs(self, adr_id: int, top_k: int = 3) -> list[dict[str, Any]]:
         """Find ADRs semantically similar to a given ADR.
 
         Uses the ADR's content from L0 to search the txtai vector store
@@ -813,14 +813,14 @@ class ArchitectureMemoryL1:
             logger.error("Consolidation failed: %s", exc)
             return f"ERROR: {exc}"
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Get the current status of the L1 memory index.
 
         Returns:
             Dict con keys: available (bool), chunks (int), pages (int),
             model (str), dimension (int), last_index (str), warmed_up (bool).
         """
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "available": False,
             "chunks": 0,
             "pages": 0,

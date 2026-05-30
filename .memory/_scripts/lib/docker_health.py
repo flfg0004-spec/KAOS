@@ -5,7 +5,6 @@ Core services: SearXNG (8888), Crawl4AI (11235).
 Optional: Langfuse (3000) only if ETHER_LANGFUSE_ENABLED flag is true.
 """
 
-import json
 import os
 import subprocess
 from datetime import datetime

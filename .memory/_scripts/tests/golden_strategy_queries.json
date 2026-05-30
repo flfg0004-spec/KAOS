@@ -1,0 +1,140 @@
+[
+    {
+        "query": "cloud infrastructure OKR planning for Q3",
+        "context": {"industry": "cloud", "plan_type": "okr"},
+        "relevant_ids": [1, 5],
+        "category": "exacto"
+    },
+    {
+        "query": "cloud computing objectives and key results for next quarter",
+        "context": {"industry": "cloud", "plan_type": "okr"},
+        "relevant_ids": [1, 5],
+        "category": "sinonimos"
+    },
+    {
+        "query": "define success metrics for cloud platform team",
+        "context": {"industry": "cloud", "plan_type": "okr"},
+        "relevant_ids": [1, 5],
+        "category": "parafrasis"
+    },
+    {
+        "query": "fintech OKR planning for payment infrastructure",
+        "context": {"industry": "fintech", "plan_type": "okr"},
+        "relevant_ids": [2, 8],
+        "category": "exacto"
+    },
+    {
+        "query": "financial technology objectives and key results",
+        "context": {"industry": "fintech", "plan_type": "okr"},
+        "relevant_ids": [2, 8],
+        "category": "sinonimos"
+    },
+    {
+        "query": "define payment success KPIs for fintech product",
+        "context": {"industry": "fintech", "plan_type": "okr"},
+        "relevant_ids": [2, 8],
+        "category": "parafrasis"
+    },
+    {
+        "query": "healthtech product roadmap for HIPAA compliance",
+        "context": {"industry": "healthtech", "plan_type": "roadmap"},
+        "relevant_ids": [3, 9],
+        "category": "exacto"
+    },
+    {
+        "query": "healthcare technology roadmap with regulatory requirements",
+        "context": {"industry": "healthtech", "plan_type": "roadmap"},
+        "relevant_ids": [3, 9],
+        "category": "sinonimos"
+    },
+    {
+        "query": "plan medical software development timeline with compliance gates",
+        "context": {"industry": "healthtech", "plan_type": "roadmap"},
+        "relevant_ids": [3, 9],
+        "category": "parafrasis"
+    },
+    {
+        "query": "SaaS competitive analysis for market expansion",
+        "context": {"industry": "saas", "plan_type": "competitive_intel"},
+        "relevant_ids": [4, 10],
+        "category": "exacto"
+    },
+    {
+        "query": "software as a service competitor landscape assessment",
+        "context": {"industry": "saas", "plan_type": "competitive_intel"},
+        "relevant_ids": [4, 10],
+        "category": "sinonimos"
+    },
+    {
+        "query": "analyze rival SaaS offerings and market positioning",
+        "context": {"industry": "saas", "plan_type": "competitive_intel"},
+        "relevant_ids": [4, 10],
+        "category": "parafrasis"
+    },
+    {
+        "query": "cloud SWOT analysis for infrastructure provider",
+        "context": {"industry": "cloud", "plan_type": "foda"},
+        "relevant_ids": [6, 11],
+        "category": "exacto"
+    },
+    {
+        "query": "cloud strengths weaknesses opportunities threats assessment",
+        "context": {"industry": "cloud", "plan_type": "foda"},
+        "relevant_ids": [6, 11],
+        "category": "sinonimos"
+    },
+    {
+        "query": "fintech SWOT analysis for digital banking platform",
+        "context": {"industry": "fintech", "plan_type": "foda"},
+        "relevant_ids": [7, 12],
+        "category": "exacto"
+    },
+    {
+        "query": "OKR planning for cloud migration initiative",
+        "context": {"industry": "cloud", "plan_type": "okr"},
+        "relevant_ids": [1, 5],
+        "category": "cross_tipo"
+    },
+    {
+        "query": "competitive analysis for healthtech marketplace",
+        "context": {"industry": "healthtech", "plan_type": "competitive_intel"},
+        "relevant_ids": [3, 9],
+        "category": "cross_tipo"
+    },
+    {
+        "query": "data center capacity planning roadmap",
+        "context": {"industry": "cloud", "plan_type": "roadmap"},
+        "relevant_ids": [1, 6],
+        "category": "cross_tipo"
+    },
+    {
+        "query": "python machine learning model training",
+        "context": {"industry": "energy", "plan_type": "technical"},
+        "relevant_ids": [],
+        "category": "negativo"
+    },
+    {
+        "query": "cooking recipe for Italian pasta carbonara",
+        "context": {"industry": "food", "plan_type": "recipe"},
+        "relevant_ids": [],
+        "category": "negativo"
+    },
+    {
+        "query": "quantum physics research paper on entanglement",
+        "context": {"industry": "research", "plan_type": "academic"},
+        "relevant_ids": [],
+        "category": "negativo"
+    },
+    {
+        "query": "cloud fintech integrated OKR and roadmap planning",
+        "context": {"industry": "cloud", "plan_type": "okr"},
+        "relevant_ids": [1, 2, 5],
+        "category": "cross_tipo"
+    },
+    {
+        "query": "SaaS product strategy with competitive positioning and OKRs",
+        "context": {"industry": "saas", "plan_type": "okr"},
+        "relevant_ids": [4, 10],
+        "category": "cross_tipo"
+    }
+]

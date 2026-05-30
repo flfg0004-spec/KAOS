@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAOS Knowledge Graph</title>
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/layout-base/layout-base.js"></script>
+<script src="https://unpkg.com/cose-base/cose-base.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; }
+  #header { padding:1rem 1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; border-bottom:1px solid #334155; }
+  #header h1 { font-size:1.1rem; }
+  #stats { display:flex; gap:1rem; font-size:0.8rem; color:#94a3b8; }
+  #stats span { background:#1e293b; padding:0.2rem 0.6rem; border-radius:4px; }
+  #legend { display:flex; gap:0.5rem; flex-wrap:wrap; font-size:0.75rem; }
+  #legend .comm-item { display:flex; align-items:center; gap:0.3rem; }
+  #legend .comm-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  #cy { width:100%; height:calc(100vh - 60px); }
+  #tooltip { position:absolute; display:none; background:#1e293b; border:1px solid #334155; border-radius:6px; padding:0.5rem 0.75rem; font-size:0.8rem; pointer-events:none; z-index:100; max-width:250px; }
+  .loading { display:flex; align-items:center; justify-content:center; height:calc(100vh - 60px); color:#64748b; font-size:1.2rem; }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>KAOS Knowledge Graph</h1>
+  <div id="stats"><span id="node-count">—</span><span id="edge-count">—</span></div>
+  <div id="legend"></div>
+</div>
+<div id="cy"><div class="loading">Cargando grafo…</div></div>
+<div id="tooltip"></div>
+
+<script>
+const ELEMENTS = null; // injected by Python
+
+function getCommunityColor(community) {
+  const palette = [
+    "#38bdf8", "#a78bfa", "#f59e0b", "#22c55e", "#ef4444",
+    "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16",
+    "#06b6d4", "#d946ef", "#10b981", "#eab308", "#64748b",
+  ];
+  return palette[(community || 0) % palette.length];
+}
+
+function initGraph(elements) {
+  if (!elements || !elements.nodes || elements.nodes.length === 0) {
+    document.getElementById("cy").innerHTML = '<div class="loading" style="height:100%;">Grafo vacío — no hay datos de wikilinks</div>';
+    return;
+  }
+
+  document.getElementById("node-count").textContent = elements.nodes.length + " nodos";
+  document.getElementById("edge-count").textContent = elements.edges.length + " aristas";
+
+  const communities = new Set();
+  elements.nodes.forEach(n => { if (n.data.community !== undefined) communities.add(n.data.community); });
+  const legendEl = document.getElementById("legend");
+  communities.forEach(c => {
+    const item = document.createElement("span");
+    item.className = "comm-item";
+    item.innerHTML = `<span class="comm-dot" style="background:${getCommunityColor(c)}"></span>${c}`;
+    legendEl.appendChild(item);
+  });
+
+  const cy = cytoscape({
+    container: document.getElementById("cy"),
+    elements: elements,
+    style: [
+      { selector: "node", css: {
+        "background-color": "data(color)",
+        "label": "data(label)",
+        "font-size": "10px",
+        "color": "#e2e8f0",
+        "text-valign": "bottom",
+        "text-halign": "center",
+        "width": "mapData(weight, 0, 0.1, 20, 60)",
+        "height": "mapData(weight, 0, 0.1, 20, 60)",
+        "border-width": 1,
+        "border-color": "#334155",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+      }},
+      { selector: "edge", css: {
+        "line-color": "#334155",
+        "target-arrow-color": "#334155",
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier",
+        "width": "mapData(weight, 0, 5, 0.5, 3)",
+        "opacity": 0.5,
+      }},
+      { selector: "node:selected", css: {
+        "border-color": "#38bdf8",
+        "border-width": 3,
+      }},
+      { selector: "edge:selected", css: {
+        "line-color": "#38bdf8",
+        "opacity": 1,
+      }},
+    ],
+    layout: {
+      name: "cose",
+      idealEdgeLength: 100,
+      nodeRepulsion: 4000,
+      gravity: 0.25,
+      numIter: 1000,
+      animate: false,
+    },
+  });
+
+  cy.on("tap", "node", function(evt) {
+    const node = evt.target;
+    const path = node.data("path");
+    if (path) {
+      window.open("../../../.memory/" + path, "_blank");
+    }
+  });
+
+  cy.on("mouseover", "node", function(evt) {
+    const node = evt.target;
+    const tip = document.getElementById("tooltip");
+    tip.innerHTML = `<strong>${node.data("label")}</strong><br>PR: ${node.data("weight")?.toFixed(4) || "—"}<br>Comunidad: ${node.data("community") ?? "—"}`;
+    tip.style.display = "block";
+  });
+
+  cy.on("mouseout", "node", function() {
+    document.getElementById("tooltip").style.display = "none";
+  });
+
+  cy.on("mousemove", function(evt) {
+    const tip = document.getElementById("tooltip");
+    tip.style.left = (evt.originalEvent.clientX + 12) + "px";
+    tip.style.top = (evt.originalEvent.clientY + 12) + "px";
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => initGraph(ELEMENTS));
+</script>
+</body>
+</html>

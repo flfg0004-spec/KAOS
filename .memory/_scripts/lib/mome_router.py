@@ -1,13 +1,14 @@
 """MoME — Mixture of Memory Experts: router TF-IDF + colecciones particionadas."""
-import json, sqlite3, re, struct, sys, os
+import os
+import sqlite3
+import sys
 from pathlib import Path
-from contextlib import contextmanager
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 
-from lib.vectorstore import CHUNK_SIZE, CHUNK_OVERLAP, EMBED_DIM, _serialize
 from lib.config import MOME_THRESHOLD
+from lib.vectorstore import EMBED_DIM, _serialize
 
 BASE = Path(__file__).resolve().parent.parent.parent
 KAOS_ROOT = BASE.parent
@@ -277,8 +278,8 @@ def query_partitioned(query: str, domain: str, top_k: int = 5) -> list[dict]:
 
 def rebuild_partitioned(full: bool = False):
     """Rebuild all partitioned indexes from vault files."""
+
     from lib.vectorstore import _import_model, chunk_text
-    import unicodedata
     
     model = _import_model()
     if not model:

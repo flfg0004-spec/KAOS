@@ -1,0 +1,130 @@
+# Aether Configuration — Single source of truth for model routing.
+# Edit this file to change routing, costs, tiers, or feature flags.
+# Changes take effect on Aether restart (or config reload).
+# Env vars override YAML values (e.g., ETHER_MIMO_ENABLED=false).
+
+version: 3
+
+# ── Task → Model Routing ─────────────────────────────────────
+task_model_map:
+  lint:         [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 2}]
+  extract:      {model: go-mimo,        thinking: null, tier: mimo}
+  health:       [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 2}]
+  hydrate:      {model: go-flash,       thinking: null, tier: flash}
+  wikilinks:    {model: go-mimo,        thinking: null, tier: mimo}
+  curation:     {model: go-flash,       thinking: null, tier: flash}
+  code_gen:     {model: go-flash,       thinking: null, tier: flash}
+  code_simple:  {model: go-mimo,        thinking: null, tier: mimo}
+  general:      [{model: go-gemini-flash, thinking: null, tier: flash, priority: 1},
+                 {model: go-mimo,        thinking: null, tier: mimo, priority: 2},
+                 {model: go-flash,        thinking: null, tier: flash, priority: 3}]
+  research:     {model: go-pro,         thinking: high, tier: pro}
+  analyze:      {model: go-pro,         thinking: high, tier: pro}
+  adr:          {model: go-pro,         thinking: high, tier: pro}
+  factual:      {model: go-pro,         thinking: high, tier: pro}
+  synthesize:   {model: go-kimi-latest, thinking: null, tier: kimi}
+  strategy:     {model: go-kimi-latest, thinking: null, tier: kimi}
+  verify:       {model: go-flash,       thinking: null, tier: flash}
+  cross_check:  {model: go-flash,       thinking: null, tier: flash}
+  code_agentic: {model: go-kimi-latest, thinking: null, tier: kimi}
+  diversity:    {model: go-mimo,        thinking: null, tier: mimo}
+
+# ── Agent → Default Task ─────────────────────────────────────
+agent_default_task:
+  aletheia: research
+  kosmos: analyze
+  metis: strategy
+  kratos: code_gen
+  mnemosyne: curation
+  kronos: general       # → go-mimo (ahora default más barato)
+  critic: verify
+  planner: general
+
+# ── Thinking Configuration ────────────────────────────────────
+thinking_config:
+  null:  {description: "No thinking — fastest, JSON mode, tool calls available"}
+  high:  {description: "Thinking enabled — balanced speed vs depth"}
+  xmax:  {description: "Maximum thinking — deepest reasoning, slowest"}
+
+# ── Token Budgets ─────────────────────────────────────────────
+budgets:
+  flash: {min: 1024, optimal: 8192, max: 32768}
+  pro:   {min: 4096, optimal: 16384, max: 65536}
+  kimi:  {min: 4096, optimal: 16384, max: 65536}
+  kimi_long: {min: 4096, optimal: 16384, max: 131072}
+
+# ── Model Tiers ───────────────────────────────────────────────
+model_tiers:
+  flash: {description: "Base — alta velocidad, bajo costo",         target_pct: 40}
+  mimo:  {description: "Ultra-económico — tareas simples",          target_pct: 40}
+  pro:   {description: "Calidad — razonamiento profundo, factual",  target_pct: 5}
+  kimi:  {description: "Diversidad — contexto largo, estratégico",  target_pct: 15}
+
+# ── Cost Rates (per 1K tokens) ────────────────────────────────
+cost_rates:
+  go-flash:       {input: 0.00014,  output: 0.00028,  cache_read: 0.000028}
+  go-pro:         {input: 0.00174,  output: 0.00348,  cache_read: 0.000145}
+  go-kimi-latest: {input: 0.00095,  output: 0.00400,  cache_read: 0.00016}
+  go-mimo:        {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
+  mimo-direct:    {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
+  go-qwen:        {input: 0.00010,  output: 0.00020,  cache_read: 0.00002}
+  go-gemini-flash: {input: 0.0,     output: 0.0,      cache_read: 0.0}
+  flash:          {input: 0.00014,  output: 0.00028,  cache_read: 0.000028}
+  pro:            {input: 0.00174,  output: 0.00348,  cache_read: 0.000145}
+  mimo:           {input: 0.000014, output: 0.000028, cache_read: 0.0000028}
+  moonshotai/kimi-k2.5: {input: 0.00060, output: 0.00300, cache_read: 0.00016}
+  moonshotai/kimi-k2.6: {input: 0.00090, output: 0.00372, cache_read: 0.00020}
+  router9-minimax:  {input: 0.0000002, output: 0.0000002, cache_read: 0.00000004}
+  router9-glm:      {input: 0.0000006, output: 0.0000006, cache_read: 0.00000012}
+  router9-default:  {input: 0.000001,  output: 0.000002,  cache_read: 0.0000002}
+
+# ── Cost Caps ─────────────────────────────────────────────────
+cost_caps:
+  flash: {weekly_usd: 3.00, daily_calls: 500}
+  mimo:  {weekly_usd: 2.00, daily_calls: 1000}
+  pro:   {weekly_usd: 0.50, daily_calls: 50}
+  kimi:  {weekly_usd: 1.00, daily_calls: 30}
+
+# ── Fallback Chains ───────────────────────────────────────────
+fallback_chains:
+  go-flash:        [go-flash, go-mimo, go-qwen, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-pro:          [go-pro, go-mimo, go-kimi-latest, go-flash, go-qwen, router9-minimax, router9-glm]
+  go-kimi-latest:  [go-kimi-latest, mimo-direct, go-pro, go-flash, go-qwen, router9-minimax, router9-glm]
+  mimo-direct:     [mimo-direct, go-kimi-latest, go-pro, go-flash, go-qwen, router9-minimax, router9-glm]
+  go-mimo:         [go-mimo, go-flash, go-qwen, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-qwen:         [go-qwen, go-mimo, go-flash, go-pro, go-kimi-latest, router9-minimax, router9-glm]
+  go-gemini-flash:  [go-gemini-flash, go-flash, go-mimo, go-qwen, go-pro, router9-minimax, router9-glm]
+
+# ── Evaluation Sampling ───────────────────────────────────────
+eval_sampling:
+  enabled: true
+  tiers:
+    pro: {sample_rate: 0.5, tier: pro}
+    kimi: {sample_rate: 0.5, tier: kimi}
+    flash: {sample_rate: 0.2, tier: flash}
+    mimo: {sample_rate: 0.05, tier: mimo}
+  quality_feedback:
+    enabled: true
+    high_score_threshold: 8.0
+    reduction_factor: 0.5
+    failure_boost_factor: 2.0
+    min_samples: 5
+  budget:
+    max_daily_usd: 0.05
+
+# ── Feature Flags ─────────────────────────────────────────────
+# Env vars override these (e.g., ETHER_MIMO_ENABLED=false)
+feature_flags:
+  ether_mimo_enabled: true
+  ether_mimo_direct_enabled: true
+  ether_kimi_enabled: true
+  ether_context_routing: true
+  ether_multimodal_enabled: true
+  ether_budget_enforcement: true
+  ether_langfuse_enabled: true
+  ether_deepeval_enabled: true
+  quality_routing_enabled: true
+  ether_eval_sample_size: 30
+  ether_router9_enabled: false

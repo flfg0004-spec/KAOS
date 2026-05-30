@@ -4,7 +4,6 @@ Tiers map 0-100 scores to 6 quality levels:
   RAW (0-20) → ROUGH (21-40) → DRAFT (41-60) → REVIEW (61-75) → CURATED (76-90) → CANONICAL (91-100)
 """
 
-from typing import Optional
 
 TIERS: dict[str, tuple[int, int, str]] = {
     "RAW": (0, 20, "Sin procesar, necesita síntesis completa"),
@@ -46,7 +45,7 @@ def get_tier_info(tier: str) -> dict:
     }
 
 
-def can_promote(current_score: float, previous_score: Optional[float] = None) -> dict:
+def can_promote(current_score: float, previous_score: float | None = None) -> dict:
     """Retorna si puede promocionar de tier y a cuál.
 
     Si previous_score es None, solo evalúa score actual.

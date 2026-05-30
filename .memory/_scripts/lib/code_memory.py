@@ -1,5 +1,7 @@
 """Code Experience Memory — FTS5 + sqlite-vec + AST hybrid with RRF merge."""
-import sqlite3, hashlib, json, re
+import hashlib
+import json
+import sqlite3
 from pathlib import Path
 
 DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")
@@ -189,8 +191,10 @@ def store(error_message: str, language: str = "unknown",
         
         # Store embedding for vector search
         try:
-            from lib.code_memory import _get_embedding, VEC_DIM, DB as _DB
             import sqlite_vec
+
+            from lib.code_memory import DB as _DB
+            from lib.code_memory import _get_embedding
             vec_conn = sqlite3.connect(str(_DB))
             sqlite_vec.load(vec_conn)
             vec_embedding = _get_embedding(error_message[:500])
@@ -322,16 +326,16 @@ def search(query: str, top_k: int = 5,
         conn.close()
 
 def feedback(error_hash: str, success: bool):
-    """Update confidence using LinUCB contextual bandit."""
+    """Update confidence using RSCB-MC contextual bandit."""
     conn = sqlite3.connect(str(DB))
     try:
         row = conn.execute("SELECT id, confidence, retrieval_count, language, error_message, ast_signature FROM code_experiences WHERE error_hash = ?", (error_hash,)).fetchone()
         if not row:
             return {"status": "not_found"}
         
-        # Use LinUCB bandit for adaptive confidence
+        # Use RSCB-MC bandit for adaptive confidence
         try:
-            from lib.bandit import get_bandit, extract_features
+            from lib.bandit import extract_features, get_bandit
             bandit = get_bandit()
             error_data = {
                 "language": row[3],

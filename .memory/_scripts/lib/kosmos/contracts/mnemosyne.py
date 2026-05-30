@@ -7,11 +7,11 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from .models import (
-    CurationFeedback,
     _WIKI_ENTITIES_DIR,
+    CurationFeedback,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class KosmosMnemosyneContract:
 
     def __init__(self) -> None:
         """Initialize the Kosmos-Mnemosyne contract."""
-        self._status: Dict[str, Any] = {
+        self._status: dict[str, Any] = {
             "active": True,
             "last_run": "",
             "last_score": 0.0,
@@ -128,7 +128,7 @@ class KosmosMnemosyneContract:
 
             # Extract tags
             tags = re.findall(r'(?:tag|tags?)\s*:?\s*\[([^\]]+)\]', text, re.IGNORECASE)
-            tags_added: List[str] = []
+            tags_added: list[str] = []
             for t in tags:
                 tags_added.extend([x.strip().strip('"').strip("'") for x in t.split(",") if x.strip()])
 
@@ -163,7 +163,7 @@ class KosmosMnemosyneContract:
                 timestamp=datetime.now().isoformat(),
             )
 
-    def check_curation_quality(self, adr_path: str, min_score: float = 70.0) -> Dict[str, Any]:
+    def check_curation_quality(self, adr_path: str, min_score: float = 70.0) -> dict[str, Any]:
         """Check if an ADR's curation meets quality threshold.
 
         Args:
@@ -181,8 +181,8 @@ class KosmosMnemosyneContract:
 
             adr_text = path.read_text(encoding="utf-8", errors="replace")
 
-            issues: List[str] = []
-            improvement_plan: List[str] = []
+            issues: list[str] = []
+            improvement_plan: list[str] = []
 
             # Heuristic curation quality check
             # 1. Check if it has YAML frontmatter
@@ -245,7 +245,7 @@ class KosmosMnemosyneContract:
             self._status["errors"] += 1
             return {"passed": False, "score": 0.0, "issues": [f"Error: {exc}"], "improvement_plan": []}
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Return contract status."""
         return dict(self._status)
 

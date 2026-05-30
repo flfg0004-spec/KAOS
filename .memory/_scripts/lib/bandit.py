@@ -9,11 +9,11 @@ scoring in CodeExperience. Replaces LinUCB with:
 - Persistence via SQLite across restarts
 """
 
-import numpy as np
 import json
 import sqlite3
-from typing import Dict, List, Optional, Any
 from pathlib import Path
+
+import numpy as np
 
 DB = (Path(__file__).resolve().parent.parent.parent / "cache" / "code_experiences.db")
 
@@ -32,9 +32,9 @@ class RSCBMCBandit:
         self.alpha = alpha
         self.risk_lambda = risk_lambda
         self.n_features = n_features
-        self.means: Dict[str, float] = {}
-        self.variances: Dict[str, float] = {}
-        self.counts: Dict[str, int] = {}
+        self.means: dict[str, float] = {}
+        self.variances: dict[str, float] = {}
+        self.counts: dict[str, int] = {}
         self.total_pulls: int = 0
         
     def _init_arm(self, arm: str):
@@ -43,7 +43,7 @@ class RSCBMCBandit:
             self.variances[arm] = 0.25  # Maximum uncertainty
             self.counts[arm] = 0
     
-    def select_arm(self, features: np.ndarray, available_arms: List[str]) -> Optional[str]:
+    def select_arm(self, features: np.ndarray, available_arms: list[str]) -> str | None:
         """Select arm with highest Risk-Sensitive UCB.
         
         UCB = mean + alpha * sqrt(log(N) / n) - risk_lambda * variance
@@ -148,7 +148,7 @@ class RSCBMCBandit:
             pass
 
 
-def extract_features(error: Dict) -> np.ndarray:
+def extract_features(error: dict) -> np.ndarray:
     """Extract feature vector from error data.
     
     Features:
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         bandit.update(selected, features, reward)
         print(f"Trial {trial+1:2d}: selected {selected}, reward {reward}")
     
-    print(f"\nFinal confidences:")
+    print("\nFinal confidences:")
     for arm in arms:
         print(f"  {arm}: {bandit.get_confidence(arm):.3f} (mean={bandit.means[arm]:.3f}, var={bandit.variances[arm]:.3f})")
-    print(f"\n✅ RSCB-MC should prefer hash1 > hash2 > hash3")
+    print("\n✅ RSCB-MC should prefer hash1 > hash2 > hash3")

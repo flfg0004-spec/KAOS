@@ -3,8 +3,8 @@
 Extracts normalized AST structure from code snippets to match structurally
 similar errors regardless of variable names or literal values.
 """
-import hashlib, re
-from pathlib import Path
+import hashlib
+import re
 
 _LANGUAGES = {}
 _GRAMMAR_CACHE = {}
@@ -135,7 +135,7 @@ def _token_fallback(code: str) -> str:
     # Strip identifiers (keep keywords)
     keywords = {"if","else","for","while","def","class","return","import","from",
                 "let","fn","mut","const","var","match","async","await","pub","use",
-                "function","const","let","var","null","undefined","true","false"}
+                "function","null","undefined","true","false"}
     tokens = re.findall(r'[a-zA-Z_]\w*|[^\w\s]', code)
     normalized = []
     for t in tokens:

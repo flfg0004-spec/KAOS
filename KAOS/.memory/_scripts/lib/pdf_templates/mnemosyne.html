@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        /* ── Quality Score Hero ── */
+        .quality-hero {
+            text-align: center;
+            background: linear-gradient(135deg, {{ brand_colors.background }}, {{ brand_colors.secondary }});
+            border: 1px solid {{ brand_colors.secondary }};
+            border-radius: 12px;
+            padding: 25px 20px;
+            margin: 20px 0;
+        }
+        .quality-hero .score-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: {{ brand_colors.muted }};
+            font-weight: 600;
+        }
+        .quality-hero .score-display {
+            font-size: 48px;
+            font-weight: 800;
+            color: {{ agent_color }};
+            line-height: 1.2;
+            font-family: {{ fonts.heading }};
+            margin: 8px 0;
+        }
+        .quality-hero .score-sub {
+            font-size: 12px;
+            color: {{ brand_colors.muted }};
+            margin-top: 6px;
+        }
+
+        /* ── Phase Progress Bar ── */
+        .phase-progress {
+            margin: 20px 0;
+            padding: 15px;
+            background: {{ brand_colors.secondary }};
+            border-radius: 8px;
+        }
+        .phase-progress h3 {
+            color: {{ agent_color }};
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: {{ fonts.heading }};
+        }
+        .progress-track {
+            height: 20px;
+            background: {{ brand_colors.primary }};
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, {{ brand_colors.primary }}, {{ agent_color }});
+            border-radius: 10px;
+        }
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 10px;
+            color: {{ brand_colors.muted }};
+        }
+
+        /* ── Curation Pill ── */
+        .curation-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: {{ agent_color }};
+            color: {{ brand_colors.background }};
+        }
+
+        /* ── Compact Section Override ── */
+        .section.curation-summary {
+            border-bottom: none;
+            margin-bottom: 10px;
+        }
+        .section.curation-summary p {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .section.curation-summary strong {
+            color: {{ agent_color }};
+            font-size: 20px;
+        }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section {% if loop.first %}curation-summary{% endif %}">
+        <h2>
+            {% if loop.first %}<span class="curation-pill">curation</span>{% endif %}
+            {{ section.title }}
+        </h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>{% for col in section.table.headers %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="quality-hero">
+        <div class="score-label">Quality Score</div>
+        <div class="score-display">{{ agent_color }}</div>
+        <div class="score-sub">Knowledge Base Quality Assessment</div>
+    </div>
+
+    <div class="phase-progress">
+        <h3>Curation Phase Progress</h3>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: 75%"></div>
+        </div>
+        <div class="progress-labels">
+            <span>Ingest</span>
+            <span>Clean</span>
+            <span>Validate</span>
+            <span>Link</span>
+            <span>Publish</span>
+        </div>
+    </div>
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

@@ -15,10 +15,10 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class KosmosKronosLoop:
         # Cached data
         self._history: list[dict[str, Any]] = []
         self._optimizations_applied: list[str] = []
-        self._last_kronos_feedback: Optional[str] = None
+        self._last_kronos_feedback: str | None = None
 
         # Load existing data
         self._load()
@@ -144,7 +144,7 @@ class KosmosKronosLoop:
         """
         # Try live Kronos agent first
         try:
-            from lib.kronos_agent import suggest_routing, pipeline_status, evaluation_read
+            from lib.kronos_agent import evaluation_read, pipeline_status, suggest_routing
 
             suggestions_text = suggest_routing()
             status = pipeline_status()
@@ -372,7 +372,7 @@ class KosmosKronosLoop:
 
         return suggestions
 
-    def _try_apply_suggestion(self, suggestion: dict[str, str]) -> Optional[str]:
+    def _try_apply_suggestion(self, suggestion: dict[str, str]) -> str | None:
         """Try to apply a single optimization suggestion.
 
         Returns:

@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta
-from pathlib import Path
 import re
-from lib.config import VAULT_ROOT
-from lib import index as index_mod
-from lib import git
+from datetime import datetime
 
+from lib import git
+from lib import index as index_mod
+from lib.config import VAULT_ROOT
 
 LOG_PATH = VAULT_ROOT / "wiki" / "log.md"
 ARCHIVE_DIR = VAULT_ROOT / "raw" / "archive"
@@ -132,7 +131,8 @@ def extract_session(agent: str, summary: str, pages: list[str] | None = None) ->
     mnemosyne_result = ""
     if agent and agent.lower() != "mnemosyne":
         try:
-            import subprocess, sys
+            import subprocess
+            import sys
             vault = VAULT_ROOT
             script = vault / "_scripts" / "vault.py"
             r = subprocess.run(
@@ -148,7 +148,8 @@ def extract_session(agent: str, summary: str, pages: list[str] | None = None) ->
     commit_result = git.add_and_commit(commit_msg)
 
     try:
-        import subprocess, sys
+        import subprocess
+        import sys
         subprocess.run(
             [sys.executable, str(VAULT_ROOT / "_scripts/vault.py"), "dashboard"],
             capture_output=True, timeout=30,
@@ -159,7 +160,7 @@ def extract_session(agent: str, summary: str, pages: list[str] | None = None) ->
 
     results = [
         f"Session extracted for {agent}.",
-        f"log.md updated.",
+        "log.md updated.",
     ]
     if index_result:
         results.append(index_result)

@@ -15,10 +15,11 @@ API pública compatible con la anterior implementación sqlite-vec:
 """
 
 import json
+import logging
 import re
-import sys
 from pathlib import Path
-from functools import lru_cache
+
+logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 128
@@ -99,7 +100,7 @@ def chunk_text(text: str) -> list[str]:
                 heading = stripped.lstrip('#').strip()
                 break
         title = heading if heading else (lines[0].strip() if lines else '')
-        content_lines = [l for l in lines if not l.strip().startswith('#')]
+        content_lines = [line for line in lines if not line.strip().startswith('#')]
         content = '\n'.join(content_lines).strip()
         min_content = 5 if heading else 20
         if len(content) < min_content:
@@ -148,8 +149,8 @@ def build_index(full: bool = False) -> str:
                 pid = r.get("id", "")
                 path_part = pid.split("::")[0] if "::" in pid else pid
                 existing_paths.add(path_part)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("build_index: failed to query existing paths: %s", e)
 
     md_files = _get_md_files()
     new_count = 0
@@ -205,7 +206,7 @@ def query(text: str, top_k: int = 5) -> list[dict]:
                 "score": round(score, 3),
             })
         return formatted
-    except Exception as e:
+    except Exception:
         return _bm25_search(text, top_k)
 
 
@@ -233,8 +234,8 @@ def update(path: str) -> str:
         old_ids = [r["id"] for r in old if "id" in r]
         for oid in old_ids:
             embeddings.delete([oid])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("update: failed to delete old entries for %s: %s", path, e)
 
     # Add new chunks
     texts = []
@@ -306,8 +307,8 @@ def concept_vector(path: str) -> list:
         vector = embeddings.vector(f"{path}::0")
         if vector is not None:
             return vector.tolist() if hasattr(vector, "tolist") else list(vector)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("concept_vector: failed for %s: %s", path, e)
     return None
 
 

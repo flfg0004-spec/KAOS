@@ -1,6 +1,4 @@
 """Shared frontmatter parsing utilities for knowledge modules."""
-import re
-from typing import Optional
 
 import yaml
 

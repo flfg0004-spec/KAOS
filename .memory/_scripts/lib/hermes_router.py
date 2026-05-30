@@ -56,7 +56,8 @@ def _telegram_fallback(message: str, silent: bool = False) -> bool:
     if not token:
         return False
     try:
-        import json, urllib.request
+        import json
+        import urllib.request
         url = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {"chat_id": chat_id, "text": message, "disable_notification": silent, "parse_mode": "Markdown"}
         data = json.dumps(payload).encode("utf-8")

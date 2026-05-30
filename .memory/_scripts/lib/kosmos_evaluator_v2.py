@@ -13,19 +13,17 @@ ADVERTENCIA: NO usa DeepEval. Usa SOLO heurística basada en reglas + análisis
 de contenido. La evaluación es rápida (<1s) y no dependiente de LLM externo.
 """
 
-import json
 import logging
-import math
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def _load_profiles_from_yaml(yaml_path: str = None) -> Tuple[Dict, Dict]:
+def _load_profiles_from_yaml(yaml_path: str = None) -> tuple[dict, dict]:
     """Load dimension weights and thresholds from eval-profile.yaml.
 
     Si el archivo no existe o hay error, retorna los valores hardcodeados como fallback.
@@ -56,8 +54,8 @@ def _load_profiles_from_yaml(yaml_path: str = None) -> Tuple[Dict, Dict]:
         logger.warning("Cannot read eval-profile.yaml: %s — using hardcoded defaults", exc)
         return DIMENSION_WEIGHTS, PROFILE_THRESHOLDS
 
-    weights: Dict[str, Dict[str, float]] = {}
-    thresholds: Dict[str, Dict[str, float]] = {}
+    weights: dict[str, dict[str, float]] = {}
+    thresholds: dict[str, dict[str, float]] = {}
     current_profile: str | None = None
     current_section: str | None = None
     # Track indentation of the current section to detect when it ends
@@ -140,7 +138,7 @@ def _load_profiles_from_yaml(yaml_path: str = None) -> Tuple[Dict, Dict]:
 
 # ── Dimension weights per profile (from eval-profile.yaml) ──
 
-DIMENSION_WEIGHTS: Dict[str, Dict[str, float]] = {
+DIMENSION_WEIGHTS: dict[str, dict[str, float]] = {
     "exploracion": {
         "veracidad": 0.15,
         "coherencia": 0.15,
@@ -180,7 +178,7 @@ DIMENSION_WEIGHTS: Dict[str, Dict[str, float]] = {
 
 # ── Thresholds per profile ──
 
-PROFILE_THRESHOLDS: Dict[str, Dict[str, float]] = {
+PROFILE_THRESHOLDS: dict[str, dict[str, float]] = {
     "exploracion": {
         "veracidad_min": 50,
         "coherencia_min": 40,
@@ -385,7 +383,7 @@ def _word_count(text: str) -> int:
     return len(_RE_WORDS.findall(text))
 
 
-def _score_dimension_heuristic(text: str, dimension: str) -> Tuple[float, List[str]]:
+def _score_dimension_heuristic(text: str, dimension: str) -> tuple[float, list[str]]:
     """Score a single dimension using heuristic pattern matching.
 
     Returns:
@@ -399,7 +397,7 @@ def _score_dimension_heuristic(text: str, dimension: str) -> Tuple[float, List[s
     positives = patterns.get("positive", [])
     negatives = patterns.get("negative", [])
 
-    evidence: List[str] = []
+    evidence: list[str] = []
     pos_hits = 0
     neg_hits = 0
 
@@ -487,7 +485,7 @@ def _score_dimension_heuristic(text: str, dimension: str) -> Tuple[float, List[s
     return (round(score, 1), evidence[:5])
 
 
-def evaluate_dimension(text: str, dimension: str, profile: str = "desarrollo") -> Dict[str, Any]:
+def evaluate_dimension(text: str, dimension: str, profile: str = "desarrollo") -> dict[str, Any]:
     """Evaluate a single dimension of the given text.
 
     Args:
@@ -520,7 +518,7 @@ def evaluate_dimension(text: str, dimension: str, profile: str = "desarrollo") -
     }
 
 
-def evaluate_all_dimensions(text: str, profile: str = "desarrollo") -> Dict[str, Any]:
+def evaluate_all_dimensions(text: str, profile: str = "desarrollo") -> dict[str, Any]:
     """Evaluate all 5 dimensions and compute a weighted composite score.
 
     Args:
@@ -538,8 +536,8 @@ def evaluate_all_dimensions(text: str, profile: str = "desarrollo") -> Dict[str,
     weights = DIMENSION_WEIGHTS[profile]
     thresholds = PROFILE_THRESHOLDS.get(profile, PROFILE_THRESHOLDS["desarrollo"])
 
-    scores: Dict[str, float] = {}
-    evidences: Dict[str, List[str]] = {}
+    scores: dict[str, float] = {}
+    evidences: dict[str, list[str]] = {}
     all_passed = True
 
     for dim in ["veracidad", "coherencia", "completitud", "reproducibilidad", "utilidad"]:
@@ -578,7 +576,7 @@ def evaluate_all_dimensions(text: str, profile: str = "desarrollo") -> Dict[str,
     }
 
 
-def check_adherence(adr_text: str, existing_adrs: List[Dict[str, Any]]) -> Dict[str, Any]:
+def check_adherence(adr_text: str, existing_adrs: list[dict[str, Any]]) -> dict[str, Any]:
     """Verify consistency of an ADR against existing ADRs in L0 memory.
 
     Checks for:
@@ -596,10 +594,10 @@ def check_adherence(adr_text: str, existing_adrs: List[Dict[str, Any]]) -> Dict[
         valid_references, missing_references.
     """
     text_lower = adr_text.lower()
-    contradictions: List[str] = []
-    warnings: List[str] = []
-    valid_refs: List[str] = []
-    missing_refs: List[str] = []
+    contradictions: list[str] = []
+    warnings: list[str] = []
+    valid_refs: list[str] = []
+    missing_refs: list[str] = []
 
     # Extract ADR references from text
     adr_refs = re.findall(r'(ADR-\d+)', adr_text)
@@ -685,15 +683,15 @@ class EvaluationResult:
         timestamp: ISO timestamp of evaluation.
         profile_used: Profile name used.
     """
-    scores: Dict[str, float] = field(default_factory=dict)
+    scores: dict[str, float] = field(default_factory=dict)
     weighted_score: float = 0.0
-    thresholds: Dict[str, Any] = field(default_factory=dict)
+    thresholds: dict[str, Any] = field(default_factory=dict)
     passed: bool = False
-    evidences: Dict[str, List[str]] = field(default_factory=dict)
+    evidences: dict[str, list[str]] = field(default_factory=dict)
     timestamp: str = ""
     profile_used: str = "desarrollo"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to plain dict for serialization."""
         return asdict(self)
 
@@ -726,8 +724,8 @@ class DimensionalEvaluator:
         self._profile = profile if profile in DIMENSION_WEIGHTS else "desarrollo"
         self._weights = DIMENSION_WEIGHTS
         self._thresholds = PROFILE_THRESHOLDS.get(self._profile, PROFILE_THRESHOLDS["desarrollo"])
-        self._all_weights: Dict[str, Dict[str, float]] = DIMENSION_WEIGHTS
-        self._all_thresholds: Dict[str, Dict[str, float]] = PROFILE_THRESHOLDS
+        self._all_weights: dict[str, dict[str, float]] = DIMENSION_WEIGHTS
+        self._all_thresholds: dict[str, dict[str, float]] = PROFILE_THRESHOLDS
 
         if use_yaml:
             try:
@@ -779,8 +777,8 @@ class DimensionalEvaluator:
         weights = self._weights.get(profile, self._weights.get("desarrollo", DIMENSION_WEIGHTS["desarrollo"]))
         thresholds = self._thresholds if isinstance(self._thresholds, dict) else PROFILE_THRESHOLDS.get(profile, PROFILE_THRESHOLDS["desarrollo"])
 
-        scores: Dict[str, float] = {}
-        evidences: Dict[str, List[str]] = {}
+        scores: dict[str, float] = {}
+        evidences: dict[str, list[str]] = {}
         all_passed = True
 
         for dim in ["veracidad", "coherencia", "completitud", "reproducibilidad", "utilidad"]:
@@ -817,7 +815,7 @@ class DimensionalEvaluator:
             profile_used=profile,
         )
 
-    def compare_with_v1(self, text: str) -> Dict[str, Any]:
+    def compare_with_v1(self, text: str) -> dict[str, Any]:
         """Compare evaluation scores between V2 (current) and legacy V1 style.
 
         Legacy V1 (``kosmos_evaluator.py``) used simple pattern-matching with
@@ -862,8 +860,7 @@ def evaluate_system(state: dict = None) -> dict:
     Proporciona la misma interfaz que la función evaluate_system del
     kosmos_evaluator v1 para mantener compatibilidad con orchestrator.py.
     """
-    from lib.system_scanner import scan, health_score
-    from lib.kosmos_evaluator_v2 import DimensionalEvaluator
+    from lib.system_scanner import health_score, scan
     
     system = scan()
     sys_score = health_score(system)

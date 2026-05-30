@@ -1,6 +1,7 @@
 import re
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
 from lib.config import VAULT_ROOT
 
 

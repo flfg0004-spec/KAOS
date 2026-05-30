@@ -7,14 +7,13 @@ Consumes output from all 14 curation phases and produces:
 """
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-from lib import quality, gaps
-from lib.wikilinks import parse as wikilinks_parse
-from lib.memory_lifecycle import status as lifecycle_status
+from lib import gaps, quality
 from lib.graph_analysis import VaultGraph
+from lib.wikilinks import parse as wikilinks_parse
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 
@@ -205,7 +204,6 @@ def _collect_phases() -> dict[str, Any]:
         phases["lint"] = {"issues": -1, "ok": False}
 
     try:
-        from lib.contradictions import report as contradictions_report
         phases["contradictions"] = {"ok": True}
     except Exception:
         phases["contradictions"] = {"ok": False}

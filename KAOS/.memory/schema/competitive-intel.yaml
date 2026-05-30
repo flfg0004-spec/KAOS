@@ -1,0 +1,41 @@
+industries:
+  cloud-gpu:
+    competitors:
+    - Nvidia
+    - AMD
+    - Google Cloud
+    topics:
+    - pricing
+    - new products
+    - market share
+    - funding
+    schedule: weekly
+    output_dir: .memory/cache/intel/cloud-gpu/
+  ai-llm:
+    competitors:
+    - OpenAI
+    - Anthropic
+    - Google DeepMind
+    - Meta AI
+    topics:
+    - model releases
+    - pricing
+    - benchmarks
+    - funding
+    - open source
+    schedule: weekly
+    output_dir: .memory/cache/intel/ai-llm/
+  cloud-infra:
+    competitors:
+    - AWS
+    - Azure
+    - Google Cloud
+    - Oracle Cloud
+    topics:
+    - pricing
+    - new regions
+    - kubernetes
+    - serverless
+    - enterprise
+    schedule: monthly
+    output_dir: .memory/cache/intel/cloud-infra/

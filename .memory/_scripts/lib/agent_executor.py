@@ -6,18 +6,19 @@ Each function:
   3. Updates context.json for cross-agent memory
   4. Returns augmented KAOSState
 """
-import json, logging, re, os, subprocess, tempfile
+import json
+import logging
+import re
+import subprocess
+import tempfile
 from datetime import datetime
 from functools import lru_cache
-from pathlib import Path
 
 logger = logging.getLogger("agent_executor")
 
-from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT, HYBRID_PRO_ENABLED
-from lib.rag_injector import inject_context
+from lib.config import EXECUTOR_ENABLED, EXECUTOR_TIMEOUT, HERMES_ENABLED, LLM_DIRECT_ENABLED, RAG_ENABLED, VAULT_ROOT
 from lib.hermes_bridge import pipeline_notify
-from lib.code_memory import search as ce_search
-from lib.quality.agent import record as verify_record
+from lib.rag_injector import inject_context
 
 RAW_DIR = VAULT_ROOT / "_pipeline" / "raw"
 CONTEXT_PATH = VAULT_ROOT / "_pipeline" / "context.json"
@@ -165,7 +166,7 @@ def _call_with_langfuse(agent_name: str, prompt: str, trace_id: str = "", **kwar
         if handler:
             return agent_llm_call(agent_name, prompt, langfuse_handler=handler, **kwargs)
     except Exception:
-        pass
+        logger.warning("Langfuse handler not available, proceeding without tracing")
     return agent_llm_call(agent_name, prompt, **kwargs)
 
 
@@ -179,6 +180,7 @@ def _build_rag_context(topic: str) -> str:
     try:
         return _cached_rag(topic)
     except Exception:
+        logger.warning("RAG context injection failed, proceeding without RAG context")
         return ""
 
 def _notify_step(state, agent_name: str, status: str = "in_progress"):
@@ -470,7 +472,7 @@ def metis_node(state: dict) -> dict:
         execution_plan = {}
         if okrs:
             try:
-                from lib.strategy_tools import scope_initiatives, assign_krs, build_execution_plan
+                from lib.strategy_tools import assign_krs, build_execution_plan, scope_initiatives
                 initiatives = scope_initiatives(okrs, topic)
                 kr_assignment = assign_krs(okrs, initiatives)
                 execution_plan = build_execution_plan(okrs, initiatives, kr_assignment)
@@ -527,9 +529,12 @@ def metis_node(state: dict) -> dict:
     }
 
 # Backward-compatible re-exports (canonical implementations live in agent_nodes/)
-from lib.agent_tools import is_complete_code, resolve_kratos_model
-from lib.lang_utils import detect_code_language as _detect_code_language
-from lib.agent_nodes.kratos import kratos_node  # canonical version with type guards, quality gates, OPA
+
+def kratos_node(state: dict) -> dict:
+    """Delegates to canonical kratos_node in agent_nodes/kratos.py."""
+    from lib.agent_nodes.kratos import kratos_node as _kratos_node
+    return _kratos_node(state)
+
 
 def mnemosyne_node(state: dict) -> dict:
     """Delegates to the unified curation pipeline (lib/curation_pipeline.py).
@@ -594,7 +599,7 @@ def bcg_evaluator_node(state: dict) -> dict:
         return {**state, "bcg_score": 0, "bcg_passed": False, "bcg_details": {}}
 
     try:
-        from lib.bcg_evaluator import evaluate_strategy, evaluate_okrs
+        from lib.bcg_evaluator import evaluate_okrs, evaluate_strategy
         bcg = evaluate_strategy(metis_output)
 
         okr_result = {}
@@ -607,6 +612,7 @@ def bcg_evaluator_node(state: dict) -> dict:
             if okrs:
                 okr_result = evaluate_okrs(okrs)
         except Exception:
+            logger.warning("OKR evaluation failed, proceeding without OKR quality assessment")
             okr_result = {}
 
         # Track to strategy analytics timeseries
@@ -625,6 +631,7 @@ def bcg_evaluator_node(state: dict) -> dict:
             metis_feedback = ctx.get("cross_agent", {}).get("metis_to_aletheia", {})
             gaps = metis_feedback.get("gaps_identified", [])
         except Exception:
+            logger.warning("Failed to extract knowledge gaps from context")
             gaps = []
 
         return {

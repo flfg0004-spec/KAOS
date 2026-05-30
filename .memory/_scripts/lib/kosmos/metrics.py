@@ -11,7 +11,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class MetricsCollector:
 
     # ── API pública ──
 
-    def collect(self) -> Dict[str, Any]:
+    def collect(self) -> dict[str, Any]:
         """Recolecta TODAS las métricas disponibles.
 
         Returns:
@@ -48,7 +48,7 @@ class MetricsCollector:
             (graceful degradation).
         """
         now = datetime.now()
-        metrics: Dict[str, Any] = {
+        metrics: dict[str, Any] = {
             "timestamp": now.isoformat(),
             "service": "kosmosv2",
         }
@@ -103,7 +103,7 @@ class MetricsCollector:
 
     # ── Traces ──
 
-    def _load_traces(self, window_minutes: int) -> List[Dict[str, Any]]:
+    def _load_traces(self, window_minutes: int) -> list[dict[str, Any]]:
         """Carga spans desde archivos JSONL dentro de la ventana de tiempo.
 
         Args:
@@ -118,11 +118,11 @@ class MetricsCollector:
             return []
 
         cutoff = datetime.now() - timedelta(minutes=window_minutes)
-        spans: List[Dict[str, Any]] = []
+        spans: list[dict[str, Any]] = []
 
         for trace_file in sorted(_TRACES_DIR.glob("traces-*.jsonl"), reverse=True):
             try:
-                with open(trace_file, "r", encoding="utf-8") as f:
+                with open(trace_file, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if not line:
@@ -152,7 +152,7 @@ class MetricsCollector:
 
     # ── Pipeline ──
 
-    def _build_pipeline_data(self, spans: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _build_pipeline_data(self, spans: list[dict[str, Any]]) -> dict[str, Any]:
         """Construye métricas de pipeline a partir de spans.
 
         Args:
@@ -171,7 +171,7 @@ class MetricsCollector:
             }
 
         # Contar spans por nombre (nombre del nodo / batch)
-        node_counts: Dict[str, int] = {}
+        node_counts: dict[str, int] = {}
         error_count = 0
         # Para estimar ejecuciones: agrupar por span_id o usar batches
         execution_spans = [s for s in spans if s.get("name", "").startswith("batch_")]
@@ -198,7 +198,7 @@ class MetricsCollector:
         }
 
     @staticmethod
-    def _estimate_executions(spans: List[Dict[str, Any]]) -> int:
+    def _estimate_executions(spans: list[dict[str, Any]]) -> int:
         """Estima número de ejecuciones de pipeline agrupando spans cercanos.
 
         Si hay spans con nombre 'batch_level_0', cada batch marca una ejecución.
@@ -244,7 +244,7 @@ class MetricsCollector:
     # ── Latencia ──
 
     @staticmethod
-    def _compute_latency_percentiles(spans: List[Dict[str, Any]]) -> Dict[str, float]:
+    def _compute_latency_percentiles(spans: list[dict[str, Any]]) -> dict[str, float]:
         """Calcula percentiles P50, P95, P99 de duración de spans.
 
         Args:
@@ -284,7 +284,7 @@ class MetricsCollector:
     # ── Error rate ──
 
     @staticmethod
-    def _compute_error_rate(spans: List[Dict[str, Any]]) -> float:
+    def _compute_error_rate(spans: list[dict[str, Any]]) -> float:
         """Calcula porcentaje de spans con success=false.
 
         Args:
@@ -318,13 +318,13 @@ class AlertEngine:
     def __init__(self, check_interval: int = 60) -> None:
         self.check_interval = check_interval
         self._lock = threading.Lock()
-        self._last_alerts: List[Dict[str, Any]] = []
+        self._last_alerts: list[dict[str, Any]] = []
         self._consecutive_timeouts: int = 0
         self._last_check_time: float = 0.0
 
     # ── API pública ──
 
-    def check(self, metrics: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def check(self, metrics: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """Revisa condiciones y retorna lista de alertas activas.
 
         Args:
@@ -344,7 +344,7 @@ class AlertEngine:
             collector = MetricsCollector(window_minutes=10)
             metrics = collector.collect()
 
-        alerts: List[Dict[str, Any]] = []
+        alerts: list[dict[str, Any]] = []
 
         # Check conditions
         alerts.extend(self._check_errors(metrics))
@@ -357,12 +357,12 @@ class AlertEngine:
 
         return alerts
 
-    def get_last_alerts(self) -> List[Dict[str, Any]]:
+    def get_last_alerts(self) -> list[dict[str, Any]]:
         """Retorna la última lista de alertas generadas (thread-safe)."""
         with self._lock:
             return list(self._last_alerts)
 
-    def start_daemon(self, interval: Optional[int] = None) -> None:
+    def start_daemon(self, interval: int | None = None) -> None:
         """Inicia thread daemon que checkea periódicamente.
 
         Args:
@@ -387,7 +387,7 @@ class AlertEngine:
     # ── Checks internos ──
 
     @staticmethod
-    def _check_errors(metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _check_errors(metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Revisa condiciones de error rate.
 
         - WARN: error rate > 5% en ventana 10min
@@ -399,7 +399,7 @@ class AlertEngine:
         Returns:
             Lista de alertas (vacía si no se exceden thresholds).
         """
-        alerts: List[Dict[str, Any]] = []
+        alerts: list[dict[str, Any]] = []
         error_rate = metrics.get("error_rate", 0.0)
         pipeline = metrics.get("pipeline", {})
 
@@ -431,7 +431,7 @@ class AlertEngine:
         return alerts
 
     @staticmethod
-    def _check_cache(metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _check_cache(metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Revisa condiciones de cache.
 
         - WARN: cache hit rate < 50%
@@ -442,7 +442,7 @@ class AlertEngine:
         Returns:
             Lista de alertas (vacía si no se exceden thresholds).
         """
-        alerts: List[Dict[str, Any]] = []
+        alerts: list[dict[str, Any]] = []
         cache = metrics.get("cache", {})
 
         hit_rate = float(cache.get("hit_rate", 100.0))
@@ -459,7 +459,7 @@ class AlertEngine:
 
         return alerts
 
-    def _check_rate_limit(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _check_rate_limit(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Revisa condiciones de rate limiter.
 
         - WARN: waiting > 5
@@ -471,7 +471,7 @@ class AlertEngine:
         Returns:
             Lista de alertas (vacía si no se exceden thresholds).
         """
-        alerts: List[Dict[str, Any]] = []
+        alerts: list[dict[str, Any]] = []
         rl = metrics.get("rate_limiter", {})
 
         waiting = int(rl.get("waiting", 0))

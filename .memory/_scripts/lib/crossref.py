@@ -5,12 +5,11 @@ Also suggests backlinks for semantically close pages that should reference each 
 """
 
 import re
-from pathlib import Path
 from datetime import datetime
-from collections import defaultdict
+from pathlib import Path
 
+from lib.config import IGNORED_PAGES
 from lib.wikilinks import build_graph
-from lib.config import VAULT_ROOT, IGNORED_PAGES
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
 

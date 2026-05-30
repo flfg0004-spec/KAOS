@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kaos-visual"
+version = "1.0.0"
+description = "KAOS Visualization Integration — Plotly, Cytoscape.js, Kroki, Markmap"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lib*", "mcp_*"]

@@ -6,10 +6,10 @@ Graceful degradation: each phase catches errors independently.
 """
 import logging
 import os
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Optional
 
 from lib.config import VAULT_ROOT
 from lib.feature_flags import is_enabled
@@ -23,7 +23,7 @@ _DOC_TIMEOUT = int(os.environ.get("CURATION_DOC_TIMEOUT", "30"))
 
 @dataclass
 class SharedCache:
-    vault_graph: Optional[object] = None
+    vault_graph: object | None = None
     txtai_available: bool = False
     pr_cache: dict = field(default_factory=dict)
 
@@ -182,7 +182,7 @@ register_phase("lint", _phase_lint)
 register_phase("report", _phase_report)
 
 
-def run_pipeline(state: Optional[CurationState] = None) -> CurationState:
+def run_pipeline(state: CurationState | None = None) -> CurationState:
     if state is None:
         state = CurationState()
     try:

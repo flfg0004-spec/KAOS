@@ -1,19 +1,21 @@
 """LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE + Langfuse."""
-import os, re, json, sqlite3, logging, uuid
-from langgraph.graph import StateGraph, END
+import json
+import logging
+import os
+import re
+import sqlite3
+import uuid
+from typing import TypedDict
+
 from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import END, StateGraph
 from langgraph.types import Send
-from typing import TypedDict, Optional
 
-from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, HERMES_ENABLED
-from lib.file_lock import acquire_lock
-from lib.llm import agent_llm_call, SYSTEM_PROMPTS
-from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, mnemosyne_node, bcg_evaluator_node
-from lib.agent_nodes.kratos import kratos_node
+from lib.agent_executor import aletheia_node, bcg_evaluator_node, kosmos_node, metis_node, mnemosyne_node, planner_node
 from lib.agent_nodes.critic import critic_node
-from lib.quality.agent import record as verify_record
-
-
+from lib.agent_nodes.kratos import kratos_node
+from lib.config import HERMES_ENABLED, LLM_DIRECT_ENABLED, VAULT_ROOT
+from lib.file_lock import acquire_lock
 
 _LOG = logging.getLogger(__name__)
 
@@ -102,36 +104,36 @@ def _has_code_keywords(topic: str) -> bool:
 
 class KAOSState(TypedDict):
     topic: str
-    profile: Optional[str] = "standard"
-    plan: Optional[dict] = None
+    profile: str | None = "standard"
+    plan: dict | None = None
     has_code_subtasks: bool = False
-    aletheia_output: Optional[str] = None
-    aletheia_prompt: Optional[str] = None
-    kosmos_output: Optional[str] = None
-    kosmos_prompt: Optional[str] = None
-    metis_output: Optional[str] = None
-    metis_prompt: Optional[str] = None
-    kratos_output: Optional[str] = None
-    kratos_prompt: Optional[str] = None
-    mnemosyne_output: Optional[str] = None
-    mnemosyne_prompt: Optional[str] = None
-    mnemosyne_gaps: Optional[list] = None
+    aletheia_output: str | None = None
+    aletheia_prompt: str | None = None
+    kosmos_output: str | None = None
+    kosmos_prompt: str | None = None
+    metis_output: str | None = None
+    metis_prompt: str | None = None
+    kratos_output: str | None = None
+    kratos_prompt: str | None = None
+    mnemosyne_output: str | None = None
+    mnemosyne_prompt: str | None = None
+    mnemosyne_gaps: list | None = None
     needs_gap_check: bool = False
-    kratos_decision: Optional[str] = None
+    kratos_decision: str | None = None
     critic_score: float = 0
-    critic_feedback: Optional[str] = None
+    critic_feedback: str | None = None
     iteration: int = 0
     reflexion_iteration: int = 0
     reflexion_score: float = 0
-    error: Optional[str] = None
+    error: str | None = None
     retries: int = 0
-    hitl_approved: Optional[bool] = None
-    evaluation: Optional[dict] = None
-    evaluation_score: Optional[float] = None
-    okrs: Optional[list[dict]] = None
-    initiatives: Optional[list[dict]] = None
-    kr_assignment: Optional[dict] = None
-    aletheia_pending_gaps: Optional[list] = None
+    hitl_approved: bool | None = None
+    evaluation: dict | None = None
+    evaluation_score: float | None = None
+    okrs: list[dict] | None = None
+    initiatives: list[dict] | None = None
+    kr_assignment: dict | None = None
+    aletheia_pending_gaps: list | None = None
     gap_iteration: int = 0
 
 def interrupt_human(prompt: str, context: dict = None) -> bool:
@@ -151,7 +153,8 @@ def interrupt_human(prompt: str, context: dict = None) -> bool:
     Returns:
         True if approved, False if rejected
     """
-    import time, datetime
+    import datetime
+    import time
     
     # Write request with UUID so readers can detect stale reads
     session_id = str(uuid.uuid4())[:8]
@@ -202,8 +205,8 @@ def route_after_strategy(state: KAOSState) -> str:
 def get_dsol_config(agent_name: str, topic: str) -> dict:
     """REAL DSOL integration per ADR-010: resolves model via dsol.resolve_model()."""
     try:
-        from lib.aether.router import resolve_model
         from lib.aether.config import AGENT_DEFAULT_TASK
+        from lib.aether.router import resolve_model
         task_type = AGENT_DEFAULT_TASK.get(agent_name, "general")
         result = resolve_model(task_type=task_type, agent=agent_name)
         return {
@@ -212,11 +215,13 @@ def get_dsol_config(agent_name: str, topic: str) -> dict:
             "budget": result.get("tier", "flash"),
         }
     except Exception:
+        _LOG.warning("DSOL config resolution failed for agent %s — falling back to flash defaults", agent_name)
         return {
             "model": "gemini-3.5-flash",
             "thinking": False,
             "budget": "flash",
         }
+
 
 def route_after_bcg(state: KAOSState) -> str:
     """Route after BCG evaluation: gaps → Aletheia (re-research) else normal routing.
@@ -259,6 +264,7 @@ def _cross_validator_node(state: KAOSState) -> dict:
         state["cross_val_passed"] = result.get("avg_score", 0) >= 60
         state["cross_val_report"] = result
     except Exception:
+        _LOG.warning("Cross-validation failed for profile %s", profile)
         state["cross_val_score"] = 0
         state["cross_val_passed"] = False
     return state
@@ -287,9 +293,7 @@ def route_after_kratos(state: KAOSState) -> str:
             if not approved:
                 return "mnemosyne"
     
-    if decision == "complete":
-        return "reflexion"
-    elif decision == "error":
+    if decision == "complete" or decision == "error":
         return "reflexion"
     return "reflexion"
 
@@ -350,6 +354,7 @@ def _gap_check_node(state: KAOSState) -> dict:
         if ctx:
             gaps = ctx.get("aletheia_research_context", {}).get("gaps_detected", [])
     except Exception:
+        _LOG.warning("Gap check failed while querying pipeline cross-context")
         pass
     _notify("Mnemosyne Gap Check", "completed", state)
     return {**state, "mnemosyne_gaps": gaps, "needs_gap_check": False}
@@ -411,7 +416,7 @@ def _generate_suggestions(scores: dict, outputs: dict) -> dict[str, list[str]]:
 def _kratos_feedback_loop(kratos_output: str, critic_score: float):
     """Feed Kratos output quality back into CodeExperience bandit."""
     try:
-        from lib.code_memory import search, feedback, capture_from_bash
+        from lib.code_memory import feedback, search
         # Find relevant experiences for this output
         experiences = search(kratos_output[:200], top_k=3)
         for exp in experiences:
@@ -424,6 +429,7 @@ def _kratos_feedback_loop(kratos_output: str, critic_score: float):
                 logger.debug("Feedback loop: %s → %s (score=%d, success=%s)",
                             exp["hash"], fb.get("new_confidence"), critic_score, success)
     except Exception:
+        _LOG.warning("Kratos feedback loop to CodeExperience bandit failed")
         pass
 
 
@@ -517,6 +523,7 @@ def reflexion_node(state: KAOSState) -> dict:
         composite = score.get("composite", 0)
         gate_issues = [f"{g}: {d['detail']}" for g, d in score.get("gates", {}).items() if not d.get("passed", True)]
     except Exception:
+        _LOG.warning("Quality gate evaluation failed during reflexion iteration %d, using default score 5.0", reflexion_iter)
         composite = 5.0
         gate_issues = []
     
@@ -539,10 +546,10 @@ def reflexion_node(state: KAOSState) -> dict:
         f"## Issues Detectados (Quality Score: {composite}/10)\n"
         + "\n".join(f"- {issue}" for issue in gate_issues[:5])
         + "\n\n## Instrucciones\n"
-        f"1. Corrige cada issue listado arriba\n"
-        f"2. Mejora la calidad del código\n"
-        f"3. Mantén la funcionalidad original\n"
-        f"4. Responde SOLO con el código mejorado en bloques ```\n"
+        "1. Corrige cada issue listado arriba\n"
+        "2. Mejora la calidad del código\n"
+        "3. Mantén la funcionalidad original\n"
+        "4. Responde SOLO con el código mejorado en bloques ```\n"
     )
     
     try:

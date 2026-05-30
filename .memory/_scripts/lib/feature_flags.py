@@ -29,6 +29,31 @@ DEFAULT_FLAGS: Final[dict[str, bool]] = {
     "ether_agno_pg_enabled": False,
     "ether_sandbox_enabled": False,
     "ether_langfuse_enabled": False,
+
+    # === Kratos 2.0 Alpha — Track A (Foundation) ===
+    "use_kratos_v2": False,
+    "use_real_coverage": False,
+    "use_kratos_telemetry": False,
+
+    # === Kratos 2.0 Alpha — Track D (Multi-lang) ===
+    "use_rust_gates": False,
+    "use_ts_gates": False,
+    "use_go_gates": False,
+
+    # === Kratos 2.0 Alpha — Track B (Performance) ===
+    "use_parallel_gates": False,
+    "use_early_exit": False,
+
+    # === Kratos 2.0 Alpha — Track C (Quality) ===
+    "use_real_mypy": False,
+    "use_circuit_breaker": False,
+
+    # === H3 Sprint 3 — Governance & Dashboard ===
+    "opa_strict_mode": False,
+    "use_kratos_dashboard": False,
+
+    # === Hermes Tool Bridge (WS-1) ===
+    "use_progressive_disclosure": False,
 }
 
 _flags: dict[str, bool] = {}

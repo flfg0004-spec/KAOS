@@ -18,9 +18,9 @@ Sin dependencias externas — solo stdlib (http.server, threading).
 import json
 import logging
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
-from typing import Any, Dict
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ _DEFAULT_RESPONSE_HEADERS = {
 }
 
 
-def health_status() -> Dict[str, Any]:
+def health_status() -> dict[str, Any]:
     """Return current health status with uptime.
 
     Útil para MetricsCollector y monitoreo externo.
@@ -51,7 +51,7 @@ def health_status() -> Dict[str, Any]:
 class _HealthHandler(BaseHTTPRequestHandler):
     """HTTP request handler for /health, /ready, /metrics endpoints."""
 
-    def _respond(self, code: int, data: Dict[str, Any]) -> None:
+    def _respond(self, code: int, data: dict[str, Any]) -> None:
         """Send JSON response with status code and CORS headers."""
         self.send_response(code)
         for key, value in _DEFAULT_RESPONSE_HEADERS.items():
@@ -107,7 +107,7 @@ class _HealthHandler(BaseHTTPRequestHandler):
 
     def _handle_metrics(self) -> None:
         """Return JSON with cache, rate limiter, and span metrics."""
-        metrics: Dict[str, Any] = {
+        metrics: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "service": "kosmosv2",
         }
@@ -128,7 +128,7 @@ class _HealthHandler(BaseHTTPRequestHandler):
 
         # B1+B2+K2: OpenTelemetry + trace export
         try:
-            from lib.kosmos.otel import get_trace_summary, get_otel_status
+            from lib.kosmos.otel import get_otel_status, get_trace_summary
             otel_info = get_otel_status()
             metrics["otel"] = otel_info
             metrics["traces"] = get_trace_summary()
@@ -140,7 +140,7 @@ class _HealthHandler(BaseHTTPRequestHandler):
     def _handle_metrics_v2(self) -> None:
         """Return extended metrics with pipeline, latency, percentiles, alerts (B3+B4)."""
         try:
-            from lib.kosmos.metrics import MetricsCollector, AlertEngine
+            from lib.kosmos.metrics import AlertEngine, MetricsCollector
             mc = MetricsCollector()
             metrics = mc.collect()
             metrics["alerts"] = AlertEngine().check()
@@ -290,9 +290,9 @@ if __name__ == "__main__":
         try:
             port = int(sys.argv[1])
         except ValueError:
-            print(f"Usage: python -m lib.kosmos.health [port]")
+            print("Usage: python -m lib.kosmos.health [port]")
             sys.exit(1)
 
     print(f"🧪 KosmosV2 Health Server — http://localhost:{port}")
-    print(f"   Endpoints: GET /health  GET /ready  GET /metrics  GET /metrics/v2  GET /dashboard  GET /tune  GET /tune/apply")
+    print("   Endpoints: GET /health  GET /ready  GET /metrics  GET /metrics/v2  GET /dashboard  GET /tune  GET /tune/apply")
     serve_forever(port)

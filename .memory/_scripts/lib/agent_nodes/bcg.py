@@ -14,7 +14,7 @@ def _bcg_evaluator_node_impl(state: dict) -> dict:
         return {**state, "bcg_score": 0, "bcg_passed": False, "bcg_details": {}}
 
     try:
-        from lib.bcg_evaluator import evaluate_strategy, evaluate_okrs
+        from lib.bcg_evaluator import evaluate_okrs, evaluate_strategy
         bcg = evaluate_strategy(metis_output)
 
         okr_result = {}

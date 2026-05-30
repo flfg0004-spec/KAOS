@@ -1,19 +1,24 @@
 """Kratos Bash Hook — wraps CodeExperience capture around subprocess execution.
 
-Usage:
-    from kratos_hook import CodeMemoryCapture, init_code_memory_hook
+Usage (recommended — context manager):
+    from kratos_hook import CodeMemoryCapture
     
-    # Auto-capture all subprocess errors globally:
-    init_code_memory_hook()
-    
-    # Or as context manager (recommended):
+    # Scoped capture via context manager (safe, no global side-effects):
     with CodeMemoryCapture():
         result = subprocess.run(["py", "-3", "script.py"], capture_output=True)
     
     # Or per-command:
     result = run_and_capture(["py", "-3", "script.py"], cwd="/project")
+
+    # DEPRECATED — global monkey-patch (fragile, prefer context manager):
+    from kratos_hook import init_code_memory_hook  # noqa
 """
-import subprocess, sys, os, builtins, logging, threading
+import builtins
+import logging
+import os
+import subprocess
+import sys
+import threading
 from pathlib import Path
 
 logger = logging.getLogger("kratos_hook")
@@ -21,7 +26,7 @@ logger = logging.getLogger("kratos_hook")
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS.parent))
 
-from lib.code_memory import capture_from_bash, status as ce_status
+from lib.code_memory import capture_from_bash
 
 _original_run = subprocess.run
 _hook_lock = threading.Lock()
@@ -50,11 +55,12 @@ class CodeMemoryCapture:
 
 
 def init_code_memory_hook():
-    """Patch subprocess.run globally to auto-capture errors into CodeExperience.
+    """DEPRECATED — use CodeMemoryCapture context manager instead.
     
-    Uses threading.Lock for safety. Prefer CodeMemoryCapture context manager
-    for scoped capture.
+    Patch subprocess.run globally to auto-capture errors into CodeExperience.
+    This is fragile — prefer the scoped CodeMemoryCapture context manager.
     """
+    logger.warning("init_code_memory_hook is deprecated, use CodeMemoryCapture context manager instead")
     subprocess.run = _hooked_run
     builtins._code_memory_hook_active = True
     logger.info("CodeMemory hook activated (global monkey-patch)")
@@ -186,6 +192,7 @@ if __name__ == "__main__":
     print(f"Exit code: {result.returncode}")
     print(f"Stderr: {str(result.stderr)[:100]}...")
     
-    from lib.code_memory import status
     import json
+
+    from lib.code_memory import status
     print(f"\nCodeExperience: {json.dumps(status(), indent=2)}")

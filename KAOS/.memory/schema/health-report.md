@@ -1,0 +1,329 @@
+# Vault Health Report
+*Generated: 2026-05-28 13:04*
+## WARNING: Uncommitted Changes
+
+```
+M .agents/mcp_config.json
+ M .env.template
+ M .gitignore
+ D .memory/_archive/lib/obsidian.py
+ D .memory/_archive/tools/weekly_report.py
+ M .memory/_scripts/cli_pipeline.py
+ M .memory/_scripts/cli_quality.py
+ M .memory/_scripts/lib/agent_executor.py
+ M .memory/_scripts/lib/bandit.py
+ M .memory/_scripts/lib/code_memory.py
+ M .memory/_scripts/lib/config.py
+ M .memory/_scripts/lib/cot.py
+ M .memory/_scripts/lib/crew_orchestrator.py
+ M .memory/_scripts/lib/crystallize.py
+ M .memory/_scripts/lib/dashboard.py
+ M .memory/_scripts/lib/dsol.py
+ M .memory/_scripts/lib/hyde.py
+ M .memory/_scripts/lib/hydrate.py
+ M .memory/_scripts/lib/llm.py
+ M .memory/_scripts/lib/memory_lifecycle.py
+ D .memory/_scripts/lib/obsidian.py
+ M .memory/_scripts/lib/orchestrator.py
+ M .memory/_scripts/lib/parallel_worker.py
+ M .memory/_scripts/lib/pipeline.py
+ M .memory/_scripts/lib/quality.py
+ M .memory/_scripts/lib/quality_gate.py
+ M .memory/_scripts/lib/report_engine.py
+ M .memory/_scripts/lib/tagger.py
+ M .memory/_scripts/lib/verification_hook.py
+ M .memory/_scripts/lib/wikilinks.py
+ M .memory/_scripts/mcp_embed.py
+ M .memory/_scripts/mcp_txtai.py
+ M .memory/_scripts/requirements.txt
+ M .memory/_scripts/tests/run.py
+ M .memory/_scripts/tests/test_bandit.py
+ M .memory/_scripts/tests/test_config.py
+ M .memory/_scripts/tests/test_dsol.py
+ M .memory/_scripts/tests/test_embed.py
+ M .memory/_scripts/tests/test_fase0.py
+ M .memory/_scripts/tests/test_lifecycle.py
+ M .memory/_scripts/tests/test_parallel_worker.py
+ M .memory/_scripts/tests/test_tagger.py
+ M .memory/_scripts/vault.py
+ M .memory/ingest/queue/manifest.json
+ M .memory/schema/adr-004-deepseek-optimization-layer.md
+ M .memory/schema/adr-005-vector-store.md
+ M .memory/schema/adr-009-arquitectura-kratos.md
+ M .memory/schema/adr-010-integracion-dsol-langgraph.md
+ M .memory/schema/eval-profile.yaml
+ M .memory/schema/health-report.md
+ M .memory/schema/lint-report.md
+ M .memory/schema/vault-policy.md
+ M .memory/wiki/concepts/per-agent-mcp-restriction.md
+ M .memory/wiki/concepts/pipeline-maid.md
+ M .memory/wiki/entities/aletheia.md
+ M .memory/wiki/entities/kosmos.md
+ M .memory/wiki/entities/kratos.md
+ M .memory/wiki/entities/metis.md
+ M .memory/wiki/entities/mnemosyne.md
+ M .memory/wiki/glosario-kaos.md
+ M .memory/wiki/index.md
+ M .memory/wiki/log.md
+ M .opencode/agents/aletheia.md
+ M .opencode/agents/kosmos.md
+ M .opencode/agents/kratos.md
+ M .opencode/agents/metis.md
+ M .opencode/agents/metis/AGENTS.md
+ M .opencode/agents/metis/SOUL.md
+ M .opencode/opencode.json
+ M .opencode/skills/aletheia/SKILL.md
+ M .opencode/skills/kosmos/SKILL.md
+ M .opencode/skills/kratos/SKILL.md
+ M .opencode/skills/metis/SKILL.md
+ M .opencode/skills/mnemosyne/SKILL.md
+ M .tools/__pycache__/score_engine.cpython-312.pyc
+ M .tools/alert_daemon.py
+ M .tools/docker-compose.yml
+ M .tools/seed_dashboard.py
+ M .tools/verification_chain.py
+ M KAOS/.obsidian/community-plugins.json
+ M KAOS/.obsidian/graph.json
+ D KAOS/.obsidian/plugins/mcp-rest/data.json
+ D KAOS/.obsidian/plugins/mcp-rest/main.js
+ D KAOS/.obsidian/plugins/mcp-rest/manifest.json
+ D KAOS/.obsidian/plugins/obsidian-api/data.json
+ D KAOS/.obsidian/plugins/obsidian-api/main.js
+ D KAOS/.obsidian/plugins/obsidian-api/manifest.json
+ D KAOS/.obsidian/plugins/obsidian-api/styles.css
+ M KAOS/.obsidian/plugins/obsidian-git/data.json
+ D KAOS/.obsidian/plugins/smart-chatgpt/data.json
+ D KAOS/.obsidian/plugins/smart-chatgpt/main.js
+ D KAOS/.obsidian/plugins/smart-chatgpt/manifest.json
+ D KAOS/.obsidian/plugins/smart-chatgpt/styles.css
+ M KAOS/.obsidian/workspace.json
+ M KAOS/.smart-env/event_logs/event_logs.ajson
+ M KAOS/.smart-env/multi/00-MOC_md.ajson
+ M KAOS/.smart-env/multi/01-agentes_aletheia_md.ajson
+ M KAOS/.smart-env/multi/01-agentes_kosmos_md.ajson
+ M KAOS/.smart-env/multi/01-agentes_kratos_md.ajson
+ M KAOS/.smart-env/multi/01-agentes_metis_md.ajson
+ M KAOS/.smart-env/multi/01-agentes_mnemosyne_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_4_-recomendaciones_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_arquitectura-integracion-herramientas_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_github-mcp-oficial_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_herramientas_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_per-agent-mcp-restriction_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_pipeline-maid_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_que-hace_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_sentry-mcp_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_sin-compilacion-cruzada_md.ajson
+ M KAOS/.smart-env/multi/02-conceptos_veredicto_md.ajson
+ M KAOS/.smart-env/multi/03-referencias_evaluacion-plugins-ecosistema-opencode-firecrawl_md.ajson
+ M KAOS/.smart-env/multi/03-referencias_opencode-ecosystem-plugins_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_KAOS_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-001-sistema-memoria_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-002-aislamiento-memoria_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-002-sistema-scores_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-004-deepseek-optimization-layer_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-005-vector-store_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-006-sleep-time-compute_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-008-plugin-decision_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_adr-010-integracion-dsol-langgraph_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_compression-strategy_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_lint-report_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_mcp-security-audit_md.ajson
+ M KAOS/.smart-env/multi/04-esquema_vault-policy_md.ajson
+ M KAOS/.smart-env/multi/05-calidad_dashboard_md.ajson
+ M KAOS/.smart-env/multi/glosario-kaos_md.ajson
+ M KAOS/.smart-env/multi/index_md.ajson
+ M KAOS/00-MOC.md
+ M KAOS/01-agentes/aletheia.md
+ M KAOS/01-agentes/metis.md
+ M KAOS/02-conceptos/4.-recomendaciones.md
+ M KAOS/02-conceptos/per-agent-mcp-restriction.md
+ M KAOS/02-conceptos/pipeline-maid.md
+ M KAOS/02-conceptos/sin-compilacion-cruzada.md
+ M KAOS/04-esquema/KAOS.md
+ M KAOS/04-esquema/adr-001-sistema-memoria.md
+ M KAOS/04-esquema/adr-004-deepseek-optimization-layer.md
+ M KAOS/04-esquema/adr-009-arquitectura-kratos.md
+ M KAOS/04-esquema/adr-010-integracion-dsol-langgraph.md
+ M KAOS/04-esquema/estrategia-multi-modelo.md
+ M KAOS/04-esquema/mcp-security-audit.md
+ M KAOS/04-esquema/vault-policy.md
+ M KAOS/glosario-kaos.md
+ M SECURITY.md
+ D docker-compose.deerflow.yml
+ M docker-compose.langfuse.yml
+ D docker-compose.owui.yml
+ M docs/architecture/multi-model-router.md
+ M manage-ecosystem.ps1
+ D owui/mcpo-config/mcp-servers.json
+ D owui/otel-config.yaml
+ D owui/pipelines/kaos_dashboard.py
+?? .aim/
+?? .backup/docker-volumes/
+?? .backup/kanban.db
+?? .github/workflows/pdf-tests.yml
+?? .memory/_scripts/.coverage
+?? .memory/_scripts/aletheia_router.py
+?? .memory/_scripts/audit/
+?? .memory/_scripts/bcg_eval_cli.py
+?? .memory/_scripts/dashboard_populate.py
+?? .memory/_scripts/ether_dashboard.py
+?? .memory/_scripts/kaos_visual.egg-info/
+?? .memory/_scripts/lib/agent_nodes/
+?? .memory/_scripts/lib/agent_tools.py
+?? .memory/_scripts/lib/arch_graph.py
+?? .memory/_scripts/lib/atdi.py
+?? .memory/_scripts/lib/cache_warmer.py
+?? .memory/_scripts/lib/cost_optimizer.py
+?? .memory/_scripts/lib/domain_mapper.py
+?? .memory/_scripts/lib/ether/
+?? .memory/_scripts/lib/ether_v2/
+?? .memory/_scripts/lib/eval_dataset.py
+?? .memory/_scripts/lib/feature_flags.py
+?? .memory/_scripts/lib/forecasting.py
+?? .memory/_scripts/lib/incremental.py
+?? .memory/_scripts/lib/knowledge_graph_viz.py
+?? .memory/_scripts/lib/knowledge_tour.py
+?? .memory/_scripts/lib/kosmos_quality.py
+?? .memory/_scripts/lib/lang_utils.py
+?? .memory/_scripts/lib/langfuse_handler.py
+?? .memory/_scripts/lib/opa_bridge.py
+?? .memory/_scripts/lib/pdf_branding.py
+?? .memory/_scripts/lib/pdf_chart_engine.py
+?? .memory/_scripts/lib/pdf_report_generator.py
+?? .memory/_scripts/lib/pdf_templates/
+?? .memory/_scripts/lib/pipeline_swarm_bridge.py
+?? .memory/_scripts/lib/pr_gate.py
+?? .memory/_scripts/lib/quality/
+?? .memory/_scripts/lib/smell_pipeline.py
+?? .memory/_scripts/lib/templates/
+?? .memory/_scripts/lib/visual_dashboard.py
+?? .memory/_scripts/lib/viz_orchestrator.py
+?? .memory/_scripts/mcp_dsol.py
+?? .memory/_scripts/mcp_ether.py
+?? .memory/_scripts/mcp_ether_judge.py
+?? .memory/_scripts/mcp_kroki.py
+?? .memory/_scripts/mcp_markmap.py
+?? .memory/_scripts/mcp_speed.py
+?? .memory/_scripts/metis_mode.py
+?? .memory/_scripts/pyproject.toml
+?? .memory/_scripts/pytest.ini
+?? .memory/_scripts/scripts/
+?? .memory/_scripts/swarm/
+?? .memory/_scripts/test_wave2.py
+?? .memory/_scripts/tests/conftest.py
+?? .memory/_scripts/tests/mocks/
+?? .memory/_scripts/tests/pdf/
+?? .memory/_scripts/tests/test_aletheia_integration.py
+?? .memory/_scripts/tests/test_atdi.py
+?? .memory/_scripts/tests/test_cache_warmer.py
+?? .memory/_scripts/tests/test_cost_optimizer.py
+?? .memory/_scripts/tests/test_domain_mapper.py
+?? .memory/_scripts/tests/test_e2e_smoke.py
+?? .memory/_scripts/tests/test_ether.py
+?? .memory/_scripts/tests/test_ether_judge.py
+?? .memory/_scripts/tests/test_ether_kimi.py
+?? .memory/_scripts/tests/test_ether_router.py
+?? .memory/_scripts/tests/test_ether_v2_smoke.py
+?? .memory/_scripts/tests/test_eval.py
+?? .memory/_scripts/tests/test_feature_flags.py
+?? .memory/_scripts/tests/test_forecasting.py
+?? .memory/_scripts/tests/test_incremental.py
+?? .memory/_scripts/tests/test_knowledge_graph_viz.py
+?? .memory/_scripts/tests/test_knowledge_tour.py
+?? .memory/_scripts/tests/test_kosmos_integration.py
+?? .memory/_scripts/tests/test_kosmos_quality.py
+?? .memory/_scripts/tests/test_kratos_integration.py
+?? .memory/_scripts/tests/test_mcp_ether.py
+?? .memory/_scripts/tests/test_mcp_kroki.py
+?? .memory/_scripts/tests/test_mcp_markmap.py
+?? .memory/_scripts/tests/test_metis_integration.py
+?? .memory/_scripts/tests/test_metis_pipeline.py
+?? .memory/_scripts/tests/test_mnemosyne_integration.py
+?? .memory/_scripts/tests/test_observability.py
+?? .memory/_scripts/tests/test_phase3.py
+?? .memory/_scripts/tests/test_smell_pipeline.py
+?? .memory/_scripts/tests/test_ua_smoke.py
+?? .memory/_scripts/tests/test_visual_dashboard.py
+?? .memory/_scripts/tests/test_viz_orchestrator.py
+?? .memory/guides/
+?? .memory/plan-tactico-final.md
+?? .memory/plans/
+?? .memory/quality/
+?? .memory/schema/ADRs/
+?? .memory/schema/adr-017-ua-inspiracion-fase1.md
+?? .memory/schema/orphan-report.md
+?? .memory/schema/plan-estrategico-tactico-paralelo-2026.md
+?? .memory/wiki/concepts/cloud-computing.md
+?? .memory/wiki/concepts/cloud-storage-strategy.md
+?? .memory/wiki/concepts/gpu-pricing.md
+?? .memory/wiki/concepts/hybrid-cloud-strategy.md
+?? .memory/wiki/concepts/hyperscaler-comparison.md
+?? .memory/wiki/concepts/neoclouds.md
+?? .memory/wiki/concepts/spot-compute-strategy.md
+?? .memory/wiki/entities/DSOL.md
+?? .memory/wiki/entities/Ether-Kimi-Strategy.md
+?? .memory/wiki/entities/Hybrid-Attention.md
+?? .memory/wiki/entities/MOPD.md
+?? .memory/wiki/entities/MiMo-Embodied.md
+?? .memory/wiki/entities/MiMo-V2-Flash.md
+?? .memory/wiki/entities/MiMo-V2-Omni.md
+?? .memory/wiki/entities/MiMo-V2-TTS.md
+?? .memory/wiki/entities/MiMo-V2.5-Pro.md
+?? .memory/wiki/entities/MiMo.md
+?? .memory/wiki/entities/Miclaw.md
+?? .memory/wiki/entities/Multi-Token-Prediction-MTP.md
+?? .memory/wiki/entities/XLA-Cognitive-Model.md
+?? .memory/wiki/entities/analisis-incremental.md
+?? .memory/wiki/entities/cloud-research-report.md
+?? .memory/wiki/entities/domain-mapper.md
+?? .memory/wiki/entities/ether.md
+?? .memory/wiki/entities/hermes-workspace-integration.md
+?? .memory/wiki/entities/kimi.md
+?? .memory/wiki/entities/knowledge-tour.md
+?? .memory/wiki/entities/metis_ether_kimi_strategy.md
+?? .memory/wiki/entities/ua-inspiracion.md
+?? .opencode/notepads/
+?? .opencode/opencode.json.bak
+?? .tools/score_hook.py
+?? .tools/tests/test_verification_chain.py
+?? .tools/weekly_report.py
+?? .tools/wsl-metrics.ps1
+?? .tools/wsl-watchdog.ps1
+?? .workspace/
+?? 04-esquema/
+?? KAOS/.smart-env/multi/04-esquema_ADR-016-arquitectura-metis_md.ajson
+?? KAOS/.smart-env/multi/04-esquema_adr-009-migracion-scraping-stack_md.ajson
+?? KAOS/.smart-env/multi/04-esquema_estrategia-multi-modelo_md.ajson
+?? KAOS/.smart-env/multi/okrs_KAOS-OKRs-Q2-2026_md.ajson
+?? KAOS/04-esquema/ADR-016-arquitectura-metis.md
+?? KAOS/okrs/
+?? bin/
+?? docker-compose.kroki.yml
+?? docker/
+?? docs/LANGFUSE-SETUP.md
+?? docs/circuit-breaker-unification.md
+?? docs/hermes-workspace.md
+?? docs/quality-engine-diagnosis.md
+?? gateway_err.txt
+?? gateway_out.txt
+?? kaos.bat
+?? okrs/
+?? owui.bak/
+?? policy/
+?? scripts/backup-volumes.ps1
+?? shared/
+```
+## Frontmatter Validation
+- WARNING: wiki\entities\cloud-research-report.md missing frontmatter
+
+## Directory Structure
+- OK: wiki/entities (27 .md files, 27 total entries)
+- OK: wiki/concepts (98 .md files, 98 total entries)
+- OK: wiki/sources (31 .md files, 31 total entries)
+- OK: raw (26 .md files, 27 total entries)
+- OK: schema (31 .md files, 33 total entries)
+- OK: _scripts (1 .md files, 46 total entries)
+- OK: _pending (1 .md files, 1 total entries)
+- OK: _pipeline (51 .md files, 11 total entries)
+---
+**Vault health: WARNING Issues found**

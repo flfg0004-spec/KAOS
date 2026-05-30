@@ -1,9 +1,13 @@
-from lib.config import LLM_DIRECT_ENABLED
 from lib.agent_tools import (
-    slugify, load_context, save_context,
-    llm_or_executor_call, build_rag_context, notify_step,
     RAW_DIR,
+    build_rag_context,
+    llm_or_executor_call,
+    load_context,
+    notify_step,
+    save_context,
+    slugify,
 )
+from lib.config import LLM_DIRECT_ENABLED
 from lib.feature_flags import is_enabled
 
 

@@ -1,7 +1,6 @@
 """Speed metrics for the dual system (Gemini Flash + DeepSeek)."""
 
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 

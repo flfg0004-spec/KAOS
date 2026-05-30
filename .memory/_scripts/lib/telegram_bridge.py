@@ -11,9 +11,8 @@ Comandos:
 Auto-deteccion: si python-telegram-bot no esta instalado, opera en modo mock.
 """
 
-import os
-import json
 import logging
+import os
 from datetime import datetime
 
 logger = logging.getLogger("telegram_bridge")
@@ -45,8 +44,8 @@ class TelegramBridge:
     async def _investigate(self, update, context):
         topic = " ".join(context.args) if context.args else "analisis general"
         try:
+
             from lib.deerflow_bridge import bridge as df_bridge
-            import asyncio
             result = await df_bridge.execute({
                 "type": "reasoning",
                 "prompt": f"Investiga: {topic}",

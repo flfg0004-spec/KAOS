@@ -17,8 +17,8 @@ import hashlib
 import json
 import re
 import shutil
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import lib.llm as llm
 
@@ -75,7 +75,9 @@ def _jaccard_similarity(a: str, b: str) -> float:
 
 def _embedding_similarity(texts: list[str]) -> list[tuple[str, str, float]]:
     """Compute pairwise embedding similarities via txtai MCP."""
-    import subprocess, sys as _sys, os as _os
+    import os as _os
+    import subprocess
+    import sys as _sys
     if _os.environ.get("KAOS_TESTING") == "1":
         return []
     mcp_txtai = BASE / "_scripts" / "mcp_txtai.py"

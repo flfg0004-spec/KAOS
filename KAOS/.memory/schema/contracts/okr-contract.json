@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OKR Contract",
+  "description": "Schema formal de OKRs con objective, key_results, baseline, target, confidence y BCG score — usado como referente cruzado en strategy-transfer y strategy-feedback",
+  "type": "object",
+  "properties": {
+    "okrs": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/okr_entry" },
+      "minItems": 1
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "session_id": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "profile": { "type": "string", "enum": ["exploracion", "desarrollo", "produccion"] },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" }
+      }
+    }
+  },
+  "required": ["okrs"],
+  "definitions": {
+    "okr_entry": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^O[0-9]+$" },
+        "objective": {
+          "type": "string",
+          "description": "Objetivo cualitativo e inspirador",
+          "minLength": 10
+        },
+        "owner": { "type": "string" },
+        "key_results": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/key_result" },
+          "minItems": 1,
+          "maxItems": 5
+        },
+        "initiatives": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/initiative" }
+        },
+        "bcg_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "BCG 8-dimension evaluation score"
+        },
+        "health_check": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "OKR health check score (7 criterios)"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["alta", "media", "baja"]
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "okr_id": { "type": "string" },
+              "type": { "type": "string", "enum": ["blocking", "blocked_by", "related"] }
+            }
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/risk" }
+        },
+        "quarter": { "type": "string", "pattern": "^Q[1-4]-[0-9]{4}$" }
+      },
+      "required": ["objective", "key_results"]
+    },
+    "key_result": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^KR[0-9]+$" },
+        "description": { "type": "string", "minLength": 5 },
+        "baseline": { "type": "number" },
+        "target": { "type": "number" },
+        "current": { "type": "number" },
+        "unit": { "type": "string" },
+        "owner": { "type": "string" },
+        "weight": { "type": "number", "minimum": 0, "maximum": 1 },
+        "status": { "type": "string", "enum": ["on_track", "at_risk", "behind", "completed", "not_started"] }
+      },
+      "required": ["description", "target"]
+    },
+    "initiative": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^I[0-9]+$" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "rice_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "assigned_to": { "type": "string" },
+        "effort_hours": { "type": "number", "minimum": 0 },
+        "deadline": { "type": "string", "format": "date" },
+        "dependencies": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "title"]
+    },
+    "risk": {
+      "type": "object",
+      "properties": {
+        "risk": { "type": "string" },
+        "probability": { "type": "string", "enum": ["alta", "media", "baja"] },
+        "impact": { "type": "string", "enum": ["alto", "medio", "bajo"] },
+        "mitigation": { "type": "string" }
+      },
+      "required": ["risk", "probability", "impact"]
+    }
+  }
+}

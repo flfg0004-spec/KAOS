@@ -1,5 +1,6 @@
 """Agent output quality evaluation — DeepEval + heuristic fallback."""
-import json, logging
+import json
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -95,7 +96,7 @@ def evaluate_agent_output(agent: str, output: str, task_prompt: str = "", contex
         return {"composite": round(composite, 1), "real_metrics": False, **{k: round(v, 1) for k, v in dims.items()}}
 
 
-def record(agent: str, output: str, topic: str = "", pipeline_id: str = "", task_prompt: str = "") -> dict:
+def record(agent: str, output: str, topic: str = "", pipeline_id: str = "", task_prompt: str = "", decision: str = "") -> dict:
     scores = evaluate_agent_output(agent, output, task_prompt)
     timestamp = datetime.now().isoformat()
     entry = {
@@ -103,8 +104,13 @@ def record(agent: str, output: str, topic: str = "", pipeline_id: str = "", task
         "topic": topic[:80] if topic else "",
         "pipeline_id": pipeline_id,
         "timestamp": timestamp,
+        "decision": str(decision) if decision else "",
         **{k: v for k, v in scores.items()},
     }
+    if decision in ("failed", "rejected_by_gov", "early_exit"):
+        scores["composite"] = max(0, scores.get("composite", 0) * 0.8)
+        entry["composite"] = scores["composite"]
+        entry["decision_penalty"] = True
     TIMESERIES_DIR.mkdir(parents=True, exist_ok=True)
     data = locked_update(
         TIMESERIES_FILE,

@@ -1,7 +1,13 @@
 """Vault quality metrics — 7-dimension score for overall vault health."""
-import json, re, subprocess, sys
-from pathlib import Path
+import json
+import logging
+import re
+import subprocess
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 BASE = (Path(__file__).resolve().parent.parent.parent.parent)
 KAOS_ROOT = BASE.parent

@@ -7,9 +7,9 @@ import json
 import logging
 import re
 
-from lib.config import LLM_DIRECT_ENABLED, HERMES_ENABLED
-from lib.llm import agent_llm_call
+from lib.config import HERMES_ENABLED, LLM_DIRECT_ENABLED
 from lib.hermes_bridge import pipeline_notify
+from lib.llm import agent_llm_call
 from lib.quality.agent import record as verify_record
 
 _CRITIC_THRESHOLD = 40
@@ -62,7 +62,7 @@ def _generate_suggestions(scores: dict, outputs: dict) -> dict[str, list[str]]:
 def _kratos_feedback_loop(kratos_output: str, critic_score: float):
     """Feed Kratos output quality back into CodeExperience bandit."""
     try:
-        from lib.code_memory import search, feedback
+        from lib.code_memory import feedback, search
         experiences = search(kratos_output[:200], top_k=3)
         for exp in experiences:
             success = critic_score >= 60

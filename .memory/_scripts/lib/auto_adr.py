@@ -12,10 +12,9 @@ Mecanismo:
   4. Humano aprueba o timeout 30min auto-aplica
 """
 
-import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger("auto_adr")
@@ -112,8 +111,8 @@ class AutoADRDetector:
         )
         consequences = [
             f"+ Mejora la calidad del output del agente {agent}",
-            f"+ Establece un baseline de calidad para monitoreo futuro",
-            f"- Puede requerir iteraciones adicionales para ajustar parametros",
+            "+ Establece un baseline de calidad para monitoreo futuro",
+            "- Puede requerir iteraciones adicionales para ajustar parametros",
             f"- El cambio puede afectar otros agentes que dependen de {agent}",
         ]
 

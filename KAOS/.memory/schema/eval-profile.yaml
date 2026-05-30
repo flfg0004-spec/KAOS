@@ -1,0 +1,120 @@
+# Perfiles de Evaluación — KAOS Quality System
+# Cada perfil define pesos y umbrales para el score compuesto
+
+profiles:
+  exploracion:
+    label: "Exploración 🟢"
+    description: "Investigación inicial, prototipos, brainstorming"
+    weights:
+      veracidad: 0.15
+      coherencia: 0.15
+      completitud: 0.20
+      reproducibilidad: 0.15
+      utilidad: 0.35
+    thresholds:
+      veracidad_min: 50
+      coherencia_min: 40
+      completitud_min: 40
+      reproducibilidad_min: 30
+      utilidad_min: 50
+      composite_good: 60
+      composite_critical: 30
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: false
+      l3_enabled: false
+
+  desarrollo:
+    label: "Desarrollo 🟡"
+    description: "Trabajo estándar, features, refactors"
+    weights:
+      veracidad: 0.20
+      coherencia: 0.20
+      completitud: 0.20
+      reproducibilidad: 0.20
+      utilidad: 0.20
+    thresholds:
+      veracidad_min: 65
+      coherencia_min: 60
+      completitud_min: 55
+      reproducibilidad_min: 50
+      utilidad_min: 55
+      composite_good: 70
+      composite_critical: 40
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: true
+      l3_enabled: false
+    kratos:
+      compile_rate_min: 50
+      test_pass_rate_min: 50
+      code_review_score_min: 50
+      error_capture_rate_min: 30
+
+  produccion:
+    label: "Producción 🔴"
+    description: "Decisiones críticas, ADRs, releases"
+    weights:
+      veracidad: 0.30
+      coherencia: 0.25
+      completitud: 0.20
+      reproducibilidad: 0.15
+      utilidad: 0.10
+    thresholds:
+      veracidad_min: 80
+      coherencia_min: 75
+      completitud_min: 70
+      reproducibilidad_min: 60
+      utilidad_min: 50
+      composite_good: 80
+      composite_critical: 55
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: true
+      l3_enabled: true
+
+  auditoria:
+    label: "Auditoría 🟣"
+    description: "Revisión trimestral, compliance"
+    weights:
+      veracidad: 0.35
+      coherencia: 0.25
+      completitud: 0.25
+      reproducibilidad: 0.10
+      utilidad: 0.05
+    thresholds:
+      veracidad_min: 85
+      coherencia_min: 80
+      completitud_min: 75
+      reproducibilidad_min: 70
+      utilidad_min: 40
+      composite_good: 85
+      composite_critical: 60
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: true
+      l3_enabled: true
+
+  qa:
+    label: "QA / Pre-release"
+    description: "Validación de calidad pre-release, compliance"
+    weights:
+      veracidad: 0.30
+      coherencia: 0.25
+      completitud: 0.20
+      reproducibilidad: 0.15
+      utilidad: 0.10
+    thresholds:
+      veracidad_min: 85
+      coherencia_min: 80
+      completitud_min: 80
+      reproducibilidad_min: 75
+      utilidad_min: 50
+      composite_good: 80
+      composite_critical: 65
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: true
+      l3_enabled: true
+
+default_profile: desarrollo

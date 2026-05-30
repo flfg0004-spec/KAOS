@@ -1,7 +1,6 @@
 """Seed CodeExperience with initial entries for bootstrap.
 Uses code_memory.store() — no own schema. Multi-language support."""
 
-from pathlib import Path
 from lib.code_memory import init, store
 
 SEEDS = [
@@ -46,8 +45,9 @@ def seed_code_experiences(count: int = 10) -> dict:
     """
     init()
 
-    from lib.code_memory import DB
     import sqlite3
+
+    from lib.code_memory import DB
     conn = sqlite3.connect(str(DB))
     try:
         existing = conn.execute("SELECT COUNT(*) FROM code_experiences").fetchone()[0]

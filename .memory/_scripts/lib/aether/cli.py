@@ -2,7 +2,6 @@
 """Aether CLI — dashboard and configuration tool for the Aether routing system."""
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -12,11 +11,11 @@ AETHER_YAML = Path(__file__).resolve().parent.parent.parent / "aether.yaml"
 def _rich():
     try:
         from rich.console import Console
-        from rich.table import Table
         from rich.layout import Layout
-        from rich.panel import Panel
-        from rich.progress import Progress, BarColumn, TextColumn
         from rich.live import Live
+        from rich.panel import Panel
+        from rich.progress import BarColumn, Progress, TextColumn
+        from rich.table import Table
         return Console, Table, Layout, Panel, Progress, BarColumn, TextColumn, Live
     except ImportError:
         return None
@@ -30,14 +29,19 @@ def cmd_status(args):
     else:
         console = None
 
-    from lib.aether.config_loader import get_config
-    from lib.aether.tracker import EtherTracker
     from lib.aether.circuit import _ETHER_CIRCUIT_BREAKER
+    from lib.aether.config_loader import get_config
+    from lib.aether.quality_store import QualityStore
+    from lib.aether.tracker import EtherTracker
 
     cfg = get_config(str(AETHER_YAML))
     tracker = EtherTracker()
     stats = tracker.get_stats()
     cb_status = _ETHER_CIRCUIT_BREAKER.get_status()
+    qs = QualityStore()
+    quality_summary = qs.get_summary() if qs else {}
+    budget = tracker.check_budget()
+    model_bd = tracker.get_model_breakdown()
 
     if console:
         layout = Layout()
@@ -51,9 +55,10 @@ def cmd_status(args):
             Layout(name="costs"),
         )
 
-        from datetime import datetime
         layout["top"].update(Panel(
-            f"Aether Routing Dashboard  |  {stats.get('total_calls', 0)} calls tracked  |  ${stats.get('total_cost_usd', 0):.4f} total cost",
+            f"Aether Dashboard  |  {stats.get('total_calls', 0)} calls  |  "
+            f"${stats.get('total_cost_usd', 0):.4f} total  |  "
+            f"Budget: {budget.get('status', 'unknown')}",
             style="bold cyan",
         ))
 
@@ -63,43 +68,75 @@ def cmd_status(args):
         t.add_column("Model", style="green")
         t.add_column("Tier", style="yellow")
         for task, rule in sorted(task_map.items()):
-            t.add_row(task, rule["model"], rule.get("tier", ""))
+            model = rule["model"] if isinstance(rule, dict) else rule[0]["model"]
+            tier = rule.get("tier", "") if isinstance(rule, dict) else rule[0].get("tier", "")
+            t.add_row(task, model, tier)
         layout["routing"].update(Panel(t))
 
-        rates = cfg.COST_RATES
-        cost_table = Table(title="Cost Rates (per 1K tokens)")
+        cost_table = Table(title="Cost & Traffic by Model")
         cost_table.add_column("Model", style="cyan")
-        cost_table.add_column("Input", style="green")
-        cost_table.add_column("Output", style="yellow")
-        for model, rate in sorted(rates.items()):
-            inp = f"${rate.get('input', 0):.6f}"
-            out = f"${rate.get('output', 0):.6f}"
-            cost_table.add_row(model, inp, out)
+        cost_table.add_column("Calls", style="green")
+        cost_table.add_column("Cost", style="yellow")
+        cost_table.add_column("Avg Latency", style="magenta")
+        for model, data in sorted(model_bd.items()):
+            cost_table.add_row(
+                model,
+                str(data.get("calls", 0)),
+                f"${data.get('cost_usd', 0):.4f}",
+                f"{data.get('latency_ms', 0):.0f}ms",
+            )
         layout["costs"].update(Panel(cost_table))
 
-        cb_table = Table(title="Circuit Breaker States")
-        cb_table.add_column("Model", style="cyan")
-        cb_table.add_column("State", style="yellow")
-        cb_table.add_column("Failures", style="red")
-        for model, state in sorted(cb_status.items()):
-            s = state.get("state", "unknown")
-            color = "green" if s == "closed" else ("red" if s == "open" else "yellow")
-            cb_table.add_row(model, f"[{color}]{s}[/{color}]", str(state.get("failures", 0)))
-        layout["bottom"].update(Panel(cb_table))
+        layout["bottom"].split_row(
+            Layout(name="quality"),
+            Layout(name="trends"),
+        )
+
+        q_table = Table(title="Quality Scores by Task")
+        q_table.add_column("Task", style="cyan")
+        q_table.add_column("Model", style="green")
+        q_table.add_column("Score", style="yellow")
+        for task, data in sorted(quality_summary.get("by_task", {}).items()):
+            model = data.get("best_model", "?")
+            score = data.get("avg_score", 0)
+            color = "green" if score >= 7 else ("yellow" if score >= 4 else "red")
+            q_table.add_row(task, model, f"[{color}]{score:.1f}[/{color}]")
+        layout["quality"].update(Panel(q_table))
+
+        daily = stats.get("daily_breakdown", {})
+        trend_table = Table(title="Last 7 Days Trend")
+        trend_table.add_column("Date", style="cyan")
+        trend_table.add_column("Calls", style="green")
+        trend_table.add_column("Cost", style="yellow")
+        for day, data in sorted(daily.items(), reverse=True)[:7]:
+            trend_table.add_row(day, str(data.get("calls", 0)), f"${data.get('cost_usd', 0):.4f}")
+        layout["trends"].update(Panel(trend_table))
+
+        # Budget alerts panel
+        if budget.get("alerts"):
+            alert_text = "\n".join(budget["alerts"])
+            console.print(Panel(alert_text, title="[bold red]Budget Alerts[/bold red]", style="red"))
 
         console.print(layout)
     else:
         print("=== Aether Status ===")
-        print(f"Calls: {stats.get('total_calls', 0)} | Cost: ${stats.get('total_cost_usd', 0):.4f}")
+        print(f"Calls: {stats.get('total_calls', 0)} | Cost: ${stats.get('total_cost_usd', 0):.4f} | Budget: {budget.get('status', 'unknown')}")
         print(f"\nRouting ({len(cfg.TASK_MODEL_MAP)} tasks):")
         for task, rule in sorted(cfg.TASK_MODEL_MAP.items()):
-            print(f"  {task}: {rule['model']} ({rule.get('tier', '')})")
-        print(f"\nModels ({len(cfg.COST_RATES)}):")
-        for model in sorted(cfg.COST_RATES):
-            print(f"  {model}")
-        print(f"\nCB States ({len(cb_status)}):")
-        for model, s in sorted(cb_status.items()):
-            print(f"  {model}: {s.get('state', 'unknown')} ({s.get('failures', 0)} failures)")
+            model = rule["model"] if isinstance(rule, dict) else rule[0]["model"]
+            tier = rule.get("tier", "") if isinstance(rule, dict) else rule[0].get("tier", "")
+            print(f"  {task}: {model} ({tier})")
+        print("\nTraffic by Model:")
+        for model, data in sorted(model_bd.items()):
+            print(f"  {model}: {data.get('calls', 0)} calls, ${data.get('cost_usd', 0):.4f}")
+        print("\nQuality Scores:")
+        for task, data in sorted(quality_summary.get("by_task", {}).items()):
+            print(f"  {task}: {data.get('avg_score', 0):.1f} (best: {data.get('best_model', '?')})")
+        print("\nTrends (last 7 days):")
+        for day, data in sorted(stats.get("daily_breakdown", {}).items(), reverse=True)[:7]:
+            print(f"  {day}: {data.get('calls', 0)} calls, ${data.get('cost_usd', 0):.4f}")
+        if budget.get("alerts"):
+            print(f"\n[ALERTS] {budget['message']}")
 
 
 def cmd_config(args):

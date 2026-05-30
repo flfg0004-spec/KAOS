@@ -21,3 +21,29 @@
 - `lib/docker_lazy.py` — Docker lazy start con DOCKERLESS_MODE
 - `scripts/rotate-keys.ps1` — Rotación de API keys + purga git
 - `.tools/sandbox/Dockerfile` — Sandbox multi-stage alpine
+
+### Kratos — Code Agent
+**Version**: 2.0 Alpha (H3 Sprint 4)
+**Tests**: 73+ passing
+**Feature flags**: 20+ flags (all disabled by default)
+**Capabilities**:
+- PRGII pipeline (Plan → Retrieve → Generate → Iterate → Document)
+- 8 quality gates (syntax, compilation, lint, types, structure, security, coverage, style)
+- Multi-lang support (Rust, TypeScript, Go) via feature flags
+- Parallel gate execution via ThreadPoolExecutor
+- Real mypy --strict type checking (feature-flagged)
+- Real pytest --cov coverage measurement (feature-flagged)
+- Circuit Breaker for LLM critic calls (per-invocation)
+- Self-healing triggers based on telemetry
+- Telemetry dashboard (CLI) with health score
+- OPA governance (configurable fail-open/fail-close)
+- KratosDecision enum (5 values, str-compatible)
+- Type guards for cross-agent data (never crashes)
+**Key Files**:
+- `lib/agent_nodes/kratos.py`
+- `lib/quality_gate/` (package, 11 files)
+- `lib/kratos_decision.py`
+- `lib/kratos_telemetry.py`
+- `lib/kratos_dashboard.py`
+- `lib/kratos_self_heal.py`
+- `lib/kratos_contract.py`

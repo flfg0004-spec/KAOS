@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        /* ── Pipeline Metrics Grid ── */
+        .pipeline-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .pipeline-card {
+            background: {{ brand_colors.secondary }};
+            border: 1px solid {{ brand_colors.primary }};
+            border-radius: 8px;
+            padding: 16px 14px;
+            text-align: center;
+        }
+        .pipeline-card .pl-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: {{ brand_colors.muted }};
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .pipeline-card .pl-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: {{ agent_color }};
+            font-family: {{ fonts.heading }};
+        }
+
+        /* ── Cost Breakdown Table ── */
+        .cost-section {
+            margin: 20px 0;
+        }
+        .cost-section h3 {
+            color: {{ agent_color }};
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-family: {{ fonts.heading }};
+        }
+        .cost-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .cost-table th {
+            background: {{ agent_color }}22;
+            color: {{ agent_color }};
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid {{ agent_color }}44;
+        }
+        .cost-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid {{ brand_colors.secondary }};
+            font-size: 13px;
+        }
+        .cost-table .cost-amount {
+            font-weight: 700;
+            font-family: {{ fonts.mono }};
+            color: {{ brand_colors.text }};
+        }
+        .cost-table tr:last-child td {
+            font-weight: 700;
+            border-top: 2px solid {{ agent_color }};
+        }
+
+        /* ── Pipeline Badge ── */
+        .pipeline-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: {{ agent_color }};
+            color: {{ brand_colors.background }};
+        }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section">
+        <h2>{{ section.title }}</h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>{% for col in section.table.headers %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if pipeline_metrics %}
+    <h2><span class="pipeline-badge">pipeline</span> Pipeline Metrics</h2>
+    <div class="pipeline-metrics">
+        {% for key, value in pipeline_metrics.items() %}
+        <div class="pipeline-card">
+            <div class="pl-label">{{ key }}</div>
+            <div class="pl-value">{{ value }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if costs %}
+    <div class="cost-section">
+        <h3>Cost Breakdown</h3>
+        <table class="cost-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in costs.items() %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td class="cost-amount">{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

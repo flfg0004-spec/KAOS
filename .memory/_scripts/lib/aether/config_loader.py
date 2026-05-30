@@ -1,9 +1,12 @@
 """AetherConfig — loads Aether configuration from aether.yaml with env var overrides."""
 
+import logging
 import os
+import signal
 from pathlib import Path
 
 AETHER_YAML = Path(__file__).resolve().parent.parent.parent / "aether.yaml"
+_LOG = logging.getLogger(__name__)
 
 
 class AetherConfig:
@@ -32,6 +35,7 @@ class AetherConfig:
             "ETHER_LANGFUSE_ENABLED": "ether_langfuse_enabled",
             "ETHER_DEEPEVAL_ENABLED": "ether_deepeval_enabled",
             "ETHER_QUALITY_ROUTING": "quality_routing_enabled",
+            "ETHER_ROUTER9_ENABLED": "ether_router9_enabled",
         }
         for env_key, flag_key in env_map.items():
             val = os.environ.get(env_key)
@@ -161,3 +165,20 @@ def get_config(path: str | Path = None) -> AetherConfig:
 def reload_config(path: str | Path = None):
     global _config_instance
     _config_instance = AetherConfig(path)
+    _config_instance.validate()
+    _LOG.info("Config reloaded from %s", path or AETHER_YAML)
+    # Propagate new values to config.py module-level constants
+    import lib.aether.config as _cfg_module
+    _cfg_module._cfg = _config_instance
+    _cfg_module.refresh_constants()
+
+
+def _handle_sighup(signum, frame):
+    _LOG.info("SIGHUP received — reloading config")
+    reload_config()
+
+
+try:
+    signal.signal(signal.SIGHUP, _handle_sighup)
+except (AttributeError, ValueError):
+    pass

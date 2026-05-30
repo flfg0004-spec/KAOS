@@ -1,0 +1,749 @@
+"""LangGraph Orchestrator — DAG with deep routing + HITL + parallel fan-out + DeerFlow/Agno LIVE + Langfuse."""
+import json
+import logging
+import os
+import re
+import sqlite3
+import uuid
+from typing import TypedDict
+
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import END, StateGraph
+from langgraph.types import Send
+
+from lib.agent_executor import aletheia_node, bcg_evaluator_node, kosmos_node, metis_node, mnemosyne_node, planner_node
+from lib.agent_nodes.critic import critic_node
+from lib.agent_nodes.kratos import kratos_node
+from lib.config import HERMES_ENABLED, LLM_DIRECT_ENABLED, VAULT_ROOT
+from lib.file_lock import acquire_lock
+
+_LOG = logging.getLogger(__name__)
+
+DB_PATH = VAULT_ROOT / "cache" / "langgraph.db"
+HITL_PATH = VAULT_ROOT / "_pipeline" / "hitl.json"
+EVAL_PATH = VAULT_ROOT / "_pipeline" / "evaluation.json"
+
+# ── Langfuse Tracing ─────────────────────────────────────────
+LANGFUSE_ENABLED = os.environ.get("LANGFUSE_PUBLIC_KEY", "") and os.environ.get("LANGFUSE_SECRET_KEY", "")
+if LANGFUSE_ENABLED:
+    try:
+        from langfuse.callback import CallbackHandler
+        _LANGFUSE_HANDLER = CallbackHandler(
+            public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+            secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+            host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+        )
+        _LOG.info("Langfuse tracing enabled")
+    except Exception as e:
+        _LANGFUSE_HANDLER = None
+        _LOG.warning(f"Langfuse init failed: {e}")
+else:
+    _LANGFUSE_HANDLER = None
+
+def get_langfuse_handler():
+    return _LANGFUSE_HANDLER
+
+# ── DeerFlow / Agno LIVE mode ──────────────────────────────────────
+DEERFLOW_ENABLED = os.environ.get("DEERFLOW_ENABLED", "false").lower() == "true"
+AGNO_ENABLED = os.environ.get("AGNO_ENABLED", "false").lower() == "true"
+
+_deerflow_bridge = None
+_agno_gateway = None
+
+def _init_deerflow():
+    global _deerflow_bridge
+    if not DEERFLOW_ENABLED:
+        return
+    try:
+        from lib.deerflow_bridge import DeerFlowBridge
+        _deerflow_bridge = DeerFlowBridge()
+        _LOG.info("DeerFlow Bridge initialized (LIVE mode)")
+    except Exception as e:
+        _LOG.warning("DeerFlow init failed: %s — falling back to mock", e)
+
+def _init_agno():
+    global _agno_gateway
+    if not AGNO_ENABLED:
+        return
+    try:
+        from lib.agno_gateway import create_gateway
+        _agno_gateway = create_gateway(host="0.0.0.0", port=8010)
+        _agno_gateway.start()
+        _LOG.info("Agno MCP Gateway started on :8010 (LIVE mode)")
+    except Exception as e:
+        _LOG.warning("Agno init failed: %s — falling back to mock", e)
+
+def init_integrations():
+    """Inicializa DeerFlow y Agno si están habilitados. Llamar una vez al arrancar."""
+    _init_deerflow()
+    _init_agno()
+
+def get_deerflow_bridge():
+    return _deerflow_bridge
+
+def get_agno_gateway():
+    return _agno_gateway
+
+# Deshabilitar LangSmith si no hay API key
+if not os.environ.get("LANGCHAIN_API_KEY"):
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
+
+CODE_KEYWORDS = ["code", "codigo", "implement", "program", "function", "class",
+                 "bug", "error", "test", "refactor", "debug", "pull request", "pr",
+                 "algorithm", "api", "script", "library", "package", "module"]
+
+HITL_TIMEOUT_MINUTES = 60
+
+def _hitl_enabled(profile: str = "standard") -> bool:
+    """HITL solo para perfil produccion. Desarrollo/exploracion usan auto-aprobar."""
+    return profile == "produccion"
+
+def _has_code_keywords(topic: str) -> bool:
+    tl = topic.lower()
+    return any(kw in tl for kw in CODE_KEYWORDS)
+
+class KAOSState(TypedDict):
+    topic: str
+    profile: str | None = "standard"
+    plan: dict | None = None
+    has_code_subtasks: bool = False
+    aletheia_output: str | None = None
+    aletheia_prompt: str | None = None
+    kosmos_output: str | None = None
+    kosmos_prompt: str | None = None
+    metis_output: str | None = None
+    metis_prompt: str | None = None
+    kratos_output: str | None = None
+    kratos_prompt: str | None = None
+    mnemosyne_output: str | None = None
+    mnemosyne_prompt: str | None = None
+    mnemosyne_gaps: list | None = None
+    needs_gap_check: bool = False
+    kratos_decision: str | None = None
+    critic_score: float = 0
+    critic_feedback: str | None = None
+    iteration: int = 0
+    reflexion_iteration: int = 0
+    reflexion_score: float = 0
+    error: str | None = None
+    retries: int = 0
+    hitl_approved: bool | None = None
+    evaluation: dict | None = None
+    evaluation_score: float | None = None
+    okrs: list[dict] | None = None
+    initiatives: list[dict] | None = None
+    kr_assignment: dict | None = None
+    aletheia_pending_gaps: list | None = None
+    gap_iteration: int = 0
+
+def interrupt_human(prompt: str, context: dict = None) -> bool:
+    """Human-in-the-Loop: pause pipeline and wait for approval.
+    
+    Uses FCoP 3.0 advisory file locking (acquire_lock) to prevent
+    race conditions on hitl.json. Uses UUID session_id to detect
+    stale reads across polling threads.
+    
+    Writes a request to hitl.json. External process (Hermes/TUI) reads it
+    and writes response. Pipeline polls until response or timeout.
+    
+    Args:
+        prompt: Question to show the human
+        context: Optional dict with extra info (diff, files, etc.)
+    
+    Returns:
+        True if approved, False if rejected
+    """
+    import datetime
+    import time
+    
+    # Write request with UUID so readers can detect stale reads
+    session_id = str(uuid.uuid4())[:8]
+    with acquire_lock("hitl", "orchestrator"):
+        request = {
+            "id": datetime.datetime.now().strftime("HITL-%Y%m%d-%H%M%S"),
+            "session_id": session_id,
+            "prompt": prompt,
+            "context": context or {},
+            "status": "waiting",
+            "created_at": datetime.datetime.now().isoformat(),
+            "response": None,
+            "started_at": time.time(),
+        }
+        HITL_PATH.write_text(json.dumps(request, indent=2))
+    
+    # Poll for response (up to HITL_TIMEOUT_MINUTES)
+    start = time.time()
+    while (time.time() - start) < HITL_TIMEOUT_MINUTES * 60:
+        time.sleep(5)
+        if HITL_PATH.exists():
+            try:
+                with acquire_lock("hitl", "orchestrator"):
+                    data = json.loads(HITL_PATH.read_text())
+                # Verify session_id matches to confirm response is not stale
+                if data.get("session_id") == session_id and data.get("status") == "responded":
+                    approved = data.get("response") == "approved"
+                    # DO NOT write "idle" — next poll sees matching session_id + responded status
+                    return approved
+            except Exception:
+                pass
+    
+    # Timeout: auto-reject for safety
+    with acquire_lock("hitl", "orchestrator"):
+        HITL_PATH.write_text(json.dumps({"status": "timeout", "response": "denied"}))
+    return False
+
+def route_after_strategy(state: KAOSState) -> str:
+    """Route: cross_validator for production, kratos for code, mnemosyne otherwise."""
+    profile = state.get("profile", "standard")
+    if profile == "produccion":
+        return "cross_validator"
+    has_code = state.get("has_code_subtasks", False) or _has_code_keywords(state.get("topic", ""))
+    if has_code:
+        return "kratos"
+    return "mnemosyne"
+
+def get_dsol_config(agent_name: str, topic: str) -> dict:
+    """REAL DSOL integration per ADR-010: resolves model via dsol.resolve_model()."""
+    try:
+        from lib.aether.config import AGENT_DEFAULT_TASK
+        from lib.aether.router import resolve_model
+        task_type = AGENT_DEFAULT_TASK.get(agent_name, "general")
+        result = resolve_model(task_type=task_type, agent=agent_name)
+        return {
+            "model": result.get("model", "gemini-3.5-flash"),
+            "thinking": result.get("thinking", False),
+            "budget": result.get("tier", "flash"),
+        }
+    except Exception:
+        _LOG.warning("DSOL config resolution failed for agent %s — falling back to flash defaults", agent_name)
+        return {
+            "model": "gemini-3.5-flash",
+            "thinking": False,
+            "budget": "flash",
+        }
+
+
+def route_after_bcg(state: KAOSState) -> str:
+    """Route after BCG evaluation: gaps → Aletheia (re-research) else normal routing.
+    
+    Max 1 gap iteration to prevent infinite loops.
+    """
+    gaps = state.get("aletheia_pending_gaps", [])
+    gap_iter = state.get("gap_iteration", 0)
+    if gaps and len(gaps) > 0 and gap_iter < 1:
+        return "aletheia"
+    return route_after_strategy(state)
+
+def route_after_aletheia(state: KAOSState) -> str:
+    """Route to Mnemosyne gap check if needed, else Kosmos.
+    
+    For gap re-research (triggered by BCG), increment gap_iteration
+    and route to Kosmos for re-architecture.
+    """
+    if state.get("needs_gap_check", False):
+        return "mnemosyne_gap_check"
+    gap_iter = state.get("gap_iteration", 0)
+    if gap_iter > 0:
+        return "kosmos"
+    return "kosmos"
+
+def _cross_validator_node(state: KAOSState) -> dict:
+    """Cross-validate output with Gemini Flash (solo perfil produccion)."""
+    profile = state.get("profile", "standard")
+    if profile != "produccion":
+        return {**state, "cross_val_score": 100, "cross_val_passed": True}
+
+    output = state.get("metis_output", "") or state.get("aletheia_output", "")
+    if not output:
+        return {**state, "cross_val_score": 0, "cross_val_passed": False}
+
+    try:
+        from lib.cross_validator import validate_content
+        result = validate_content(output, profile=profile)
+        state["cross_val_score"] = result.get("avg_score", 0)
+        state["cross_val_passed"] = result.get("avg_score", 0) >= 60
+        state["cross_val_report"] = result
+    except Exception:
+        _LOG.warning("Cross-validation failed for profile %s", profile)
+        state["cross_val_score"] = 0
+        state["cross_val_passed"] = False
+    return state
+
+
+def route_after_cross_val(state: KAOSState) -> str:
+    """Route after cross-validation: kratos if passed, mnemosyne if failed."""
+    if state.get("cross_val_passed", True):
+        return "kratos"
+    return "mnemosyne"
+
+
+def route_after_kratos(state: KAOSState) -> str:
+    """Deep routing with HITL approval for code changes."""
+    decision = state.get("kratos_decision", "needs_curation")
+    
+    # HITL: ask human before applying Kratos changes (solo perfil produccion)
+    profile = state.get("profile", "standard")
+    if _hitl_enabled(profile) and (decision == "needs_curation" or decision == "complete"):
+        kratos_output = state.get("kratos_output", "")
+        if kratos_output and len(kratos_output) > 50:
+            approved = interrupt_human(
+                prompt="Kratos proposes code changes. Approve?",
+                context={"diff_length": len(kratos_output), "topic": state.get("topic", "")}
+            )
+            if not approved:
+                return "mnemosyne"
+    
+    if decision == "complete" or decision == "error":
+        return "reflexion"
+    return "reflexion"
+
+def _deerflow_node(state: KAOSState) -> dict:
+    """Ejecuta tareas de código via DeerFlow Sandbox si está disponible."""
+    if not DEERFLOW_ENABLED or not _deerflow_bridge:
+        return {**state, "deerflow_output": None}
+    topic = state.get("topic", "")
+    if not _has_code_keywords(topic):
+        return {**state, "deerflow_output": None}
+    try:
+        import asyncio
+        task = {"type": "code_execution", "prompt": topic, "id": f"df-{hash(topic) % 100000:05d}"}
+        result = asyncio.run(_deerflow_bridge.execute(task))
+        return {**state, "deerflow_output": result.get("output", ""),
+                "deerflow_status": result.get("status", "error")}
+    except Exception as e:
+        _LOG.warning("DeerFlow node error: %s", e)
+        return {**state, "deerflow_output": None, "deerflow_status": "error"}
+
+def route_parallel_split(state: KAOSState) -> str:
+    """Split: research+código en paralelo o secuencial."""
+    topic = state.get("topic", "")
+    if _has_code_keywords(topic):
+        return "parallel"
+    return "sequential"
+
+def _evaluator_node(state: KAOSState) -> dict:
+    _notify("Kosmos Evaluator", "in_progress", state)
+    try:
+        from lib.kosmos_evaluator_v2 import evaluate_system
+        result = evaluate_system(state=state)
+        _notify("Kosmos Evaluator", "completed", state)
+        return {**state, "evaluation": result, "evaluation_score": result.get("composite", 0)}
+    except Exception as e:
+        _notify("Kosmos Evaluator", "failed", state)
+        return {**state, "evaluation": {"error": str(e)}, "evaluation_score": 0}
+
+def _parallel_validate_node(state: KAOSState) -> dict:
+    """Parallel validation node — lightweight code review alongside Kratos."""
+    _notify("Parallel Validation", "in_progress", state)
+    topic = state.get("topic", "")
+    kratos_raw = state.get("kratos_output", "")
+    validation = "ok"
+    if kratos_raw and len(kratos_raw) < 100:
+        validation = "warning: output too short"
+    _notify("Parallel Validation", "completed", state)
+    return {**state, "parallel_validation": validation}
+
+def _gap_check_node(state: KAOSState) -> dict:
+    """Mnemosyne gap check: query existing knowledge gaps for the topic."""
+    _notify("Mnemosyne Gap Check", "in_progress", state)
+    topic = state.get("topic", "")
+    gaps = []
+    try:
+        from lib.pipeline import get_cross_context
+        ctx = get_cross_context("mnemosyne")
+        if ctx:
+            gaps = ctx.get("aletheia_research_context", {}).get("gaps_detected", [])
+    except Exception:
+        _LOG.warning("Gap check failed while querying pipeline cross-context")
+        pass
+    _notify("Mnemosyne Gap Check", "completed", state)
+    return {**state, "mnemosyne_gaps": gaps, "needs_gap_check": False}
+
+def route_parallel_fanout(state: KAOSState) -> list[Send]:
+    """Fan-out from metis: send to kratos + parallel validation simultaneously."""
+    return [
+        Send("kratos", state),
+        Send("parallel_validate", {**state, "topic": state.get("topic", "")}),
+    ]
+
+MAX_ITERATIONS = 2
+CRITIC_THRESHOLD = 40
+MAX_REFLEXION_ITERATIONS = 3
+REFLEXION_QUALITY_THRESHOLD = 7.0  # composite score /10
+NODE_TIMEOUT = 300  # seconds per node
+
+def _score_output(text: str) -> dict:
+    """Evaluate a single text output for quality."""
+    text = text or ""
+    lines = text.strip().split("\n")
+    length_score = min(1.0, len(lines) / 20)
+    has_content = len(text) > 200
+    has_structure = bool(re.search(r'(?m)^#{1,3}\s', text))
+    has_recommendations = any(w in text.lower() for w in ["recomend", "conclus", "resumen", "summary"])
+    completeness = sum([has_content, has_structure, has_recommendations]) / 3
+    score = int((length_score * 0.3 + completeness * 0.7) * 100)
+    return {"score": min(score, 100), "has_content": has_content, "has_structure": has_structure}
+
+def _notify(step: str, status: str, state: KAOSState):
+    if HERMES_ENABLED:
+        pipeline_notify(state, step, status)
+
+def _generate_suggestions(scores: dict, outputs: dict) -> dict[str, list[str]]:
+    """Generate structured improvement suggestions per agent based on scores."""
+    suggestions = {}
+    for agent, text in outputs.items():
+        agent_sugs = []
+        text = text or ""
+        if agent in scores and scores.get(agent, 100) < CRITIC_THRESHOLD:
+            score_info = _score_output(text)
+            if not score_info["has_structure"]:
+                agent_sugs.append(f"Agregar estructura clara con secciones (## titulos) en {agent}")
+            if not score_info["has_content"]:
+                agent_sugs.append(f"Incluir contenido mas sustancial en {agent} (min 200 caracteres)")
+            if agent == "aletheia":
+                agent_sugs.append("Incluir referencias a fuentes externas con [[wikilinks]]")
+            elif agent == "kosmos":
+                agent_sugs.append("Agregar diagrama de arquitectura o ADR estructurado")
+            elif agent == "kratos":
+                agent_sugs.append("Incluir ejemplos de codigo completos con explicacion")
+            elif agent == "mnemosyne":
+                agent_sugs.append("Verificar wikilinks, cobertura y consistencia del vault")
+        if agent_sugs:
+            suggestions[agent] = agent_sugs[:3]
+    return suggestions
+
+
+def _kratos_feedback_loop(kratos_output: str, critic_score: float):
+    """Feed Kratos output quality back into CodeExperience bandit."""
+    try:
+        from lib.code_memory import feedback, search
+        # Find relevant experiences for this output
+        experiences = search(kratos_output[:200], top_k=3)
+        for exp in experiences:
+            # If critic score > 60, it's a success; else a failure
+            success = critic_score >= 60
+            fb = feedback(exp["hash"], success=success)
+            if fb.get("status") == "updated":
+                import logging
+                logger = logging.getLogger("critic")
+                logger.debug("Feedback loop: %s → %s (score=%d, success=%s)",
+                            exp["hash"], fb.get("new_confidence"), critic_score, success)
+    except Exception:
+        _LOG.warning("Kratos feedback loop to CodeExperience bandit failed")
+        pass
+
+
+def critic_node(state: KAOSState) -> dict:
+    _notify("Critic Quality", "in_progress", state)
+    iteration = state.get("iteration", 0)
+    score_history = state.get("score_history", [])
+    
+    outputs = {
+        "aletheia": state.get("aletheia_output", ""),
+        "kosmos": state.get("kosmos_output", ""),
+        "metis": state.get("metis_output", ""),
+        "kratos": state.get("kratos_output", ""),
+        "mnemosyne": state.get("mnemosyne_output", ""),
+    }
+    
+    if LLM_DIRECT_ENABLED:
+        eval_prompt = "Evalúa estas salidas de pipeline (0-100 cada una). Sugiere 1-2 mejoras específicas por agente:\n\n"
+        for agent, text in outputs.items():
+            truncated = text[:1000] if text else "(empty)"
+            eval_prompt += f"## {agent}\n{truncated}\n---\n"
+        eval_prompt += (
+            '\nResponde SOLO con JSON:\n'
+            '{"scores":{"aletheia":0,"kosmos":0,"metis":0,"kratos":0,"mnemosyne":0},'
+            '"avg_score":0,"feedback":"...",'
+            '"suggestions":{"aletheia":["mejora1","mejora2"],"kosmos":[...]}}'
+        )
+        from lib.llm import agent_llm_call
+        raw = agent_llm_call("critic", eval_prompt)
+        import json as _json
+        try:
+            parsed = _json.loads(raw.strip().strip("```json").strip("```").strip())
+            scores = parsed.get("scores", {})
+            avg_score = parsed.get("avg_score", 0)
+            feedback = parsed.get("feedback", "No feedback")
+            suggestions = parsed.get("suggestions", {})
+        except Exception:
+            scores = {a: _score_output(t)["score"] for a, t in outputs.items()}
+            avg_score = int(sum(scores.values()) / max(1, len(scores)))
+            feedback = "LLM parse error, used heuristic fallback"
+            suggestions = _generate_suggestions(scores, outputs)
+    else:
+        scores = {agent: _score_output(text)["score"] for agent, text in outputs.items()}
+        avg_score = int(sum(scores.values()) / max(1, len(scores)))
+        feedback_parts = []
+        for agent, s in scores.items():
+            if s < CRITIC_THRESHOLD:
+                missing = []
+                if not _score_output(outputs[agent])["has_structure"]:
+                    missing.append("estructura")
+                if not _score_output(outputs[agent])["has_content"]:
+                    missing.append("contenido sustancial")
+                feedback_parts.append(f"{agent}: {s}/100 - falta {', '.join(missing)}")
+        feedback = "; ".join(feedback_parts) if feedback_parts else "Calidad aceptable"
+        suggestions = _generate_suggestions(scores, outputs)
+    
+    _notify("Critic Quality", "completed", state)
+    
+    # Feedback loop: Kratos output quality → CodeExperience bandit
+    kratos_out = state.get("kratos_output", "")
+    if kratos_out:
+        _kratos_feedback_loop(kratos_out, avg_score if isinstance(avg_score, (int, float)) else 0)
+    
+    return {
+        **state,
+        "critic_score": avg_score if isinstance(avg_score, int) else int(avg_score),
+        "critic_feedback": feedback,
+        "critic_suggestions": suggestions,
+        "score_history": score_history + [avg_score],
+        "iteration": iteration + 1,
+    }
+
+
+def reflexion_node(state: KAOSState) -> dict:
+    """Reflexion loop: evaluate Kratos output quality and regenerate if poor.
+    
+    Uses quality_gate 7-dimension scoring. Maximum 3 iterations.
+    Gemini 3.5 Flash's low cost makes multiple iterations practical.
+    """
+    _notify("Kratos Reflexion", "in_progress", state)
+    kratos_out = state.get("kratos_output", "")
+    reflexion_iter = state.get("reflexion_iteration", 0)
+    
+    if not kratos_out or len(kratos_out) < 100:
+        _notify("Kratos Reflexion", "completed", state)
+        return {**state, "reflexion_iteration": reflexion_iter, "reflexion_score": 0}
+    
+    try:
+        from lib.quality_gate import evaluate
+        score = evaluate(kratos_out, language=_detect_language(kratos_out))
+        composite = score.get("composite", 0)
+        gate_issues = [f"{g}: {d['detail']}" for g, d in score.get("gates", {}).items() if not d.get("passed", True)]
+    except Exception:
+        _LOG.warning("Quality gate evaluation failed during reflexion iteration %d, using default score 5.0", reflexion_iter)
+        composite = 5.0
+        gate_issues = []
+    
+    if composite >= REFLEXION_QUALITY_THRESHOLD or reflexion_iter >= MAX_REFLEXION_ITERATIONS:
+        _notify("Kratos Reflexion", "completed", state)
+        return {
+            **state,
+            "reflexion_iteration": reflexion_iter + 1,
+            "reflexion_score": composite,
+            "kratos_decision": "complete" if composite >= REFLEXION_QUALITY_THRESHOLD else "needs_curation",
+        }
+    
+    # Regenerate with feedback
+    topic = state.get("topic", "")
+    iteration = reflexion_iter + 1
+    reflexion_prompt = (
+        f"# Pipeline: Implementación — Reflexion #{iteration}\n\n"
+        f"## Tarea Original\n{topic}\n\n"
+        f"## Código Anterior\n```\n{kratos_out[:1500]}\n```\n\n"
+        f"## Issues Detectados (Quality Score: {composite}/10)\n"
+        + "\n".join(f"- {issue}" for issue in gate_issues[:5])
+        + "\n\n## Instrucciones\n"
+        "1. Corrige cada issue listado arriba\n"
+        "2. Mejora la calidad del código\n"
+        "3. Mantén la funcionalidad original\n"
+        "4. Responde SOLO con el código mejorado en bloques ```\n"
+    )
+    
+    try:
+        from lib.llm import agent_llm_call
+        improved = agent_llm_call("kratos", reflexion_prompt, model_override="go-gemini-flash")
+        if improved and len(improved) > 100:
+            kratos_out = improved
+    except Exception:
+        _LOG.warning("reflexion LLM call failed, using original output")
+    
+    _notify("Kratos Reflexion", "completed", state)
+    return {
+        **state,
+        "kratos_output": kratos_out,
+        "reflexion_iteration": iteration,
+        "reflexion_score": composite,
+    }
+
+
+def _detect_language(text: str) -> str:
+    """Detect primary language from code blocks in text."""
+    from lib.lang_utils import detect_code_language_from_blocks
+    return detect_code_language_from_blocks(text)
+
+
+def route_after_reflexion(state: KAOSState) -> str:
+    """Route: refine (back to kratos) or advance (to mnemosyne)."""
+    score = state.get("reflexion_score", 0)
+    iteration = state.get("reflexion_iteration", 0)
+    kratos_decision = state.get("kratos_decision", "")
+    
+    if kratos_decision == "complete":
+        return "advance"
+    if kratos_decision == "needs_curation" and iteration >= MAX_REFLEXION_ITERATIONS:
+        return "advance"
+    if score >= REFLEXION_QUALITY_THRESHOLD:
+        return "advance"
+    if iteration >= MAX_REFLEXION_ITERATIONS:
+        return "advance"
+    return "refine"
+
+
+def route_after_critic(state: KAOSState) -> str:
+    """Route: refine if quality low + iterations remain, else advance.
+    
+    Skip critic loop for non-code tasks (no kratos_output).
+    Abort loop if score hasn't improved from previous iteration.
+    """
+    iteration = state.get("iteration", 0)
+    score = state.get("critic_score", 0)
+    kratos_out = state.get("kratos_output", "")
+    score_history = state.get("score_history", [])
+    
+    if not kratos_out:
+        return "advance"
+    
+    # Abort loop if no improvement from previous iteration
+    if len(score_history) >= 2 and score_history[-2] >= score:
+        return "advance"
+    
+    if score < CRITIC_THRESHOLD and iteration < MAX_ITERATIONS:
+        return "refine"
+    return "advance"
+
+def _agno_node(name: str):
+    """Crea un AgnoAgentNode para el agente dado, o None si no disponible."""
+    try:
+        from agno_kaos.bridge.langgraph_bridge import AgnoAgentNode
+        return AgnoAgentNode(name)
+    except Exception as e:
+        _LOG.warning("Agno bridge unavailable for %s: %s", name, e)
+        return None
+
+
+def build_graph(with_parallel: bool = True):
+    """Build LangGraph DAG.
+
+    Args:
+        with_parallel: Enable parallel fan-out (default True)
+    """
+    init_integrations()
+
+    builder = StateGraph(KAOSState)
+
+    builder.add_node("planner", planner_node)
+
+    if AGNO_ENABLED:
+        _LOG.info("AGNO_ENABLED=true — using AgnoAgentNode bridge")
+        builder.add_node("aletheia", _agno_node("aletheia") or aletheia_node)
+        builder.add_node("kosmos", _agno_node("kosmos") or kosmos_node)
+        builder.add_node("metis", _agno_node("metis") or metis_node)
+        builder.add_node("kratos", _agno_node("kratos") or kratos_node)
+    else:
+        builder.add_node("aletheia", aletheia_node)
+        builder.add_node("kosmos", kosmos_node)
+        builder.add_node("metis", metis_node)
+        builder.add_node("kratos", kratos_node)
+
+    builder.add_node("reflexion", reflexion_node)
+    builder.add_node("mnemosyne", mnemosyne_node)
+    builder.add_node("critic", critic_node)
+    builder.add_node("kosmos_evaluator", _evaluator_node)
+    builder.add_node("parallel_validate", _parallel_validate_node)
+    builder.add_node("mnemosyne_gap_check", _gap_check_node)
+    builder.add_node("cross_validator", _cross_validator_node)
+    builder.add_node("bcg_evaluator", bcg_evaluator_node)
+    
+    builder.set_entry_point("planner")
+    
+    builder.add_edge("planner", "aletheia")
+    builder.add_conditional_edges(
+        "aletheia",
+        route_after_aletheia,
+        {"mnemosyne_gap_check": "mnemosyne_gap_check", "kosmos": "kosmos"}
+    )
+    # Mnemosyne gap check → Kosmos (re-architecture with new info)
+    builder.add_edge("mnemosyne_gap_check", "kosmos")
+    builder.add_edge("kosmos", "metis")
+    
+    # After metis: BCG evaluation (always), then route
+    builder.add_edge("metis", "bcg_evaluator")
+    builder.add_conditional_edges(
+        "bcg_evaluator",
+        route_after_bcg,
+        {"aletheia": "aletheia", "kratos": "kratos", "mnemosyne": "mnemosyne", "cross_validator": "cross_validator"}
+    )
+    # Cross-validation for production profile only
+    builder.add_conditional_edges(
+        "cross_validator",
+        route_after_cross_val,
+        {"kratos": "kratos", "mnemosyne": "mnemosyne"}
+    )
+    
+    if with_parallel:
+        # Also start parallel validation alongside cross_validator
+        builder.add_conditional_edges(
+            "metis",
+            route_parallel_fanout,
+            ["kratos", "parallel_validate"],
+        )
+    
+    # Deep routing: Kratos → (DeerFlow si sandbox) → Reflexion → refine/advance
+    if DEERFLOW_ENABLED and _deerflow_bridge:
+        builder.add_conditional_edges(
+            "kratos",
+            route_after_kratos,
+            {"reflexion": "reflexion", "mnemosyne": "mnemosyne", "deerflow": "deerflow"}
+        )
+        builder.add_node("deerflow", _deerflow_node)
+        builder.add_edge("deerflow", "reflexion")
+    else:
+        builder.add_conditional_edges(
+            "kratos",
+            route_after_kratos,
+            {"reflexion": "reflexion", "mnemosyne": "mnemosyne"}
+        )
+    builder.add_conditional_edges(
+        "reflexion",
+        route_after_reflexion,
+        {"refine": "kratos", "advance": "mnemosyne"}
+    )
+
+    if with_parallel:
+        # Parallel join: wait for kratos + parallel_validate before mnemosyne
+        builder.add_edge("parallel_validate", "mnemosyne")
+    
+    builder.add_edge("mnemosyne", "critic")
+    builder.add_conditional_edges(
+        "critic",
+        route_after_critic,
+        {"refine": "aletheia", "advance": "kosmos_evaluator"}
+    )
+    builder.add_edge("kosmos_evaluator", END)
+    
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    checkpointer = SqliteSaver(conn)
+    return builder.compile(checkpointer=checkpointer)
+
+if __name__ == "__main__":
+    g = build_graph(with_parallel=False)
+    g2 = build_graph(with_parallel=True)
+    print(f"Sequential graph: {list(g.nodes.keys())}")
+    print(f"Parallel graph:   {list(g2.nodes.keys())}")
+    print(f"LangSmith: {bool(os.environ.get('LANGCHAIN_API_KEY'))}")
+    
+    # Test routing
+    state = KAOSState(topic="implementar API REST con JWT")
+    print(f"\nCode topic → {route_after_strategy(state)} ✓")
+    
+    state["kratos_decision"] = "complete"
+    print(f"Kratos complete → {route_after_kratos(state)} ✓")
+    
+    state["kratos_decision"] = "needs_curation"
+    print(f"Kratos needs_curation → {route_after_kratos(state)} ✓")

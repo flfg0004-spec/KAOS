@@ -6,12 +6,12 @@ For high-confidence pairs, Gemini Flash suggests typed relationships.
 
 import json
 import re
-from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from pathlib import Path
 
-from lib.config import VAULT_ROOT, IGNORED_PAGES, IGNORED_WIKILINKS
 import lib.llm as llm
+from lib.config import IGNORED_PAGES, IGNORED_WIKILINKS, VAULT_ROOT
 
 EMBEDDING_SIM_THRESHOLD = 0.75
 LLM_SIM_THRESHOLD = 0.85
@@ -44,7 +44,8 @@ def _get_embedding(text: str) -> list[float] | None:
     import os
     if os.environ.get("KAOS_TESTING") == "1":
         return None
-    import subprocess, sys as _sys
+    import subprocess
+    import sys as _sys
     mcp_embed = BASE / "_scripts" / "mcp_embed.py"
     req = json.dumps({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",
@@ -373,7 +374,6 @@ class VaultGraph:
         ]
 
     def louvain_communities(self) -> list[dict]:
-        import networkx as nx
         if self.node_count < 2:
             return [{"error": "Need at least 2 nodes for community detection"}]
         undirected = self.graph.to_undirected()

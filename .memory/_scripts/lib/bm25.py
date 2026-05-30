@@ -4,7 +4,6 @@ Consolidates 3 separate BM25 implementations into one module.
 Used by: vectorstore.py, hydrate.py, synapse.py
 """
 
-import re
 from pathlib import Path
 
 VAULT_ROOT = Path(__file__).resolve().parent.parent.parent

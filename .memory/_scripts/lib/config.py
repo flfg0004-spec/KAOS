@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Final
+
 from dotenv import load_dotenv
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -95,3 +96,11 @@ KNOWLEDGE_SYNTHESIS_TOKEN_BUDGET: Final[int] = int(os.environ.get("KAOS_SYNTHESI
 
 CACHE_DIR: Final[Path] = VAULT_ROOT / "cache"
 GAP_FEEDBACK_FILE: Path = CACHE_DIR / "gap_feedback.jsonl"
+
+# Kratos sleep cycle
+KRATOS_SLEEP_ENABLED: Final[bool] = os.environ.get("KRATOS_SLEEP_ENABLED", "false").lower() == "true"
+KRATOS_SLEEP_IDLE_MINUTES: Final[int] = int(os.environ.get("KRATOS_SLEEP_IDLE_MINUTES", "30"))
+
+# Kratos auto-pruning
+KRATOS_PRUNE_ENABLED: Final[bool] = os.environ.get("KRATOS_PRUNE_ENABLED", "true").lower() == "true"
+KRATOS_PRUNE_THRESHOLD: Final[int] = int(os.environ.get("KRATOS_PRUNE_THRESHOLD", "5000"))

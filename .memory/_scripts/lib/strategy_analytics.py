@@ -4,7 +4,6 @@ Tracks strategy quality metrics over time for visibility and improvement.
 """
 
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 

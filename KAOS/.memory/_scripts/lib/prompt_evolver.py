@@ -1,0 +1,327 @@
+"""Self-Evolving Prompts (SEMAG) — Kratos mejora su propio prompt automáticamente.
+
+Basado en SEMAG (arXiv 2505.18646):
+  - Rastrea rendimiento de cada variante de prompt (quality_gate scores)
+  - Después de N ejecuciones, analiza patrones de error vs prompt actual
+  - Genera variantes de prompt con ajustes específicos
+  - Aplica la variante ganadora cuando es estadísticamente mejor
+  - Almacena historial de variantes y sus métricas
+
+Flujo:
+  1. Kratos ejecuta con prompt_variant actual
+  2. quality_gate puntúa el resultado
+  3. prompt_evolver registra (variant_hash, score, error_patterns)
+  4. Cada N=10 ejecuciones: analiza → genera variantes → elige mejor
+"""
+
+import hashlib
+import json
+import re
+from datetime import datetime
+from pathlib import Path
+
+DATA_DIR = (Path(__file__).resolve().parent.parent.parent / "cache" / "prompt_evo")
+VARIANTS_FILE = DATA_DIR / "variants.json"
+HISTORY_FILE = DATA_DIR / "history.json"
+CURRENT_VARIANT_FILE = DATA_DIR / "current_variant.txt"
+
+EVAL_INTERVAL = 10
+MIN_SAMPLES_FOR_EVOLUTION = 5
+SIGNFICANCE_THRESHOLD = 0.1  # 10% improvement to auto-apply
+
+# Base prompt template (sections that can be evolved)
+PROMPT_SECTIONS = {
+    "methodology": [
+        "### 1. PLAN\n- Descompón la tarea en subtareas\n- Identifica archivos a crear/modificar",
+        "### 1. PLAN\n- Divide el problema en pasos atómicos verificables\n- Para cada paso, define criterio de éxito",
+        "### 1. PLAN\n- Analiza el problema. ¿Qué has hecho antes similar?\n- Descompón en tareas de <50 líneas cada una",
+    ],
+    "code_rules": [
+        "- Implementa siguiendo clean code y mejores prácticas\n- Usa type hints y documentación inline",
+        "- Escribe código legible primero, optimiza después\n- Una función = una responsabilidad\n- Nombres descriptivos > comentarios",
+        "- Sigue el principio DRY: no repitas lógica\n- Prefiere composición sobre herencia\n- Maneja edge cases primero",
+    ],
+    "test_rules": [
+        "- Escribe tests unitarios (usan pytest)\n- Incluye: casos normales, boundary, y error",
+        "- Escribe tests ANTES del código (TDD)\n- Cada test verifica UN comportamiento\n- Coverage mínimo: 80%",
+        "- Tests: casos felices + casos borde + errores esperados\n- Usa fixtures para datos repetitivos\n- Assert sobre comportamiento, no implementación",
+    ],
+}
+
+
+def _ensure_data_dir():
+    """Ensure cache directory exists."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _load_variants() -> dict:
+    """Load all prompt variants and their metrics."""
+    _ensure_data_dir()
+    if VARIANTS_FILE.exists():
+        try:
+            return json.loads(VARIANTS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"variants": {}, "current": "base", "history": []}
+
+
+def _save_variants(data: dict):
+    """Save prompt variants."""
+    VARIANTS_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _load_history() -> list:
+    """Load execution history for analysis."""
+    _ensure_data_dir()
+    if HISTORY_FILE.exists():
+        try:
+            return json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return []
+
+
+def _save_history(history: list):
+    """Save execution history (keep last 500)."""
+    HISTORY_FILE.write_text(json.dumps(history[-500:], indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _compute_variant_hash(sections: dict) -> str:
+    """Create a hash from a prompt variant's sections."""
+    raw = json.dumps(sections, sort_keys=True)
+    return hashlib.sha256(raw.encode()).hexdigest()[:12]
+
+
+def _detect_error_patterns(kratos_output: str) -> list:
+    """Extract error patterns from Kratos output for analysis."""
+    patterns = []
+    
+    lint_issues = re.findall(r"(?:lint|ruff|flake8).*?(error|warning|issue)", kratos_output, re.IGNORECASE)
+    if lint_issues:
+        patterns.append("lint_issues")
+    
+    type_issues = re.findall(r"(?:type|mypy|pyright).*?(error|mismatch)", kratos_output, re.IGNORECASE)
+    if type_issues:
+        patterns.append("type_issues")
+    
+    test_failures = re.findall(r"(?:test|assertion).*?(fail|error|broken)", kratos_output, re.IGNORECASE)
+    if test_failures:
+        patterns.append("test_failures")
+    
+    security_issues = re.findall(r"(?:security|vuln|injection|xss)", kratos_output, re.IGNORECASE)
+    if security_issues:
+        patterns.append("security_issues")
+    
+    doc_missing = re.findall(r"(?:docstring|documentation|comment).*?(?:missing|lack|absent)", kratos_output, re.IGNORECASE)
+    if doc_missing:
+        patterns.append("documentation_gaps")
+    
+    return patterns
+
+
+def record_execution(kratos_output: str, quality_score: float, prompt_variant: str = "base") -> dict:
+    """Record a Kratos execution for prompt evolution analysis.
+    
+    Args:
+        kratos_output: The code generated by Kratos
+        quality_score: Composite score from quality_gate (0-10)
+        prompt_variant: Identifier of which prompt variant was used
+    
+    Returns:
+        dict with recording status
+    """
+    history = _load_history()
+    error_patterns = _detect_error_patterns(kratos_output)
+    
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "variant": prompt_variant,
+        "score": quality_score,
+        "error_patterns": error_patterns,
+        "output_length": len(kratos_output),
+    }
+    history.append(entry)
+    _save_history(history)
+    
+    return {"status": "recorded", "total": len(history)}
+
+
+def analyze_and_evolve(force: bool = False) -> dict:
+    """Analyze execution history and evolve prompt if beneficial.
+    
+    Args:
+        force: If True, evolve even without enough samples
+    
+    Returns:
+        dict with analysis results and new variant if evolved
+    """
+    history = _load_history()
+    variants = _load_variants()
+    
+    if len(history) < (MIN_SAMPLES_FOR_EVOLUTION if not force else 1):
+        return {"status": "skipped", "reason": f"Need {MIN_SAMPLES_FOR_EVOLUTION} samples, have {len(history)}"}
+    
+    # Group by variant
+    variant_scores = {}
+    variant_patterns = {}
+    for entry in history:
+        v = entry.get("variant", "base")
+        if v not in variant_scores:
+            variant_scores[v] = []
+            variant_patterns[v] = []
+        variant_scores[v].append(entry["score"])
+        variant_patterns[v].extend(entry.get("error_patterns", []))
+    
+    # Calculate current variant performance
+    current = variants.get("current", "base")
+    current_scores = variant_scores.get(current, [])
+    current_avg = sum(current_scores) / max(1, len(current_scores)) if current_scores else 0
+    
+    # Find most common error patterns
+    from collections import Counter
+    all_patterns = [p for plist in variant_patterns.values() for p in plist]
+    pattern_counts = Counter(all_patterns)
+    top_patterns = [p for p, c in pattern_counts.most_common(3)]
+    
+    # Generate improved variant if performance plateaus
+    result = {
+        "status": "analyzed",
+        "current_variant": current,
+        "current_avg_score": round(current_avg, 2),
+        "total_executions": len(history),
+        "top_error_patterns": top_patterns,
+        "pattern_frequencies": dict(pattern_counts.most_common(5)),
+    }
+    
+    # Check if we should evolve
+    should_evolve = force or (
+        len(current_scores) >= EVAL_INTERVAL and current_avg < 7.0
+    )
+    
+    if should_evolve:
+        new_sections = _generate_variant(top_patterns, variants.get("variants", {}).get(current, {}))
+        new_hash = _compute_variant_hash(new_sections)
+        
+        variants["variants"][new_hash] = {
+            "sections": new_sections,
+            "created_at": datetime.now().isoformat(),
+            "parent": current,
+            "scores": [],
+        }
+        variants["current"] = new_hash
+        variants["history"].append({
+            "from": current,
+            "to": new_hash,
+            "reason": f"Top patterns: {top_patterns}",
+            "timestamp": datetime.now().isoformat(),
+        })
+        _save_variants(variants)
+        
+        CURRENT_VARIANT_FILE.write_text(new_hash)
+        
+        result["status"] = "evolved"
+        result["new_variant"] = new_hash
+        result["new_sections"] = new_sections
+    
+    return result
+
+
+def _generate_variant(top_patterns: list, current_sections: dict = None) -> dict:
+    """Generate a new prompt variant targeting specific error patterns."""
+    sections = {}
+    
+    # Start with defaults, override targeted sections
+    for section_name, options in PROMPT_SECTIONS.items():
+        if current_sections and section_name in current_sections:
+            sections[section_name] = current_sections[section_name]
+        else:
+            sections[section_name] = options[0]
+    
+    # Evolve based on error patterns
+    if "lint_issues" in top_patterns:
+        sections["code_rules"] = (
+            "- Ejecuta ruff --fix después de escribir cada función\n"
+            "- Verifica que no haya importaciones sin usar\n"
+            "- Sigue PEP 8 estrictamente: líneas < 79 chars, espacios, nombres"
+        )
+    
+    if "type_issues" in top_patterns:
+        sections["code_rules"] = (
+            "- TODAS las funciones deben tener type hints completos\n"
+            "- Usa Optional[X] en lugar de X | None para compatibilidad\n"
+            "- Define protocolos/TypedDict para estructuras complejas"
+        )
+    
+    if "test_failures" in top_patterns:
+        sections["test_rules"] = (
+            "- TEST-DRIVEN: escribe el test primero, luego la implementación\n"
+            "- Cada test: arrange → act → assert (una sola aserción lógica)\n"
+            "- Usa pytest.approx() para floats, pytest.raises() para excepciones"
+        )
+    
+    if "documentation_gaps" in top_patterns:
+        sections["code_rules"] += (
+            "\n- Toda función pública necesita docstring con Args, Returns, Raises\n"
+            "- Documenta el POR QUÉ, no el QUÉ (el código ya dice qué hace)"
+        )
+    
+    return sections
+
+
+def get_current_prompt_sections() -> dict:
+    """Get the current active prompt sections for Kratos."""
+    variants = _load_variants()
+    current = variants.get("current", "base")
+    
+    if current == "base":
+        return {name: opts[0] for name, opts in PROMPT_SECTIONS.items()}
+    
+    variant_data = variants.get("variants", {}).get(current, {})
+    return variant_data.get("sections", PROMPT_SECTIONS)
+
+
+def status() -> dict:
+    """Get prompt evolution status."""
+    variants = _load_variants()
+    history = _load_history()
+    
+    scores_by_variant = {}
+    for entry in history:
+        v = entry.get("variant", "base")
+        if v not in scores_by_variant:
+            scores_by_variant[v] = []
+        scores_by_variant[v].append(entry["score"])
+    
+    return {
+        "current_variant": variants.get("current", "base"),
+        "total_variants": len(variants.get("variants", {})),
+        "total_executions": len(history),
+        "evolution_events": len(variants.get("history", [])),
+        "variant_performance": {
+            v: {
+                "avg": round(sum(s) / len(s), 2) if s else 0,
+                "count": len(s),
+            }
+            for v, s in scores_by_variant.items()
+        },
+    }
+
+
+if __name__ == "__main__":
+    import json
+    
+    print("=== Prompt Evolver Status ===")
+    s = status()
+    print(json.dumps(s, indent=2))
+    
+    # Simulate some executions
+    print("\n=== Recording Sample Executions ===")
+    for i in range(12):
+        record_execution(
+            kratos_output=f"def fn{i}(): pass\n# test\n",
+            quality_score=5.0 + (i % 5),
+        )
+    
+    print("\n=== Analyze & Evolve ===")
+    result = analyze_and_evolve(force=True)
+    print(json.dumps({k: v for k, v in result.items() if k != "new_sections"}, indent=2))

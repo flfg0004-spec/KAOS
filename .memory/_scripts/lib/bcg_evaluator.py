@@ -7,8 +7,8 @@ Scale: 0-5 per dimension → weighted total → mapped to 0.0-1.0
 Threshold: < 7.0/10 → review required
 """
 
-import re
 import json
+import re
 from datetime import datetime
 
 DIMENSIONS = [

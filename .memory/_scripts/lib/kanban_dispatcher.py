@@ -13,12 +13,10 @@ Fallback local: si Hermes no está disponible, usa cola local JSON.
 import asyncio
 import json
 import logging
-import os
 import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 _LOG = logging.getLogger(__name__)
 
@@ -116,7 +114,7 @@ def complete(ticket_id: str) -> bool:
     return True
 
 
-def create(title: str, body: str = "", tag: str = "") -> Optional[str]:
+def create(title: str, body: str = "", tag: str = "") -> str | None:
     ticket_id = f"local_{int(time.time())}_{len(title) % 1000}"
     if _hermes_available():
         args = ["kanban", "create", "--json"]

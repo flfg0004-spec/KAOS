@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        @page { margin: 20mm; size: A4; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: {{ fonts.body }};
+            background: {{ brand_colors.background }};
+            color: {{ brand_colors.text }};
+            line-height: 1.6;
+            padding: 40px;
+        }
+
+        /* ── Header ── */
+        .header {
+            border-bottom: 3px solid {{ agent_color }};
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            color: {{ brand_colors.text }};
+            font-family: {{ fonts.heading }};
+        }
+        .header .subtitle {
+            color: {{ brand_colors.muted }};
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .header .meta {
+            color: {{ brand_colors.muted }};
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* ── Agent badge ── */
+        .agent-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: {{ agent_color }};
+            color: {{ brand_colors.background }};
+            margin-top: 8px;
+        }
+
+        /* ── Sections ── */
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            font-size: 20px;
+            color: {{ agent_color }};
+            border-left: 4px solid {{ agent_color }};
+            padding-left: 12px;
+            margin-bottom: 15px;
+            font-family: {{ fonts.heading }};
+        }
+        .section p, .section li {
+            color: {{ brand_colors.text }};
+            font-size: 14px;
+        }
+        .section ul { padding-left: 20px; }
+        .section li { margin-bottom: 4px; }
+
+        /* ── Charts ── */
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        .chart-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid {{ brand_colors.secondary }};
+        }
+        .chart-title {
+            font-size: 12px;
+            color: {{ brand_colors.muted }};
+            margin-top: 8px;
+        }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px 15px;
+            text-align: left;
+            border-bottom: 1px solid {{ brand_colors.secondary }};
+        }
+        th {
+            background: {{ brand_colors.secondary }};
+            color: {{ brand_colors.text }};
+            font-weight: 600;
+        }
+        td { color: {{ brand_colors.text }}; }
+
+        /* ── Footer ── */
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid {{ brand_colors.secondary }};
+            color: {{ brand_colors.muted }};
+            font-size: 11px;
+            text-align: center;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ title }}</h1>
+        {% if subtitle %}
+        <div class="subtitle">{{ subtitle }}</div>
+        {% endif %}
+        <span class="agent-badge">{{ agent_type }}</span>
+        <div class="meta">Generated: {{ generated_at }} | KAOS Knowledge Architecture</div>
+    </div>
+
+    {% block content %}
+    {% for section in sections %}
+    <div class="section">
+        <h2>{{ section.title }}</h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>
+                    {% for col in section.table.headers %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+    {% endblock %}
+
+    <div class="footer">
+        KAOS — Knowledge Architecture Optimization System | {{ generated_at }}
+    </div>
+</body>
+</html>

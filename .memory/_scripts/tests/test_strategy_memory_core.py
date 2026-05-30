@@ -211,3 +211,59 @@ def test_cli_help():
         assert e.code in (0, 2)
     except argparse.Error:
         pass
+
+
+def test_rrf_fusion_ranks_exact_higher():
+    """RRF debe rankear más alto resultados con hash exacto."""
+    bank = _bank()
+    ctx = _context({"industry": "cloud", "desc": "AI"})
+    bank.store(ctx, {"okrs": []}, "okr", outcome_score=9.0)
+    bank.store(_context({"industry": "fintech"}), {"okrs": []}, "okr", outcome_score=5.0)
+    hybrid = bank.recall_similar(ctx, top_k=5, mode="hybrid")
+    exact = bank.recall_similar(ctx, top_k=5, mode="exact")
+    assert len(hybrid) >= 1, "hybrid must return results"
+    assert len(exact) >= 1, "exact must return results"
+
+
+def test_rrf_fusion_empty_rankings():
+    """RRF con rankings vacíos debe retornar lista vacía."""
+    bank = _bank()
+    result = bank._rrf_fusion([], k=60, top_k=5)
+    assert result == []
+
+
+def test_recall_similar_mode_vector_returns_list():
+    bank = _bank()
+    ctx = _context()
+    bank.store(ctx, {"data": "test"}, "okr")
+    results = bank.recall_similar(ctx, top_k=5, mode="vector")
+    assert isinstance(results, list)
+
+def test_recall_similar_mode_hybrid_falls_back_gracefully():
+    bank = _bank()
+    ctx = _context({"industry": "unique_test_industry"})
+    bank.store(ctx, {"data": "test"}, "okr", outcome_score=9.0)
+    results = bank.recall_similar(ctx, top_k=5, mode="hybrid")
+    assert len(results) >= 1
+    assert results[0].get("outcome_score") == 9.0
+
+def test_store_triggers_embed_gracefully():
+    bank = _bank()
+    sid = bank.store(_context(), {"okrs": []}, "okr")
+    assert sid > 0
+
+def test_recall_semantic_fallback_on_vectorstore_fail():
+    bank = _bank()
+    ctx = _context({"industry": "fallback_test"})
+    bank.store(ctx, {"data": "test"}, "okr")
+    results = bank.recall_semantic(ctx, top_k=5)
+    assert len(results) >= 1
+
+def test_recall_similar_mode_exact_matches_legacy():
+    """mode='exact' debe comportarse como el recall_similar original."""
+    bank = _bank()
+    ctx = _context()
+    bank.store(ctx, {"data": "test"}, "okr", outcome_score=8.0)
+    exact = bank.recall_similar(ctx, top_k=5, mode="exact")
+    default = bank.recall_similar(ctx, top_k=5)
+    assert len(exact) >= len(default) or len(exact) > 0

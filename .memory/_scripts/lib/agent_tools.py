@@ -286,7 +286,7 @@ def call_with_langfuse(
         if handler:
             return agent_llm_call(agent_name, prompt, langfuse_handler=handler, **kwargs)
     except Exception:
-        pass
+        logger.warning("Langfuse handler init failed, falling back to bare LLM call")
     return agent_llm_call(agent_name, prompt, **kwargs)
 
 
@@ -302,6 +302,7 @@ def build_rag_context(topic: str) -> str:
     try:
         return _cached_rag(topic)
     except Exception:
+        logger.warning("RAG context injection failed for topic '%s'", topic[:60])
         return ""
 
 
@@ -370,7 +371,7 @@ def validate_aletheia_output(raw: str, topic: str = "") -> dict:
             _save_score(topic=topic, score=score, valid=score >= 0.6,
                        sections_found=found, warnings=warnings)
         except Exception:
-            pass
+            logger.warning("Failed to persist Aletheia score for topic '%s'", topic[:60])
 
     return result
 

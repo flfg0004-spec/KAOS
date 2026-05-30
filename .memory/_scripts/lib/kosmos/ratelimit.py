@@ -12,10 +12,8 @@ Uso:
         finally:
             release_pipeline()
 """
-import threading
-import time
 import logging
-from typing import Optional
+import threading
 
 logger = logging.getLogger(__name__)
 

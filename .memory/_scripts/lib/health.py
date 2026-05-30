@@ -1,7 +1,7 @@
 import subprocess
-from pathlib import Path
 from datetime import datetime
-from lib.config import VAULT_ROOT, IGNORED_PAGES
+
+from lib.config import IGNORED_PAGES, VAULT_ROOT
 
 EXPECTED_DIRS = [
     "wiki/entities", "wiki/concepts", "wiki/sources",
@@ -32,7 +32,7 @@ def git_status() -> tuple[bool, str]:
             filtered.append(line)
         if not filtered:
             return True, "## OK: Git clean (only runtime/cache changes)\n\n"
-        return False, f"## WARNING: Uncommitted Changes\n\n```\n" + "\n".join(filtered) + "\n```\n"
+        return False, "## WARNING: Uncommitted Changes\n\n```\n" + "\n".join(filtered) + "\n```\n"
     return True, "## OK: Git clean\n\n"
 
 

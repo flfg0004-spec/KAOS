@@ -8,12 +8,11 @@ import json
 import logging
 import re
 import threading
-import time
-import uuid
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 # ── D7: State schema documentation ──
 
@@ -30,36 +29,37 @@ class KosmosState(TypedDict, total=False):
     aletheia_real: bool
     rate_limiter: bool
     aletheia_output: str
-    discovery: Dict[str, Any]
-    model: Dict[str, Any]
-    analyze: Dict[str, Any]
-    quality: Dict[str, Any]
-    visualize: Dict[str, Any]
-    kosmos_diagrams: List[str]
-    document: Dict[str, Any]
+    discovery: dict[str, Any]
+    model: dict[str, Any]
+    analyze: dict[str, Any]
+    quality: dict[str, Any]
+    visualize: dict[str, Any]
+    kosmos_diagrams: list[str]
+    document: dict[str, Any]
     kosmos_adr: str
-    adr: Dict[str, Any]
-    tags: List[str]
-    govern: Dict[str, Any]
-    validate: Dict[str, Any]
-    kosmos_eval_v2: Dict[str, Any]
-    kosmos_reflection: Dict[str, Any]
-    kosmos_contracts: Dict[str, Any]
-    kosmos_fase3: Dict[str, Any]
+    adr: dict[str, Any]
+    tags: list[str]
+    govern: dict[str, Any]
+    validate: dict[str, Any]
+    kosmos_eval_v2: dict[str, Any]
+    kosmos_reflection: dict[str, Any]
+    kosmos_contracts: dict[str, Any]
+    kosmos_fase3: dict[str, Any]
     kosmos_output: str
     kosmos_prompt: str
-    pipeline_status: Dict[str, Any]
-    kosmos_errors: Dict[str, Any]
+    pipeline_status: dict[str, Any]
+    kosmos_errors: dict[str, Any]
 
 
 logger = logging.getLogger(__name__)
 
 # ── B1: ExecutionSpan via OpenTelemetry (or fallback in-memory) ──
-from lib.kosmos.otel import ExecutionSpan, export_spans
+from lib.kosmos._state import set_pipeline_cache
 
 # ── S3.2: In-memory pipeline cache (avoids sentence-transformers dependency) ──
 from lib.kosmos.cache import PipelineCache
-from lib.kosmos._state import set_pipeline_cache
+from lib.kosmos.otel import ExecutionSpan, export_spans
+
 _PIPELINE_CACHE = PipelineCache(maxsize=500, ttl_seconds=1800)
 set_pipeline_cache(_PIPELINE_CACHE)
 
@@ -78,7 +78,7 @@ _CACHE_DIR = _MEMORY_DIR / "cache"
 # ── Ensure directory ──
 _RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-from lib.kosmos.routing import resolve_routing, ROUTING_TABLE
+from lib.kosmos.routing import ROUTING_TABLE, resolve_routing
 
 
 class KosmosPipelineV2:
@@ -95,17 +95,17 @@ class KosmosPipelineV2:
         result = pipeline.run_all()
     """
 
-    def __init__(self, state: Dict[str, Any], memory: Any = None) -> None:
+    def __init__(self, state: dict[str, Any], memory: Any = None) -> None:
         """Initialize the pipeline.
 
         Args:
             state: Pipeline state dict with at least 'topic' key.
             memory: Optional ArchitectureMemoryL0 instance.
         """
-        self.state: Dict[str, Any] = {**state}
+        self.state: dict[str, Any] = {**state}
         self.memory = memory
-        self.node_results: Dict[str, Dict[str, Any]] = {}
-        self.errors: Dict[str, str] = {}
+        self.node_results: dict[str, dict[str, Any]] = {}
+        self.errors: dict[str, str] = {}
         self.iteration = state.get("iteration", 0)
 
         # G2: Skip evaluation flag (pipeline vs external evaluation)
@@ -136,7 +136,7 @@ class KosmosPipelineV2:
                      state.get("topic", "N/A")[:50], self.skip_eval, self.cache_enabled, self.kratos_real)
 
     @staticmethod
-    def _build_empty_summary(reason: str, start_time: datetime) -> Dict[str, Any]:
+    def _build_empty_summary(reason: str, start_time: datetime) -> dict[str, Any]:
         """Build empty summary for skipped/rate-limited pipeline."""
         return {
             "pipeline": "KosmosV2",
@@ -168,7 +168,7 @@ class KosmosPipelineV2:
 
     # ── Public methods ──
 
-    def run_contracts(self) -> Dict[str, Any]:
+    def run_contracts(self) -> dict[str, Any]:
         """Ejecuta todos los contratos post-ADR (Fase 2).
 
         Inicializa ContractOrchestrator con L0 memory y ejecuta
@@ -275,7 +275,7 @@ class KosmosPipelineV2:
         finally:
             _TXTAI_LOCK.release()
 
-    def _populate_arch_graph(self, adr_id: str, topic: str, tags: list, related: list, adr_text: str) -> Dict[str, Any]:
+    def _populate_arch_graph(self, adr_id: str, topic: str, tags: list, related: list, adr_text: str) -> dict[str, Any]:
         """Populate the ArchKnowledgeGraph with ADR data (Fase 3).
 
         Uses arch_graph.py to add nodes and edges representing the ADR
@@ -284,7 +284,7 @@ class KosmosPipelineV2:
         Returns:
             Dict with nodes_added, edges_added, status, coverage.
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "nodes_added": 0,
             "edges_added": 0,
             "status": {},
@@ -344,7 +344,7 @@ class KosmosPipelineV2:
 
         return result
 
-    def get_errors(self) -> Dict[str, str]:
+    def get_errors(self) -> dict[str, str]:
         """Return all errors collected during pipeline execution.
 
         Returns:
@@ -354,7 +354,7 @@ class KosmosPipelineV2:
 
     # ── P2: Parallel node execution ──
 
-    def _run_parallel_nodes(self, node_batch: List[Tuple[str, Callable]], batch_name: str = "") -> None:
+    def _run_parallel_nodes(self, node_batch: list[tuple[str, Callable]], batch_name: str = "") -> None:
         """Execute a batch of independent nodes in parallel using ThreadPoolExecutor.
 
         P2 optimization: nodes that have no dependency on each other run
@@ -393,48 +393,48 @@ class KosmosPipelineV2:
 
     # ── D2: Node methods (delegating to nodes.py with lazy imports) ──
 
-    def discover(self) -> Dict[str, Any]:
+    def discover(self) -> dict[str, Any]:
         """Nodo 1: Discover — escanea el código base."""
         from lib.kosmos.nodes import discover as _impl
         return _impl(self)
 
-    def model(self) -> Dict[str, Any]:
+    def model(self) -> dict[str, Any]:
         """Nodo 2: Model — genera modelo C4."""
         from lib.kosmos.nodes import model as _impl
         return _impl(self)
 
-    def analyze(self) -> Dict[str, Any]:
+    def analyze(self) -> dict[str, Any]:
         """Nodo 3: Analyze — análisis de impacto y health score."""
         from lib.kosmos.nodes import analyze as _impl
         return _impl(self)
 
-    def quality(self) -> Dict[str, Any]:
+    def quality(self) -> dict[str, Any]:
         """Nodo 4: Quality — evaluación dimensional del output."""
         from lib.kosmos.nodes import quality as _impl
         return _impl(self)
 
-    def visualize(self) -> Dict[str, Any]:
+    def visualize(self) -> dict[str, Any]:
         """Nodo 5: Visualize — genera diagramas C4 obligatorios con validación."""
         from lib.kosmos.nodes import visualize as _impl
         return _impl(self)
 
-    def document(self) -> Dict[str, Any]:
+    def document(self) -> dict[str, Any]:
         """Nodo 6: Document — redacta el ADR completo y lo indexa en L1."""
         from lib.kosmos.nodes import document as _impl
         return _impl(self)
 
-    def govern(self) -> Dict[str, Any]:
+    def govern(self) -> dict[str, Any]:
         """Nodo 7: Govern — población del Architecture Knowledge Graph."""
         from lib.kosmos.nodes import govern as _impl
         return _impl(self)
 
-    def validate(self) -> Dict[str, Any]:
+    def validate(self) -> dict[str, Any]:
         """Nodo 8: Validate — verificación cross-referencia + reflexión + contratos F2."""
         from lib.kosmos.nodes import validate as _impl
         return _impl(self)
 
     @staticmethod
-    def _validate_diagram(diagram_text: str, diagram_name: str) -> Dict[str, Any]:
+    def _validate_diagram(diagram_text: str, diagram_name: str) -> dict[str, Any]:
         """Validate a Mermaid diagram for minimum quality requirements."""
         from lib.kosmos.nodes import _validate_diagram as _impl
         return _impl(diagram_text, diagram_name)
@@ -447,7 +447,7 @@ class KosmosPipelineV2:
 
     # ── Pipeline runner ──
 
-    def run_all(self) -> Dict[str, Any]:
+    def run_all(self) -> dict[str, Any]:
         """Execute all 6 pipeline nodes in sequence (K3 real).
 
         Discover → Model → Analyze → Quality → Document → Validate.
@@ -540,7 +540,7 @@ class KosmosPipelineV2:
         elapsed = (datetime.now() - start_time).total_seconds()
 
         # Build summary
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "pipeline": "KosmosV2",
             "topic": topic,
             "started_at": start_time.isoformat(),
@@ -596,7 +596,7 @@ class KosmosPipelineV2:
         summary["evaluation_mode"] = "pipeline" if not self.skip_eval else "external"
 
         # ── Fase 3: Post-pipeline autonomy ──
-        fase3_result: Dict[str, Any] = {}
+        fase3_result: dict[str, Any] = {}
         try:
             from lib.kosmos_monitor import ArchitectureMonitor
             monitor = ArchitectureMonitor()
@@ -673,7 +673,7 @@ class KosmosPipelineV2:
 
 # ── Async high-level entry point ──
 
-async def run_kosmos_pipeline(topic: str, context: dict = None) -> Dict[str, Any]:
+async def run_kosmos_pipeline(topic: str, context: dict = None) -> dict[str, Any]:
     """High-level async entry point for the KosmosV2 pipeline.
 
     Initializes L0 memory, indexes ADRs (if first time), and runs
@@ -703,7 +703,7 @@ async def run_kosmos_pipeline(topic: str, context: dict = None) -> Dict[str, Any
         logger.warning("L0 memory init failed (non-critical): %s", exc)
 
     # 2. Build initial state
-    state: Dict[str, Any] = {
+    state: dict[str, Any] = {
         "topic": topic,
         "timestamp": datetime.now().isoformat(),
         "iteration": context.get("iteration", 0),
@@ -718,7 +718,7 @@ async def run_kosmos_pipeline(topic: str, context: dict = None) -> Dict[str, Any
     result = pipeline.run_all()
 
     # 4. Build final output
-    output: Dict[str, Any] = {
+    output: dict[str, Any] = {
         "topic": topic,
         "pipeline_result": result,
         "adr": state.get("kosmos_adr", ""),

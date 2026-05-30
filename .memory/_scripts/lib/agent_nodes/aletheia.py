@@ -4,18 +4,22 @@ from datetime import datetime
 
 logger = logging.getLogger("aletheia")
 
-from lib.config import LLM_DIRECT_ENABLED
 from lib.agent_tools import (
-    slugify, load_context, save_context,
-    llm_or_executor_call, build_rag_context, notify_step,
     RAW_DIR,
+    build_rag_context,
+    llm_or_executor_call,
+    load_context,
+    notify_step,
+    save_context,
+    slugify,
 )
+from lib.config import LLM_DIRECT_ENABLED
 
 try:
-    from aletheia_router import classify_query, PROFILES
+    from aletheia_router import PROFILES, classify_query
     _HAS_ROUTER = True
 except ImportError:
-    logger.info("aletheia_router not available, using fallback")
+    logger.debug("aletheia_router not available, using fallback")
     _HAS_ROUTER = False
     PROFILES = {}
 
@@ -23,7 +27,7 @@ try:
     from lib.gap_query import query_gaps
     _HAS_GAPS = True
 except ImportError:
-    logger.info("lib.gap_query not available")
+    logger.debug("lib.gap_query not available")
     _HAS_GAPS = False
 
 
@@ -87,7 +91,7 @@ def _generate_sub_questions(topic: str, profile: str) -> list:
         return [
             f"¿Cuál es el estado del arte en {topic}?",
             f"¿Qué controversias o debates existen sobre {topic}?",
-            f"¿Cuáles son las fuentes primarias y secundarias?",
+            "¿Cuáles son las fuentes primarias y secundarias?",
             f"¿Qué tendencias futuras se identifican en {topic}?",
             f"¿Qué implicaciones prácticas tiene {topic}?",
         ]
@@ -154,7 +158,7 @@ def _aletheia_node_impl(state: dict) -> dict:
     existing = state.get("existing_concepts", [])
     existing_section = ""
     if existing:
-        existing_section = f"\n## Conceptos Existentes en el Vault\n" + "\n".join(f"- {c}" for c in existing) + "\n"
+        existing_section = "\n## Conceptos Existentes en el Vault\n" + "\n".join(f"- {c}" for c in existing) + "\n"
 
     prompt = (
         f"# Pipeline: Investigación\n\n"

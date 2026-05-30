@@ -1,18 +1,16 @@
 """EtherTracker — persistent token usage tracker with thread safety."""
 
-import json
 import logging
 import threading
 from datetime import date, datetime
 from pathlib import Path
 
+from lib.aether.cache import AetherCache
 from lib.aether.circuit import _ETHER_CIRCUIT_BREAKER
 from lib.aether.config import COST_CAPS, COST_RATES
+from lib.aether.tier import resolve_tier
 
 _LOG = logging.getLogger(__name__)
-
-BASE = Path(__file__).resolve().parent.parent.parent.parent.parent
-TOKEN_CACHE = BASE / ".memory" / "cache" / "token-usage.json"
 
 
 class EtherTracker:
@@ -25,28 +23,16 @@ class EtherTracker:
     FLUSH_INTERVAL = 10
 
     def __init__(self):
-        self.path = TOKEN_CACHE
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._cache = AetherCache(name="token-usage")
         self._lock = threading.Lock()
         self.data = self._load()
         self._pending = 0
 
     def _load(self) -> dict:
-        if self.path.exists():
-            try:
-                return json.loads(self.path.read_text(encoding="utf-8"))
-            except Exception as e:
-                _LOG.warning("EtherTracker: error loading cache: %s", e)
-        return {"version": 2, "sessions": [], "totals": {}, "daily": {}}
+        return self._cache.load(default={"version": 2, "sessions": [], "totals": {}, "daily": {}})
 
     def _save(self):
-        with self._lock:
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(
-                json.dumps(self.data, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
-            tmp.replace(self.path)
+        self._cache.save(self.data)
 
     def flush(self):
         if self._pending > 0:
@@ -120,8 +106,8 @@ class EtherTracker:
         return cache_miss * r["input"] + cache_hit * r["cache_read"] + completion_tokens * r["output"]
 
     def get_stats(self) -> dict:
-        per_agent = {}
         with self._lock:
+            per_agent = {}
             for s in self.data.get("sessions", []):
                 agent = s.get("agent", "unknown")
                 if agent not in per_agent:
@@ -139,7 +125,7 @@ class EtherTracker:
             daily = dict(self.data.get("daily", {}))
             total_latency_ms = sum(e.get("latency_ms", 0) for e in self.data.get("sessions", []))
             total_multimodal_calls = sum(1 for e in self.data.get("sessions", []) if e.get("has_images", False))
-        return {
+            return {
             "total_calls": totals.get("total_calls", 0),
             "total_prompt_tokens": totals.get("prompt_tokens", 0),
             "total_completion_tokens": totals.get("completion_tokens", 0),
@@ -172,8 +158,8 @@ class EtherTracker:
         return "\n".join(lines)
 
     def get_model_breakdown(self) -> dict:
-        by_model = {}
         with self._lock:
+            by_model = {}
             for s in self.data.get("sessions", []):
                 model = s.get("model", "unknown")
                 if model not in by_model:
@@ -195,32 +181,26 @@ class EtherTracker:
                 m["reasoning_tokens"] += s.get("reasoning_tokens", 0)
                 if s.get("agent"):
                     m["agents"].add(s["agent"])
-        result = {}
-        for model, data in by_model.items():
-            result[model] = dict(data)
-            result[model]["agents"] = sorted(data["agents"])
-            result[model]["cost_usd"] = round(data["cost_usd"], 6)
-        return result
+            result = {}
+            for model, data in by_model.items():
+                result[model] = dict(data)
+                result[model]["agents"] = sorted(data["agents"])
+                result[model]["cost_usd"] = round(data["cost_usd"], 6)
+            return result
 
     def get_model_tier_breakdown(self) -> dict:
-        tiers = {}
-        for e in self.data.get("sessions", []):
-            model = e.get("model", "unknown")
-            tokens = e.get("completion_tokens", 0) + e.get("prompt_tokens", 0)
-            if "mimo" in model:
-                tier = "mimo"
-            elif model in ("go-pro", "deepseek-pro"):
-                tier = "pro"
-            elif "kimi" in model:
-                tier = "kimi"
-            else:
-                tier = "flash"
-            if tier not in tiers:
-                tiers[tier] = {"calls": 0, "tokens": 0, "cost": 0.0}
-            tiers[tier]["calls"] += 1
-            tiers[tier]["tokens"] += tokens
-            tiers[tier]["cost"] += e.get("cost_usd", 0)
-        return tiers
+        with self._lock:
+            tiers = {}
+            for e in self.data.get("sessions", []):
+                model = e.get("model", "unknown")
+                tokens = e.get("completion_tokens", 0) + e.get("prompt_tokens", 0)
+                tier = resolve_tier(model)
+                if tier not in tiers:
+                    tiers[tier] = {"calls": 0, "tokens": 0, "cost": 0.0}
+                tiers[tier]["calls"] += 1
+                tiers[tier]["tokens"] += tokens
+                tiers[tier]["cost"] += e.get("cost_usd", 0)
+            return tiers
 
     def get_routing_report(self) -> str:
         model_bd = self.get_model_breakdown()
@@ -279,6 +259,14 @@ class EtherTracker:
                 alerts.append(f"🔴 {tier}: EXCEEDED ${tier_cost:.2f} > ${cap['weekly_usd']}")
 
         status = "ok" if not alerts else "warning" if not any("EXCEEDED" in a for a in alerts) else "exceeded"
+
+        if alerts:
+            for alert in alerts:
+                if "EXCEEDED" in alert:
+                    _LOG.error("Budget alert: %s", alert)
+                else:
+                    _LOG.warning("Budget alert: %s", alert)
+
         return {
             "status": status,
             "weekly_cost_usd": round(weekly_cost, 4),

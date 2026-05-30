@@ -17,13 +17,12 @@ from __future__ import annotations
 import html
 import json
 import logging
-import os
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -515,7 +514,7 @@ class KosmosDashboard:
                             "status": status_match.group(1) if status_match else "unknown",
                             "reflection_score": "—",
                         })
-                    except (OSError, IOError):
+                    except OSError:
                         pass
         except Exception as exc:
             logger.debug("ADR collection failed: %s", exc)
@@ -590,7 +589,7 @@ class KosmosDashboard:
     def _collect_routing_metrics(self) -> dict[str, Any]:
         """Collect current DSOL routing table."""
         try:
-            from lib.kosmos_node_v2 import ROUTING_TABLE, resolve_routing
+            from lib.kosmos_node_v2 import ROUTING_TABLE
 
             routing = {}
             for node in ROUTING_TABLE:

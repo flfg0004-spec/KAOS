@@ -29,11 +29,14 @@ class StrategistBenchmark:
             p = prediction.get("probability_success", 0.5)
             avg = prediction.get("avg_outcome_score", 5.0)
             composite_score = round(avg, 1)
+            dim_scores = {}
+            for dim in DIMENSIONS:
+                dim_scores[dim] = self._score_dimension(dim, context, problem)
             plan = {
                 "context_analyzed": bool(context),
                 "has_okrs": "okrs" in json.dumps(context).lower() if context else False,
                 "prediction_based": True,
-                "dimensions": {},
+                "dimensions": dim_scores,
                 "composite_score": composite_score,
                 "recommendation": (
                     f"Predictivo: P(éxito)={p:.0%} (basado en {n} estratégias previas). "

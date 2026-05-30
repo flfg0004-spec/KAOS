@@ -1,4 +1,5 @@
 import subprocess
+
 from lib.config import VAULT_ROOT
 
 

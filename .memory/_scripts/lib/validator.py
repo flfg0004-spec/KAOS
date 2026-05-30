@@ -1,6 +1,6 @@
 """Output validation with JSON Schema — valida outputs de agentes."""
-import json, re
-from typing import Optional
+import json
+import re
 
 SCHEMAS = {
     "aletheia": {
@@ -67,7 +67,7 @@ SCHEMAS = {
 }
 
 
-def extract_json(text: str) -> Optional[str]:
+def extract_json(text: str) -> str | None:
     """Extract JSON object from agent output text."""
     # Try direct parse first
     try:

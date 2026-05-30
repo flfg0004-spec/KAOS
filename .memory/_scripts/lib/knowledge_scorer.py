@@ -11,9 +11,8 @@ import os
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
-from lib.frontmatter_utils import extract_frontmatter, has_complete_frontmatter
+from lib.frontmatter_utils import extract_frontmatter
 from lib.knowledge_levels import assign_level
 
 logger = logging.getLogger(__name__)

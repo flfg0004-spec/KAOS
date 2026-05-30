@@ -15,13 +15,13 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ── Fallback: in-memory spans (same as original ExecutionSpan) ──
 
-_FALLBACK_SPANS: List[Dict[str, Any]] = []
+_FALLBACK_SPANS: list[dict[str, Any]] = []
 _FALLBACK_LOCK = threading.Lock()
 
 # ── Try OTel import ──
@@ -29,7 +29,7 @@ _FALLBACK_LOCK = threading.Lock()
 try:
     from opentelemetry import trace
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 
     _OTEL_AVAILABLE = True
     _TRACER = trace.get_tracer("kosmosv2", "3.0.0")
@@ -58,7 +58,9 @@ def setup_otel_exporter(endpoint: str = "http://localhost:4318/v1/traces",
 
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import (
-        BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor,
+        BatchSpanProcessor,
+        ConsoleSpanExporter,
+        SimpleSpanProcessor,
     )
 
     provider = TracerProvider()
@@ -134,7 +136,7 @@ class ExecutionSpan:
         else:
             # B1: Registrar en fallback en memoria (misma estructura que antes)
             duration_ms = round((time.time() - self._fallback_start) * 1000, 1)
-            span: Dict[str, Any] = {
+            span: dict[str, Any] = {
                 "span_id": self._fallback_id,
                 "name": self.name,
                 "duration_ms": duration_ms,
@@ -152,7 +154,7 @@ class ExecutionSpan:
                 _FALLBACK_SPANS.append(span)
 
     @classmethod
-    def get_spans(cls) -> List[Dict[str, Any]]:
+    def get_spans(cls) -> list[dict[str, Any]]:
         """Return accumulated fallback spans (thread-safe copy)."""
         with _FALLBACK_LOCK:
             return list(_FALLBACK_SPANS)
@@ -246,13 +248,13 @@ def _rotate_traces(traces_dir: Path, days: int = 7) -> None:
             pass
 
 
-def get_trace_files() -> List[Path]:
+def get_trace_files() -> list[Path]:
     """Get sorted list of trace files (newest first)."""
     traces_dir = _get_traces_dir()
     return sorted(traces_dir.glob("traces-*.jsonl"), reverse=True)
 
 
-def get_trace_summary() -> Dict[str, Any]:
+def get_trace_summary() -> dict[str, Any]:
     """Get summary of all trace files — file count and total spans.
 
     Returns:
@@ -272,7 +274,7 @@ def get_trace_summary() -> Dict[str, Any]:
     }
 
 
-def get_otel_status() -> Dict[str, Any]:
+def get_otel_status() -> dict[str, Any]:
     """Get OTel integration status for health endpoint (K2).
 
     Returns:

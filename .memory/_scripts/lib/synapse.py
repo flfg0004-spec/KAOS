@@ -95,7 +95,7 @@ def _inject_wikilink(content: str, target_slug: str) -> tuple[str, bool]:
 
     # Add to a "## Referencias Cruzadas" section
     if "## Referencias Cruzadas" not in content:
-        content += f"\n\n## Referencias Cruzadas\n"
+        content += "\n\n## Referencias Cruzadas\n"
     content += f"- Relacionado: {link}\n"
     return content, True
 

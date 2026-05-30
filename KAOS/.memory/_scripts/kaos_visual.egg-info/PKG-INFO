@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: kaos-visual
+Version: 1.0.0
+Summary: KAOS Visualization Integration — Plotly, Cytoscape.js, Kroki, Markmap
+Requires-Python: >=3.10

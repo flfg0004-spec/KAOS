@@ -22,11 +22,15 @@ ROUTER9_MODELS = {
     },
 }
 
+import os
+
 import requests
 from openai import OpenAI
 
+from . import BaseLLMProvider
 
-class Router9Client:
+
+class Router9Client(BaseLLMProvider):
     """OpenAI-compatible client for 9Router proxy.
 
     Connects to localhost:20128/v1 and routes through 9Router's
@@ -35,7 +39,7 @@ class Router9Client:
 
     def __init__(self, base_url: str = None):
         self.base_url = base_url or ROUTER9_BASE_URL
-        self._client = OpenAI(api_key="9router", base_url=self.base_url)
+        self._client = OpenAI(api_key=os.environ.get("ROUTER9_API_KEY", "9router"), base_url=self.base_url)
 
     def chat(self, messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = None) -> dict:
         """OpenAI-compatible chat completion via 9Router."""
@@ -57,6 +61,24 @@ class Router9Client:
             }
         except Exception as e:
             return {"error": str(e), "text": ""}
+
+    def cost_of(self, model: str, prompt_tokens: int, completion_tokens: int, cache_hit: int = 0) -> float:
+        """Calculate cost for given model and token usage using ROUTER9_MODELS pricing.
+
+        Args:
+            model: Model name (e.g. 'router9-minimax').
+            prompt_tokens: Number of input tokens.
+            completion_tokens: Number of output tokens.
+            cache_hit: Number of tokens served from cache.
+
+        Returns:
+            Cost in USD.
+        """
+        rates = ROUTER9_MODELS.get(model, ROUTER9_MODELS.get(DEFAULT_MODEL, {}))
+        input_cost = prompt_tokens * rates.get("input", 0)
+        output_cost = completion_tokens * rates.get("output", 0)
+        cache_savings = cache_hit * rates.get("cache_read", 0)
+        return round(input_cost + output_cost - cache_savings, 10)
 
     def list_models(self) -> list:
         """List available models from 9Router endpoint."""

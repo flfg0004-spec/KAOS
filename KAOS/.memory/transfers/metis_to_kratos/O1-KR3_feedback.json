@@ -1,0 +1,42 @@
+{
+  "type": "strategy_feedback",
+  "session_id": "bc0e5c97",
+  "generated_at": "2026-05-29T14:09:58.326545",
+  "okr_id": "O1-KR3",
+  "initiative_id": "I-O1-KR3",
+  "initiative_title": "Test Initiative",
+  "completion": {
+    "percentage": 100,
+    "status": "completed",
+    "completed_at": "2026-05-29T14:09:58.326545"
+  },
+  "code_quality": {
+    "test_coverage": 85,
+    "cyclomatic_complexity": 0,
+    "lint_errors": 0,
+    "tech_debt_minutes": 0,
+    "code_smells": 0,
+    "duplication_percentage": 0
+  },
+  "performance": {
+    "latency_ms": 150,
+    "throughput_rps": 0,
+    "memory_mb": 0,
+    "error_rate": 0
+  },
+  "blockers": [],
+  "estimated_remaining_effort": {
+    "hours": 0,
+    "confidence": "media"
+  },
+  "success_criteria_met": [
+    {
+      "criterion": "latency",
+      "met": false,
+      "actual_value": "150"
+    }
+  ],
+  "recommendations": [],
+  "status": "feedback_received",
+  "source": "kratos"
+}

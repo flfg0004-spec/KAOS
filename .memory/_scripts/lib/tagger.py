@@ -97,7 +97,9 @@ def _fuzzy_match(tag: str, existing: set[str]) -> str | None:
 
 def _embedding_similarity(text: str, tag: str) -> float:
     """Compute cosine similarity between text and tag using fastembed."""
-    import subprocess, sys, json as _json
+    import json as _json
+    import subprocess
+    import sys
     mcp_embed = BASE / "_scripts" / "mcp_embed.py"
     req = _json.dumps({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",

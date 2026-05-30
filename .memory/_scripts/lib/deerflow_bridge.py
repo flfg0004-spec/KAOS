@@ -9,12 +9,11 @@ Auto-deteccion: si deerflow no esta instalado, opera en modo 'mock' (degradacion
 gradual sin bloqueo del pipeline KAOS).
 """
 
-import os
 import json
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("deerflow_bridge")
 
@@ -176,8 +175,8 @@ class DeerFlowBridge:
             logger.info("Sandbox disabled via feature flag — returning mock")
             return {"status": "mock", "note": "Sandbox disabled via feature flag"}
 
-        import subprocess
         import json as _json
+        import subprocess
 
         code = task.get("code", "")
         language = task.get("language", "python")

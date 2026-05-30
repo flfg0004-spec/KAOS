@@ -13,7 +13,6 @@ Output: feedback estructurado con prioridad (critical/major/minor) y sugerencias
 import json
 import re
 from pathlib import Path
-from typing import Optional
 
 SCRIPTS = Path(__file__).resolve().parent
 

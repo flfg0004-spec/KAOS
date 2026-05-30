@@ -7,9 +7,6 @@ Sin capacidad de modificar el DAG — solo lectura y recomendaciones.
 import json
 import logging
 import re
-from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 from lib.config import VAULT_ROOT
 

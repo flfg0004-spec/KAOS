@@ -1,7 +1,8 @@
 import re
-from pathlib import Path
 from datetime import datetime, timedelta
-from lib.config import VAULT_ROOT, IGNORED_PAGES, IGNORED_WIKILINKS
+from pathlib import Path
+
+from lib.config import IGNORED_PAGES, IGNORED_WIKILINKS, VAULT_ROOT
 
 
 def read_file(path: Path) -> str:

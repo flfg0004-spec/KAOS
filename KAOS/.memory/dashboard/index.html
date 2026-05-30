@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAOS Vault Dashboard</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; padding:2rem; }
+  h1 { font-size:1.5rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem; }
+  .status { color:#eab308; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; margin:1rem 0; }
+  .card { background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155; }
+  .card h2 { font-size:0.9rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; }
+  .metric { font-size:2rem; font-weight:700; color:#38bdf8; }
+  .metric.green { color:#eab308; }
+  .metric.red { color:#ef4444; }
+  .row { display:flex; justify-content:space-between; padding:0.25rem 0; font-size:0.85rem; }
+  .row:nth-child(even) { background:#1a2332; }
+  .label { color:#94a3b8; }
+  .bar { height:8px; background:#334155; border-radius:4px; margin-top:0.5rem; overflow:hidden; }
+  .bar-fill { height:100%; background:#eab308; border-radius:4px; transition:width 0.3s; }
+  table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  th { text-align:left; color:#94a3b8; padding:0.4rem 0.25rem; border-bottom:1px solid #334155; }
+  td { padding:0.3rem 0.25rem; border-bottom:1px solid #1e293b; }
+  .footer { margin-top:2rem; color:#475569; font-size:0.75rem; text-align:center; }
+  .badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:4px; font-size:0.75rem; }
+  .badge.green { background:#166534; color:#86efac; }
+  .badge.yellow { background:#854d0e; color:#fde047; }
+  .badge.red { background:#7f1d1d; color:#fca5a5; }
+  .ring-gauges { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; }
+  .ring-wrapper { text-align:center; width:90px; }
+  .ring-label { font-size:0.7rem; color:#94a3b8; margin-top:0.25rem; }
+  .sparkline { display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }
+  .spark-label { font-size:1.2rem; font-weight:700; color:#38bdf8; }
+</style>
+</head>
+<body>
+<h1>⚠️ KAOS Vault Dashboard <span class="status">●</span></h1>
+<p style="color:#64748b;font-size:0.85rem;">2026-05-25 17:17:06</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>Archivos</h2>
+    <div class="metric">268</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Wiki</span><span>132</span></div>
+      <div class="row"><span class="label">Schema</span><span>26</span></div>
+      <div class="row"><span class="label">Raw</span><span>26</span></div>
+      <div class="row"><span class="label">Scripts</span><span>184</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Salud</h2>
+    <div class="metric red">1</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">issues de lint</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Git clean</span><span>❌</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Pipeline</h2>
+    <div class="metric green">complete</div>
+    <div style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">Perfil: standard</div>
+    <div class="bar"><div class="bar-fill" style="width:13.333333333333334%"></div></div>
+    <div style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8;">Cache: 4/30</div>
+  </div>
+
+  <div class="card">
+    <h2>Ingesta</h2>
+    <div class="metric">3</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">archivos ingeridos</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Deduplicados</span><span>482</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sinapsis</h2>
+    <div class="metric">0</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">conceptos indexados</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">[[wikilinks]]</span><span>0</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Wikilinks</h2>
+    <div class="metric green">469</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">válidos</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Broken</span><span>❌ 1</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Calidad</h2>
+    <div class="metric green">168.1</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">score compuesto</div>
+    
+<div class="sparkline">
+  <svg width="120" height="30" viewBox="0 0 120 30">
+    <polyline fill="none" stroke="#22c55e" stroke-width="1.5" points="0.0,25.4 4.1,25.7 8.3,25.7 12.4,25.5 16.6,25.5 20.7,25.6 24.8,25.6 29.0,25.6 33.1,25.6 37.2,25.6 41.4,25.7 45.5,25.7 49.7,25.7 53.8,25.7 57.9,25.7 62.1,25.7 66.2,25.7 70.3,25.7 74.5,25.7 78.6,25.7 82.8,25.7 86.9,30.0 91.0,30.0 95.2,30.0 99.3,30.0 103.4,25.7 107.6,25.7 111.7,25.7 115.9,25.7 120.0,0.0"/>
+  </svg>
+  <span class="spark-label">168.1</span>
+</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Connectivity</span><span>4.3 pts</span></div>
+      <div class="row"><span class="label">Freshness</span><span>10.0 pts</span></div>
+      <div class="row"><span class="label">Completitud</span><span>168.1%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Gasto</h2>
+    <div class="metric">0</div>
+    <div style="font-size:0.85rem;color:#94a3b8;">llamadas API</div>
+    <div style="margin-top:0.5rem;">
+      <div class="row"><span class="label">Costo total</span><span>$0.0000</span></div>
+      <div class="row"><span class="label">Cache hit</span><span>0.0%</span></div>
+      <div class="row"><span class="label">Tokens prompt</span><span>0</span></div>
+      <div class="row"><span class="label">Tokens completion</span><span>0</span></div>
+    </div>
+    
+  </div>
+</div>
+
+<div class="ring-gauges" style="display:flex; gap:1rem; margin-bottom:1rem;">
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155;">
+    <h2 style="font-size:0.9rem; color:#94a3b8; text-transform:uppercase; margin-bottom:0.75rem;">Lifecycle</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#38bdf8" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="0.0" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">132</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/132</text>
+  </svg>
+  <div class="ring-label">Total</div>
+</div>
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#22c55e" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="2.0357503200000053" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">99</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/100</text>
+  </svg>
+  <div class="ring-label">Avg Conf</div>
+</div>
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#ef4444" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="0.0" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">132</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/132</text>
+  </svg>
+  <div class="ring-label">Flagged</div>
+</div>
+    </div>
+    <div style="margin-top:0.5rem; font-size:0.8rem;">
+      <div class="row"><span class="label">new</span><span>132</span></div>
+    </div>
+  </div>
+  <div style="flex:1; background:#1e293b; border-radius:8px; padding:1rem; border:1px solid #334155;">
+    <h2 style="font-size:0.9rem; color:#94a3b8; text-transform:uppercase; margin-bottom:0.75rem;">Contradicciones</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#f59e0b" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="226.19448" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">0</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/1</text>
+  </svg>
+  <div class="ring-label">Pairs</div>
+</div>
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#ef4444" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="226.19448" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">0</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/1</text>
+  </svg>
+  <div class="ring-label">Contrad</div>
+</div>
+      
+<div class="ring-wrapper">
+  <svg width="90" height="90" viewBox="0 0 90 90">
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="45" cy="45" r="36" fill="none" stroke="#22c55e" stroke-width="6"
+      stroke-dasharray="226.19448" stroke-dashoffset="226.19448" stroke-linecap="round"
+      transform="rotate(-90 45 45)"/>
+    <text x="45" y="40" text-anchor="middle" fill="#e2e8f0" font-size="18" font-weight="bold">0</text>
+    <text x="45" y="55" text-anchor="middle" fill="#64748b" font-size="9">/1</text>
+  </svg>
+  <div class="ring-label">Complem</div>
+</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Actividad Reciente</h2>
+    <table>
+      <tr><th>Commit</th></tr>
+      <tr><td style="font-family:monospace;font-size:0.75rem;">13a888a session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">a4a5ed7 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">6ebfc5d session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">7989949 session: mnemosyne - curation-cycle</td></tr><tr><td style="font-family:monospace;font-size:0.75rem;">138a74f session: mnemosyne - curation-cycle</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Log Reciente</h2>
+    <table>
+      <tr><th>Fecha</th><th>Evento</th></tr>
+      <tr><td>2026-05-25</td><td>session</td></tr><tr><td>2026-05-25</td><td>session</td></tr><tr><td>2026-05-25</td><td>session</td></tr><tr><td>2026-05-25</td><td>session</td></tr><tr><td>2026-05-25</td><td>session</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="footer">KAOS Memory Vault — generado por vault.py dashboard | F6+F7 activo</div>
+</body>
+</html>

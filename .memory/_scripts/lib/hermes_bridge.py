@@ -2,8 +2,7 @@
 import datetime
 import logging
 
-from lib.config import HERMES_CHANNEL
-from lib.hermes_router import send_boxed, send
+from lib.hermes_router import send_boxed
 
 _LOG = logging.getLogger(__name__)
 

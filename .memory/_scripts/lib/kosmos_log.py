@@ -10,7 +10,7 @@ import json
 import logging
 import threading
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 _lock = threading.Lock()
 
@@ -28,7 +28,7 @@ def log_json(logger: logging.Logger, level: int, event: str, **context: Any) -> 
         **context: Key-value pairs for structured data.
     """
     try:
-        safe_context: Dict[str, Any] = {}
+        safe_context: dict[str, Any] = {}
         for k, v in context.items():
             if not isinstance(v, (int, float, bool)):
                 safe_context[k] = str(v)[:500]

@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union
 
 from crewai.memory.storage.backend import MemoryRecord
 from crewai.memory.storage.lancedb_storage import LanceDBStorage
+
 from lib.config import VAULT_ROOT
+
 
 class KAOSStorageBackend(LanceDBStorage):
     """
@@ -15,9 +16,9 @@ class KAOSStorageBackend(LanceDBStorage):
     """
     def __init__(
         self,
-        path: Optional[Union[str, Path]] = None,
+        path: str | Path | None = None,
         table_name: str = "memories",
-        vector_dim: Optional[int] = None,
+        vector_dim: int | None = None,
         compact_every: int = 100
     ) -> None:
         if path is None:

@@ -203,10 +203,7 @@
       "smart-connections:Smart Connections: Open connections view": false,
       "smart-connections:Toggle Footer Connections": false,
       "smart-connections:Smart Connections: Open random connection": false,
-      "smart-connections:Smart Lookup: Open lookup view": false,
-      "smart-context:Smart Context: Open Builder": false,
-      "smart-context:Smart Context: Copy to Clipboard (select depth)": false,
-      "smart-context:Smart Context: List Named Contexts": false
+      "smart-connections:Smart Lookup: Open lookup view": false
     }
   },
   "active": "2f5da011aab018f6",

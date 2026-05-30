@@ -1,7 +1,8 @@
 import json
-from pathlib import Path
 from datetime import datetime
-from lib.config import VAULT_ROOT, CACHE_MAX_ENTRIES
+from pathlib import Path
+
+from lib.config import CACHE_MAX_ENTRIES, VAULT_ROOT
 from lib.pressure import estimate_tokens, get_level
 
 
@@ -36,8 +37,9 @@ def _embedding_search(task: str, top_k: int = 3) -> str:
 def _obsidian_search(task: str, top_k: int = 3) -> str:
     """Search Obsidian vault via REST API for relevant context."""
     try:
-        from lib.obsidian import ObsidianClient
         import json
+
+        from lib.obsidian import ObsidianClient
         config_path = Path(__file__).parents[2] / ".opencode" / "opencode.json"
         api_key = ""
         if config_path.exists():
@@ -85,6 +87,7 @@ def _kg_search(task: str, top_k: int = 5) -> str:
     """Search Knowledge Graph for relevant entities and relations."""
     try:
         import json
+
         from lib.config import VAULT_ROOT
         seed_path = VAULT_ROOT / "cache" / "knowledge-graph" / "seed.json"
         if not seed_path.exists():
@@ -231,7 +234,7 @@ def load(agent: str = "", task: str = "") -> str:
 
     if task:
         try:
-            from lib.mome_router import is_mome_active, MoMERouter, query_partitioned
+            from lib.mome_router import MoMERouter, is_mome_active, query_partitioned
             if is_mome_active():
                 _router = MoMERouter()
                 _domains = _router.route_with_gating(task)
@@ -266,7 +269,7 @@ def load(agent: str = "", task: str = "") -> str:
     log_path = vault / "wiki" / "log.md"
     if log_path.exists():
         log_lines = log_path.read_text(encoding="utf-8", errors="replace").split("\n")
-        context.append(f"\n---\n## Recent Vault Activity\n" + "\n".join(log_lines[-5:]))
+        context.append("\n---\n## Recent Vault Activity\n" + "\n".join(log_lines[-5:]))
 
     policy_path = vault / "schema" / "vault-policy.md"
     if policy_path.exists():

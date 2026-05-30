@@ -4,12 +4,12 @@ Extraído de kosmos_contracts.py (D3).
 """
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
+from .aletheia import KosmosAletheiaContract
 from .kratos import KosmosKratosContract
 from .metis import KosmosMetisContract
 from .mnemosyne import KosmosMnemosyneContract
-from .aletheia import KosmosAletheiaContract
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ContractOrchestrator:
         self._metis_contract = KosmosMetisContract(memory_l0=memory_l0)
         self._mnemosyne_contract = KosmosMnemosyneContract()
         self._aletheia_contract = KosmosAletheiaContract(real_mode=aletheia_real)
-        self._results: Dict[str, Any] = {
+        self._results: dict[str, Any] = {
             "kratos": None,
             "metis": None,
             "mnemosyne": None,
@@ -57,7 +57,7 @@ class ContractOrchestrator:
 
     # ── Public API ──
 
-    def get_corrective_actions(self) -> List[Dict[str, Any]]:
+    def get_corrective_actions(self) -> list[dict[str, Any]]:
         """G5: Generate corrective actions from contract results.
 
         Si un contrato reporta score bajo, genera una acción correctiva
@@ -66,7 +66,7 @@ class ContractOrchestrator:
         Returns:
             List of corrective action dicts with: type, severity, message, source, score.
         """
-        actions: List[Dict[str, Any]] = []
+        actions: list[dict[str, Any]] = []
         contracts = self._results.get("contracts", {})
 
         # Kratos: adherence < 70% → corrective ADR needed
@@ -127,7 +127,7 @@ class ContractOrchestrator:
 
         return actions
 
-    def run_all_contracts(self, adr_text: str, adr_id: str, state: Dict[str, Any]) -> Dict[str, Any]:
+    def run_all_contracts(self, adr_text: str, adr_id: str, state: dict[str, Any]) -> dict[str, Any]:
         """Execute all relevant contracts post-ADR.
 
         Examina el estado del pipeline y ejecuta los contratos necesarios:
@@ -145,7 +145,7 @@ class ContractOrchestrator:
             Dict con resultados de cada contrato ejecutado.
         """
         self._run_timestamp = datetime.now().isoformat()
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "orchestration_timestamp": self._run_timestamp,
             "adr_id": adr_id,
             "contracts": {},
@@ -311,7 +311,7 @@ class ContractOrchestrator:
         )
         return results
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary of all contract results.
 
         Returns:
@@ -349,7 +349,7 @@ class ContractOrchestrator:
             "summary_text": summary_text,
         }
 
-    def get_contract_statuses(self) -> Dict[str, Dict[str, Any]]:
+    def get_contract_statuses(self) -> dict[str, dict[str, Any]]:
         """Get status of each individual contract.
 
         Returns:

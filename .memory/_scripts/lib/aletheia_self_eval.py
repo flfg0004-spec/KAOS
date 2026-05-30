@@ -23,9 +23,18 @@ def _check_citations(text: str) -> dict:
 
 def _check_claims_without_sources(text: str) -> list[str]:
     claim_patterns = [
-        r"(?:the|this|our)\s+(?:study|research|analysis|data|results?)\s+(?:shows?|demonstrates?|indicates?|proves?|suggests?|reveals?|confirms?)",
-        r"(?:it\s+is|this\s+is)\s+(?:clear|evident|obvious|proven|well-known|established)\s+(?:that\s+)",
-        r"(?:significantly|dramatically|substantially|critically)\s+(?:impacts?|affects?|changes?|reduces?|increases?)",
+        (
+            r"(?:the|this|our)\s+(?:study|research|analysis|data|results?)"
+            r"\s+(?:shows?|demonstrates?|indicates?|proves?|suggests?|reveals?|confirms?)"
+        ),
+        (
+            r"(?:it\s+is|this\s+is)\s+(?:clear|evident|obvious|proven|"
+            r"well-known|established)\s+(?:that\s+)"
+        ),
+        (
+            r"(?:significantly|dramatically|substantially|critically)"
+            r"\s+(?:impacts?|affects?|changes?|reduces?|increases?)"
+        ),
     ]
     claims = []
     lines = text.lower().split("\n")
@@ -56,7 +65,6 @@ def aletheia_self_eval(agent: str, output: dict) -> dict:
     output = output or {}
     content = output.get("content", "")
     sources = output.get("sources", [])
-    claims = output.get("claims", [])
     reasoning = output.get("reasoning", "")
     summary = output.get("summary", "")
 
@@ -132,23 +140,40 @@ def aletheia_self_eval(agent: str, output: dict) -> dict:
         "dimensions": {
             "veracidad": {
                 "score": veracidad,
-                "justificacion": f"{len(unsourced_claims)} unsourced claims, {len(sources)} sources, {citation_info['count']} citations",
+                "justificacion": (
+                    f"{len(unsourced_claims)} unsourced claims, "
+                    f"{len(sources)} sources, {citation_info['count']} citations"
+                ),
             },
             "coherencia": {
                 "score": coherencia,
-                "justificacion": f"{coherence['section_count']} sections, intro={coherence['has_intro']}, conclusion={coherence['has_conclusion']}",
+                "justificacion": (
+                    f"{coherence['section_count']} sections, "
+                    f"intro={coherence['has_intro']}, "
+                    f"conclusion={coherence['has_conclusion']}"
+                ),
             },
             "completitud": {
                 "score": completitud,
-                "justificacion": f"{content_len} chars, has_summary={bool(summary)}, has_reasoning={bool(reasoning)}",
+                "justificacion": (
+                    f"{content_len} chars, has_summary={bool(summary)}, "
+                    f"has_reasoning={bool(reasoning)}"
+                ),
             },
             "citacion": {
                 "score": citacion,
-                "justificacion": f"{citation_info['count']} citation patterns, {len(sources)} structured sources",
+                "justificacion": (
+                    f"{citation_info['count']} citation patterns, "
+                    f"{len(sources)} structured sources"
+                ),
             },
             "utilidad": {
                 "score": utilidad,
-                "justificacion": f"Has summary={bool(summary)}, has conclusion={coherence['has_conclusion']}, length={content_len}",
+                "justificacion": (
+                    f"Has summary={bool(summary)}, "
+                    f"has conclusion={coherence['has_conclusion']}, "
+                    f"length={content_len}"
+                ),
             },
         },
     }

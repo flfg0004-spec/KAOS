@@ -10,11 +10,8 @@ reasoning, or via Docker sandbox (~50ms) for code execution.
 API compatible with: deerflow.client.DeerFlowClient
 """
 
-import json
-import uuid
 import logging
-from datetime import datetime
-from typing import Optional, AsyncGenerator
+import uuid
 
 logger = logging.getLogger("deerflow_client")
 
@@ -68,7 +65,7 @@ class DeerFlowClient:
     def memory_set(self, key: str, value: str):
         self._memory[key] = value
 
-    def memory_get(self, key: str) -> Optional[str]:
+    def memory_get(self, key: str) -> str | None:
         return self._memory.get(key)
 
     def memory_get_all(self) -> dict:

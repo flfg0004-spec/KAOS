@@ -53,39 +53,45 @@ LANG_KEYWORDS = {
     "swift": ["func ", "var ", "let ", "class ", "struct ", "import UIKit", "print("],
 }
 
+RUST_KEYWORDS = {"fn", "let", "mut", "use", "impl", "struct", "enum", "match", "pub", "crate"}
+TYPESCRIPT_KEYWORDS = {"interface", "type", "const", "let", "function", "=>", "as", "any", "never"}
+GO_KEYWORDS = {"func", "package", "import", "defer", "go", "chan", "goroutine", "interface", "struct"}
+
 
 def detect_code_language(text: str) -> str:
+    """Detect programming language from topic text, path, or code blocks.
+    
+    Detection priority:
+    1. Code block markers (```python, etc.)
+    2. File extensions (.py, .rs, .js, etc.)
+    3. Code content keywords (def, import, fn, etc.)
+    Falls back to "python" if nothing matches.
+    """
     if not text:
         return "python"
-    m = CODE_BLOCK_PATTERN.search(text)
+    tl = text.lower()
+
+    # 1. Code block markers
+    m = CODE_BLOCK_PATTERN.search(tl)
     if m:
-        lang = m.group(1).lower()
-        if lang in ("python", "py"):
-            return "python"
-        if lang in ("javascript", "js"):
-            return "javascript"
-        if lang in ("typescript", "ts"):
-            return "typescript"
-        if lang in ("rust", "rs"):
-            return "rust"
-        if lang in ("go", "golang"):
-            return "go"
-        if lang in ("java",):
-            return "java"
-    for ext, lang in LANGUAGE_EXTENSIONS.items():
-        if ext in text:
-            return lang
-    # Detect from code content keywords
-    for lang, keywords in LANG_KEYWORDS.items():
-        if any(kw in text for kw in keywords):
-            return lang
-    return "python"
+        raw = m.group(1).lower()
+        block_map = {
+            "py": "python", "python": "python",
+            "js": "javascript", "javascript": "javascript",
+            "ts": "typescript", "typescript": "typescript",
+            "rs": "rust", "rust": "rust",
+            "go": "go", "golang": "go",
+            "java": "java",
+            "c": "c", "h": "c",
+            "cpp": "cpp", "cc": "cpp", "cxx": "cpp", "hpp": "cpp",
+            "rb": "ruby", "ruby": "ruby",
+            "kt": "kotlin", "kotlin": "kotlin",
+        }
+        if raw in block_map:
+            return block_map[raw]
 
-
-def detect_code_language(topic_or_path: str) -> str:
-    """Detect programming language from topic text or path."""
-    tl = topic_or_path.lower()
-    code_map = {
+    # 2. File extensions and language keywords in text
+    ext_map = {
         ".py": "python", "python": "python",
         ".rs": "rust", "rust": "rust",
         ".js": "javascript", ".jsx": "javascript", "javascript": "javascript", "node": "javascript",
@@ -97,24 +103,29 @@ def detect_code_language(topic_or_path: str) -> str:
         ".rb": "ruby", "ruby": "ruby",
         ".kt": "kotlin", "kotlin": "kotlin",
     }
-    for key, lang in code_map.items():
+    for key, lang in ext_map.items():
         if key in tl:
             return lang
-    return "unknown"
+
+    # 3. Code content keywords
+    for lang, keywords in LANG_KEYWORDS.items():
+        if any(kw in tl for kw in keywords):
+            return lang
+
+    # 4. Early detection for Rust / TypeScript / Go by signature patterns
+    if "fn main" in tl or "use std::" in tl:
+        return "rust"
+    if "package main" in tl and "func main" in tl:
+        return "go"
+    if "interface " in tl or "type " in tl or ": string" in tl:
+        return "typescript"
+
+    return "python"
 
 
 def detect_code_languages(content: str) -> list[str]:
     """Detect all programming languages present in markdown code blocks."""
     return list(set(re.findall(r"```(\w+)\n", content)))
-
-
-def detect_code_language_from_blocks(text: str, default: str = "python") -> str:
-    """Detect primary language from code blocks in text."""
-    blocks = re.findall(r"```(\w+)", text)
-    if not blocks:
-        return default
-    lang_map = {"py": "python", "js": "javascript", "ts": "typescript", "rs": "rust"}
-    return lang_map.get(blocks[0], blocks[0])
 
 
 def detect_language(text: str) -> str:

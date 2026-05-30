@@ -10,11 +10,10 @@ Implements MemForge-inspired sleep cycle:
 Trigger: explicit call + auto-execution every 7 days.
 """
 
-import sqlite3
 import json
-import hashlib
 import logging
-from datetime import datetime, timedelta
+import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger("sleep_cycle")

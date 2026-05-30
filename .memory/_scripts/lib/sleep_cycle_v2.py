@@ -25,7 +25,6 @@ Forgetting:
 
 import json
 import logging
-import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -85,8 +84,8 @@ def _get_all_vectors(embeddings) -> list[dict]:
 
 def _dbscan_cluster(vectors: list[dict], eps: float, min_samples: int) -> dict:
     """DBSCAN clustering sobre vectores. Retorna {cluster_id: [items]}."""
-    from sklearn.cluster import DBSCAN
     import numpy as np
+    from sklearn.cluster import DBSCAN
 
     if len(vectors) < min_samples:
         return {"noise": vectors}
@@ -110,8 +109,8 @@ def _llm_distill(cluster_texts: list[str], level: str) -> str:
 
     prompt = (f"Destila este cluster de {level} en un resumen estructurado:\n\n"
               + "\n---\n".join(t[:300] for t in cluster_texts[:10])
-              + f"\n\nProduce un resumen con: 1) Tema principal 2) Hallazgos clave "
-              f"3) Relaciones entre conceptos 4) Nivel de confianza (0-1)")
+              + "\n\nProduce un resumen con: 1) Tema principal 2) Hallazgos clave "
+              "3) Relaciones entre conceptos 4) Nivel de confianza (0-1)")
     try:
         return agent_llm_call("mnemosyne", prompt)
     except Exception as e:

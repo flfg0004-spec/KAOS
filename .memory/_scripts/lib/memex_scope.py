@@ -15,12 +15,11 @@ Limits:
 Inspired by Databricks MemEx: programmable scratchpad for LLM agents.
 """
 
-import sys
 import io
 import json
+import sys
 import traceback
 from pathlib import Path
-from typing import Optional
 
 SCOPE_DIR = (Path(__file__).resolve().parent.parent.parent / "cache" / "memex")
 SCOPE_FILE = SCOPE_DIR / "scope.json"
@@ -70,11 +69,11 @@ class MemExScope:
                         source_lines.append(inspect.getsource(val))
                     except Exception:
                         pass
-                    serializable[key] = f"<function>"
+                    serializable[key] = "<function>"
                 elif isinstance(val, (str, int, float, bool, list, dict, tuple, type(None))):
                     serializable[key] = val
                 elif isinstance(val, type):
-                    serializable[key] = f"<class>"
+                    serializable[key] = "<class>"
                 else:
                     serializable[key] = str(type(val).__name__)
             except Exception:

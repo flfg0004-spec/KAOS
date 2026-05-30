@@ -12,10 +12,10 @@ import logging
 import math
 import re
 from collections import defaultdict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ REFLECTIONS_FILE = REFLECTIONS_DIR / "reflections.json"
 
 # ── Checklist: 10 items with weight (total = 100) and detection patterns ──
 
-CHECKLIST: List[Dict[str, Any]] = [
+CHECKLIST: list[dict[str, Any]] = [
     {
         "id": "frontmatter",
         "label": "Frontmatter YAML completo",
@@ -173,15 +173,15 @@ class ReflectionReport:
         adr_title: Título del ADR evaluado.
         pattern_matches: Patrones recurrentes detectados.
     """
-    checklist_scores: Dict[str, float] = field(default_factory=dict)
+    checklist_scores: dict[str, float] = field(default_factory=dict)
     total_score: float = 0.0
-    gaps: List[str] = field(default_factory=list)
-    improvement_plan: List[str] = field(default_factory=list)
+    gaps: list[str] = field(default_factory=list)
+    improvement_plan: list[str] = field(default_factory=list)
     timestamp: str = ""
     adr_title: str = ""
-    pattern_matches: List[str] = field(default_factory=list)
+    pattern_matches: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to plain dict."""
         return asdict(self)
 
@@ -231,9 +231,9 @@ class ReflectionEngine:
             )
 
         text_lower = adr_text.lower()
-        scores: Dict[str, float] = {}
-        gaps: List[str] = []
-        all_patterns: List[str] = []
+        scores: dict[str, float] = {}
+        gaps: list[str] = []
+        all_patterns: list[str] = []
 
         for item in CHECKLIST:
             item_id = item["id"]
@@ -345,7 +345,7 @@ class ReflectionEngine:
 
     def generate_improvement_plan(
         self, reflection: ReflectionReport
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate 3 concrete improvement actions from a reflection report.
 
         Args:
@@ -362,11 +362,11 @@ class ReflectionEngine:
                     "Documentar lecciones aprendidas para otros ADRs",
                     "Automatizar verificación de checklist"]
 
-        plan: List[str] = []
+        plan: list[str] = []
         gap_lower = [g.lower() for g in gaps]
 
         # Map gaps to concrete improvements
-        improvement_map: Dict[str, List[str]] = {
+        improvement_map: dict[str, list[str]] = {
             "frontmatter": [
                 "Agregar frontmatter YAML (id, title, status, date, tags) al inicio del ADR",
                 "Verificar que el frontmatter tenga todos los campos requeridos",
@@ -426,7 +426,7 @@ class ReflectionEngine:
         # Trim to 3 items
         return plan[:3]
 
-    def run_weekly_review(self) -> Dict[str, Any]:
+    def run_weekly_review(self) -> dict[str, Any]:
         """Run a weekly review: aggregate reflections, detect patterns, generate plan.
 
         Reads all stored reflections and produces a weekly summary with
@@ -464,7 +464,7 @@ class ReflectionEngine:
             trend = "stable 📊"
 
         # Most common gaps
-        gap_counter: Dict[str, int] = defaultdict(int)
+        gap_counter: dict[str, int] = defaultdict(int)
         for r in reflections:
             for gap in r.get("gaps", []):
                 gap_counter[gap] += 1
@@ -491,7 +491,7 @@ class ReflectionEngine:
             "period": f"{reflections[0].get('timestamp', '?')[:10]} → {reflections[-1].get('timestamp', '?')[:10]}",
         }
 
-    def get_trend(self) -> Dict[str, Any]:
+    def get_trend(self) -> dict[str, Any]:
         """Get reflection score trends over time.
 
         Returns:
@@ -547,10 +547,10 @@ class ReflectionEngine:
                 json.dumps(reflections, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
-        except (OSError, IOError) as exc:
+        except OSError as exc:
             logger.warning("Failed to save reflection: %s", exc)
 
-    def _load_all_reflections(self) -> List[Dict[str, Any]]:
+    def _load_all_reflections(self) -> list[dict[str, Any]]:
         """Load all stored reflections from the JSON file.
 
         Returns:
@@ -629,7 +629,7 @@ graph TD
     print(f"Gaps ({len(report.gaps)}):")
     for g in report.gaps[:5]:
         print(f"  - {g}")
-    print(f"\nImprovement plan:")
+    print("\nImprovement plan:")
     for i, p in enumerate(report.improvement_plan, 1):
         print(f"  {i}. {p}")
 

@@ -1,9 +1,9 @@
 """Persistent cross-session cache with LRU eviction, mtime invalidation, and semantic cache."""
-import json, time, hashlib
-from pathlib import Path
+import json
+import time
 from datetime import datetime
 
-from lib.config import VAULT_ROOT, CACHE_MAX_ENTRIES, CACHE_DEFAULT_TTL
+from lib.config import CACHE_DEFAULT_TTL, CACHE_MAX_ENTRIES, VAULT_ROOT
 
 METADATA_FILE = VAULT_ROOT / "cache" / "metadata.json"
 PAGES_DIR = VAULT_ROOT / "cache" / "pages"

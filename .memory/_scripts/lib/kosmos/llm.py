@@ -13,7 +13,8 @@ import logging
 import os
 import re
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 _IS_TESTING = os.environ.get("KAOS_TESTING") == "1" or os.environ.get("LLM_DIRECT_ENABLED") == "false"
 
 # ── LLM cache ──
-_LLM_CACHE: Dict[str, str] = {}
+_LLM_CACHE: dict[str, str] = {}
 _LLM_CACHE_LOCK = threading.Lock()
 
 _DEFAULT_TIMEOUT = 30
@@ -37,7 +38,7 @@ def _get_resolved_model(node: str, state: dict = None) -> str:
         return "go-flash"
 
 
-def call_llm(prompt: str, node: str, state: dict = None, timeout: int = _DEFAULT_TIMEOUT) -> Optional[str]:
+def call_llm(prompt: str, node: str, state: dict = None, timeout: int = _DEFAULT_TIMEOUT) -> str | None:
     """Call LLM for a pipeline node. Returns None on failure (C1).
 
     Usa DSOL routing para determinar qué modelo usar.
@@ -105,7 +106,7 @@ def llm_status() -> dict:
 # ── Helpers ──
 
 
-def _extract_json(text: str) -> Optional[Dict[str, Any]]:
+def _extract_json(text: str) -> dict[str, Any] | None:
     """Extract a JSON object from an LLM response.
 
     Handles:
@@ -159,7 +160,7 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _heuristic_gate(adr_text: str, min_score: float) -> Dict[str, Any]:
+def _heuristic_gate(adr_text: str, min_score: float) -> dict[str, Any]:
     """Heuristic pre-validate (fallback when LLM is unavailable).
 
     Scores the ADR based on structural checks:
@@ -176,7 +177,7 @@ def _heuristic_gate(adr_text: str, min_score: float) -> Dict[str, Any]:
         Dict with score, gaps, passed, source="heuristic".
     """
     score = 0.0
-    gaps: List[str] = []
+    gaps: list[str] = []
 
     # Frontmatter YAML
     if "id:" in adr_text and "title:" in adr_text and "status:" in adr_text:
@@ -240,9 +241,9 @@ def _heuristic_gate(adr_text: str, min_score: float) -> Dict[str, Any]:
 
 def evaluate_adr_quality(
     adr_text: str,
-    state: Optional[Dict[str, Any]] = None,
+    state: dict[str, Any] | None = None,
     min_score: float = 70.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Quality gate pre-validate: evalúa ADR antes de guardar (KosmosV3 C3).
 
     Dos niveles:

@@ -13,16 +13,10 @@ Config:
 Inspired by Cursor Background Agents architecture.
 """
 
-import os
-import sys
-import json
 import subprocess
-import tempfile
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Callable
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = SCRIPTS.parent.parent  # KAOS root
@@ -64,7 +58,7 @@ class ParallelWorker:
         self.tasks.append(task)
         return task
     
-    def _create_worktree(self, task: WorkerTask) -> Optional[Path]:
+    def _create_worktree(self, task: WorkerTask) -> Path | None:
         """Create an isolated git worktree for a task."""
         worktree_path = WORKTREE_DIR / task.task_id
         worktree_path.mkdir(parents=True, exist_ok=True)

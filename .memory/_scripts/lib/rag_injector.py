@@ -1,6 +1,7 @@
 """RAG Injector — context enrichment from vector store for agent prompts."""
-from lib.config import VAULT_ROOT, RAG_TOP_K
+from lib.config import RAG_TOP_K
 from lib.vectorstore import query as vector_query
+
 
 def inject_context(topic: str, k: int = None) -> str:
     """Query vectorstore for semantically relevant chunks and format as context.

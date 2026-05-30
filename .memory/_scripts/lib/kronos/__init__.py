@@ -1,2 +1,2 @@
 """Kronos — Pipeline Orchestrator Library."""
-from .executor import ParallelExecutor, TaskState, TaskResult
+from .executor import ParallelExecutor, TaskResult, TaskState

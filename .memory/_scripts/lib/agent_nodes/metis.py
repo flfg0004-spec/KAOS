@@ -1,13 +1,16 @@
 import re
 from datetime import datetime
 
-from lib.config import LLM_DIRECT_ENABLED
 from lib.agent_tools import (
-    slugify, load_context, save_context,
-    llm_or_executor_call, notify_step,
-    extract_json_from_output,
     RAW_DIR,
+    extract_json_from_output,
+    llm_or_executor_call,
+    load_context,
+    notify_step,
+    save_context,
+    slugify,
 )
+from lib.config import LLM_DIRECT_ENABLED
 from lib.feature_flags import is_enabled
 
 
@@ -116,7 +119,7 @@ def _metis_node_impl(state: dict) -> dict:
         execution_plan = {}
         if okrs:
             try:
-                from lib.strategy_tools import scope_initiatives, assign_krs, build_execution_plan
+                from lib.strategy_tools import assign_krs, build_execution_plan, scope_initiatives
                 initiatives = scope_initiatives(okrs, topic)
                 kr_assignment = assign_krs(okrs, initiatives)
                 execution_plan = build_execution_plan(okrs, initiatives, kr_assignment)

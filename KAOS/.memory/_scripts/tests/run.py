@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Test runner for KAOS Memory Vault."""
+
+import sys
+import os
+import json
+os.environ["KAOS_TESTING"] = "1"
+os.environ["LLM_DIRECT_ENABLED"] = "false"
+os.environ["RAG_ENABLED"] = "false"
+os.environ["HERMES_ENABLED"] = "false"
+os.environ["EXECUTOR_ENABLED"] = "false"
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-not-real")
+import importlib
+import time
+import threading
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+TEST_TIMEOUT = 120
+SLOW_TIMEOUT = 180
+FAST_ONLY = "--fast" in sys.argv
+if FAST_ONLY:
+    sys.argv.remove("--fast")
+
+MODULES = [
+    "test_config",
+    "test_pressure",
+    "test_lint",
+    "test_pipeline",
+    "test_dsol",
+    "test_synapse",
+    "test_llm_quality",
+    "test_full_pipeline",
+    "test_ingest",
+    "test_embed",
+    "test_graph_analysis",
+    "test_crystallize",
+    "test_tagger",
+    "test_wikilinks",
+    "test_gaps",
+    "test_lifecycle",
+    "test_contradictions",
+    "test_quality",
+    "test_dashboard",
+    "test_health",
+    "test_context_cycle",
+    "test_orchestrator",
+    "test_memory_persistence",
+    "test_viz",
+    "test_validator",
+    "test_crossref",
+    "test_gap_query",
+    "test_report_engine",
+    "test_strategy",
+    "test_metis",
+    "test_mcp_metis",
+    "test_bcg_evaluator",
+    "test_pipeline_okr",
+    "test_strategy_analytics",
+    "test_cross_agent",
+    "test_code_memory",
+    "test_bandit",
+    "test_ast_match",
+    "test_quality_gate",
+    "test_reflexion",
+    "test_sleep_cycle",
+    "test_mcp_kratos",
+    "test_skill_library",
+    "test_memex_scope",
+    "test_parallel_worker",
+    "test_prompt_evolver",
+    "test_mar_reviewer",
+    "test_hebbian_memory",
+    "test_crew_integration",
+    "test_deerflow_bridge",
+    "test_agno_real",
+    "test_telegram_real",
+    "test_verification",
+    "test_fase3",
+    "test_fase0",
+    "test_aletheia_integration",
+    "test_kosmos_integration",
+    "test_kratos_integration",
+    "test_metis_integration",
+    "test_mnemosyne_integration",
+    "test_atdi",
+    "test_cache_warmer",
+    "test_cost_optimizer",
+    "test_domain_mapper",
+    "test_e2e_smoke",
+    "test_eval",
+    "test_feature_flags",
+    "test_forecasting",
+    "test_incremental",
+    "test_knowledge_graph_viz",
+    "test_knowledge_scorer",
+    "test_knowledge_synthesis",
+    "test_knowledge_tour",
+    "test_kosmos_quality",
+    "test_mcp_ether",
+    "test_mcp_kroki",
+    "test_mcp_markmap",
+    "test_metis_pipeline",
+    "test_observability",
+    "test_phase3",
+    "test_smell_pipeline",
+    "test_ua_smoke",
+    "test_visual_dashboard",
+    "test_viz_orchestrator",
+]
+
+SLOW_MODULES = {
+    "test_context_cycle", "test_memory_persistence",
+    "test_full_pipeline", "test_llm_quality",
+    "test_deerflow_bridge", "test_agno_real",
+}
+
+SLOW_TEST_PREFIXES = {"test_tagger_slow", "test_lifecycle_slow", "test_contradictions_slow", "test_wikilinks_slow"}
+
+
+def _is_slow(mod, test_name):
+    fn = getattr(mod, test_name, None)
+    return fn is not None and getattr(fn, "_slow", False)
+
+
+def _run_test(mod, test_name, timeout):
+    result = {"exc": None}
+
+    def _target():
+        try:
+            getattr(mod, test_name)()
+        except Exception as e:
+            result["exc"] = e
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout=timeout)
+    if t.is_alive():
+        return "TIMEOUT"
+    if result["exc"] is None:
+        return "PASS"
+    return result["exc"]
+
+
+def run_all() -> int:
+    passed = 0
+    failed = 0
+    total_tests = 0
+    skipped = 0
+    start = time.time()
+
+    for mod_name in MODULES:
+        try:
+            mod = importlib.import_module(mod_name)
+        except Exception as e:
+            print(f"  ERROR loading {mod_name}: {e}")
+            failed += 1
+            continue
+
+        tests = [f for f in dir(mod) if f.startswith("test_")]
+        for test_name in tests:
+            is_slow = (
+                _is_slow(mod, test_name) or
+                mod_name in SLOW_MODULES or
+                any(prefix in test_name for prefix in SLOW_TEST_PREFIXES)
+            )
+            if FAST_ONLY and is_slow:
+                skipped += 1
+                continue
+
+            total_tests += 1
+            timeout = SLOW_TIMEOUT if _is_slow(mod, test_name) else TEST_TIMEOUT
+            r = _run_test(mod, test_name, timeout)
+            if r == "PASS":
+                passed += 1
+                print(f"  ✅ {mod_name}.{test_name}")
+            elif r == "TIMEOUT":
+                failed += 1
+                print(f"  ⏰ {mod_name}.{test_name}: TIMEOUT ({timeout}s)")
+            elif isinstance(r, AssertionError):
+                failed += 1
+                print(f"  ❌ {mod_name}.{test_name}: {r}")
+            else:
+                failed += 1
+                print(f"  ❌ {mod_name}.{test_name}: ERROR {r}")
+
+    elapsed = time.time() - start
+    print(f"\n{'='*50}")
+    label = " (fast mode)" if FAST_ONLY else ""
+    print(f"Results{label}: {passed} passed, {failed} failed, {total_tests} total" +
+          (f", {skipped} skipped" if skipped else ""))
+    print(f"Time: {elapsed:.2f}s")
+    _cache = os.path.join(os.path.dirname(__file__), "..", "..", "cache", "test-results.json")
+    os.makedirs(os.path.dirname(_cache), exist_ok=True)
+    with open(_cache, "w") as _f:
+        json.dump({"passed": passed, "failed": failed, "total": total_tests}, _f)
+    return 1 if failed > 0 else 0
+
+
+if __name__ == "__main__":
+    sys.exit(run_all())

@@ -6,7 +6,6 @@ Usa imports lazy de agent_executor para las funciones helper compartidas.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict
 
 _log = logging.getLogger(__name__)
 
@@ -24,9 +23,14 @@ def kosmos_node(state: dict) -> dict:
         Updated state dict with kosmos_output, kosmos_prompt, and evaluation results.
     """
     from lib.agent_executor import (
-        _slugify, _load_context, _save_context,
-        LLM_DIRECT_ENABLED, RAW_DIR,
-        _notify_step, _build_rag_context, _llm_or_executor_call,
+        LLM_DIRECT_ENABLED,
+        RAW_DIR,
+        _build_rag_context,
+        _llm_or_executor_call,
+        _load_context,
+        _notify_step,
+        _save_context,
+        _slugify,
     )
 
     topic = state.get("topic", "")
@@ -38,9 +42,9 @@ def kosmos_node(state: dict) -> dict:
     pipeline_result = None
     memory = None
     try:
-        from lib.kosmos_memory import ArchitectureMemoryL0
         from lib.kosmos.pipeline import KosmosPipelineV2
         from lib.kosmos_evaluator_v2 import DimensionalEvaluator
+        from lib.kosmos_memory import ArchitectureMemoryL0
         from lib.kosmos_reflect import ReflectionEngine
 
         memory = ArchitectureMemoryL0()

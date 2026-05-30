@@ -1,5 +1,6 @@
 """Chain-of-Thought + Self-Consistency para generación mejorada."""
-import json, sys
+import json
+import sys
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent
@@ -47,6 +48,7 @@ def self_consistency(prompt: str, n: int = 3, agent: str = "") -> str:
         Most consistent answer string
     """
     import random
+
     from lib.aether.client import generate_structured
     
     responses = []
