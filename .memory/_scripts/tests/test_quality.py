@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_quality_status():
-    from lib.quality import status
+    from lib.quality.vault import status
     s = status()
     assert "Quality Score" in s
     assert "Confidence matrix" in s
@@ -18,7 +18,7 @@ def test_quality_status():
 
 
 def test_quality_score_parsing():
-    from lib.quality import status
+    from lib.quality.vault import status
     import re
     s = status()
     m = re.search(r"Quality Score:\s*([\d.]+)", s)
@@ -28,19 +28,19 @@ def test_quality_score_parsing():
 
 
 def test_quality_connectivity():
-    from lib.quality import _connectivity_score
+    from lib.quality.vault import _connectivity_score
     score = _connectivity_score()
     assert 0 <= score <= 1
 
 
 def test_quality_freshness():
-    from lib.quality import _freshness_score
+    from lib.quality.vault import _freshness_score
     score = _freshness_score()
     assert 0 <= score <= 1
 
 
 def test_quality_detail_keys():
-    from lib.quality import calculate
+    from lib.quality.vault import calculate
     q = calculate()
     assert "details" in q
     d = q["details"]
@@ -51,7 +51,7 @@ def test_quality_detail_keys():
 
 
 def test_quality_confidence_matrix():
-    from lib.quality import status
+    from lib.quality.vault import status
     import re
     s = status()
     m = re.search(r"Confidence matrix:\s*(\d+)/(\d+)", s)
@@ -64,7 +64,7 @@ def test_quality_confidence_matrix():
 
 
 def test_quality_embedded_pages():
-    from lib.quality import _embedded_pages
+    from lib.quality.vault import _embedded_pages
     embedded, total = _embedded_pages()
     assert isinstance(embedded, int)
     assert isinstance(total, int)
@@ -73,6 +73,6 @@ def test_quality_embedded_pages():
 
 
 def test_quality_trend():
-    from lib.quality import trend
+    from lib.quality.vault import trend
     t = trend(days=7)
     assert isinstance(t, dict)

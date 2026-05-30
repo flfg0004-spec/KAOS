@@ -1087,27 +1087,23 @@ def quality(self) -> Dict[str, Any]:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# Node 5: Visualize
+# K3 helper: standalone diagram generation (ex-Visualize core logic)
 # ═══════════════════════════════════════════════════════════════════════
 
-def visualize(self) -> Dict[str, Any]:
-    """Nodo 5: Visualize — genera diagramas C4 obligatorios con validación.
+def _generate_c4_diagrams(self) -> Dict[str, Any]:
+    """Core C4 diagram generation — extracted for reuse by document() (K3).
 
-    Produce SIEMPRE diagramas C4 (Contexto y Contenedor) en formato Mermaid.
-    Valida que los diagramas tengan título, leyenda, y ≥4 nodos.
-    Si la validación falla, intenta regenerar con fallback a diagrama simplificado.
-    Guarda los diagramas en ``.memory/_pipeline/raw/diagrams/``.
+    Generates C4 Context and Container diagrams in Mermaid format,
+    validates them, and saves to disk.
+    Does NOT set node_results or state — caller is responsible.
 
     Returns:
-        Dict with keys: mermaid_diagrams, diagram_paths, validation, node_time.
+        Dict with keys: mermaid_diagrams, diagram_paths, visualization, fallback_used.
     """
-    logger.info("▶️ Nodo 5: Visualize (C4 obligatorio)")
     result: Dict[str, Any] = {
         "mermaid_diagrams": [],
         "diagram_paths": [],
-        "validation": {"passed": False, "checks": []},
-        "fallback_used": False,
-        "node_time": datetime.now().isoformat(),
+        "visualization": {"passed": False, "checks": [], "fallback_used": False},
     }
 
     try:
@@ -1116,7 +1112,6 @@ def visualize(self) -> Dict[str, Any]:
         discovery = self.state.get("discovery", {})
         model_data = self.state.get("model", {})
         containers = model_data.get("containers", [])
-        external_systems = model_data.get("external_systems", [])
 
         # Ensure minimum containers for C4 validity
         if len(containers) < 3:
@@ -1167,20 +1162,20 @@ def visualize(self) -> Dict[str, Any]:
         # ── Validate diagrams ──
         validation_checks = []
         diagrams_to_save = []
+        fallback_used = False
 
         for d_name, d_content in [("c4-context", c4_diagram), ("container", dep_diagram)]:
-            checks = self._validate_diagram(d_content, d_name)
+            checks = _validate_diagram(d_content, d_name)
             validation_checks.append({f"{d_name}_validation": checks})
             if checks.get("passed", False):
                 diagrams_to_save.append((d_name, d_content))
             else:
                 logger.warning("   Diagram '%s' validation failed: %s", d_name, checks.get("issues", []))
-                # Fallback: generate simplified diagram
-                simplified = self._generate_fallback_diagram(d_name, topic)
-                fallback_checks = self._validate_diagram(simplified, f"{d_name}-fallback")
+                simplified = _generate_fallback_diagram(d_name, topic)
+                fallback_checks = _validate_diagram(simplified, f"{d_name}-fallback")
                 validation_checks.append({f"{d_name}_fallback_validation": fallback_checks})
                 diagrams_to_save.append((f"{d_name}-fallback", simplified))
-                result["fallback_used"] = True
+                fallback_used = True
 
         # ── Save diagrams ──
         diagrams_dir = _RAW_DIR / "diagrams"
@@ -1201,22 +1196,55 @@ def visualize(self) -> Dict[str, Any]:
             c.get(list(c.keys())[0], {}).get("passed", False)
             for c in validation_checks
         )
-        result["validation"] = {
+        result["visualization"] = {
             "passed": all_passed,
             "checks": validation_checks,
             "total_diagrams": len(diagrams_to_save),
+            "fallback_used": fallback_used,
         }
 
-        # Register diagrams in state for downstream nodes
-        self.state["kosmos_diagrams"] = result["diagram_paths"]
-
-        logger.info("   Visualize: %d diagrams saved (validation=%s, fallback=%s)",
-                    len(result["diagram_paths"]), all_passed, result["fallback_used"])
-
     except Exception as exc:
-        logger.warning("   Visualize failed: %s", exc)
-        self.errors["visualize"] = str(exc)
+        logger.warning("   Diagram generation failed: %s", exc)
         result["error"] = str(exc)
+
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Node 5: Visualize (K3 wrapper — delegates to Document or standalone)
+# ═══════════════════════════════════════════════════════════════════════
+
+def visualize(self) -> Dict[str, Any]:
+    """Nodo 5: Visualize — wrapper K3 (K3 fusion).
+
+    Si Document ya fue ejecutado, retorna los diagramas desde alli.
+    Si no, ejecuta la generacion standalone de diagramas C4.
+
+    Returns:
+        Dict with keys: diagram_paths, mermaid_diagrams, validation, node_time.
+    """
+    # If Document already ran, extract diagrams from its results
+    if "document" in self.node_results:
+        doc = self.node_results["document"]
+        logger.info("▶️ Nodo 5: Visualize (K3 — leyendo desde Document)")
+        return {
+            "diagram_paths": doc.get("diagram_paths", []),
+            "mermaid_diagrams": doc.get("mermaid_diagrams", []),
+            "validation": doc.get("visualization", {"passed": False, "checks": []}),
+            "fallback_used": doc.get("visualization", {}).get("fallback_used", False),
+            "node_time": datetime.now().isoformat(),
+        }
+
+    # Standalone mode (runs before Document in the pipeline)
+    logger.info("▶️ Nodo 5: Visualize (K3 standalone)")
+    result = _generate_c4_diagrams(self)
+    result["node_time"] = datetime.now().isoformat()
+    if "error" not in result:
+        self.state["kosmos_diagrams"] = result["diagram_paths"]
+        logger.info("   Visualize: %d diagrams saved (validation=%s)",
+                    len(result["diagram_paths"]), result.get("visualization", {}).get("passed", False))
+    else:
+        self.errors["visualize"] = result["error"]
 
     self.node_results["visualize"] = result
     self.state["visualize"] = result
@@ -1228,24 +1256,37 @@ def visualize(self) -> Dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 
 def document(self) -> Dict[str, Any]:
-    """Nodo 6: Document — redacta el ADR completo y lo indexa en L1.
+    """Nodo 6: Document — ADR + diagramas + triples (K3 fusion).
 
-    Genera un ADR con frontmatter YAML, contexto, opciones,
-    decisión, consecuencias, scores, y referencias cruzadas.
-    Usa L0 para buscar ADRs relacionados.
-    Indexa automáticamente el ADR en L1 (txtai) tras generarlo.
+    Ahora incluye:
+    - Generacion de ADR (como antes)
+    - Generacion de diagramas C4 (antes nodo Visualize)
+    - Generacion de tripletas RDF + ArchKnowledgeGraph (antes nodo Govern)
 
     Returns:
-        Dict with keys: adr_text, adr_id, filepath, references,
-        l1_index_status.
+        Dict with keys: adr_text, adr_id, filepath, references, l1_index_status,
+        diagram_paths, mermaid_diagrams, visualization, triples, triple_count,
+        triples_filepath, arch_graph_nodes_added, arch_graph_edges_added.
     """
-    logger.info("▶️ Nodo 6: Document")
+    logger.info("▶️ Nodo 6: Document (K3: ADR + Diagrams + KG)")
     result: Dict[str, Any] = {
         "adr_text": "",
         "adr_id": "ADR-XXX",
         "filepath": "",
         "references": [],
         "l1_index_status": "",
+        # K3: Visualize results absorbed
+        "diagram_paths": [],
+        "mermaid_diagrams": [],
+        "visualization": {"passed": False},
+        # K3: Govern results absorbed
+        "triples": [],
+        "triple_count": 0,
+        "triples_filepath": "",
+        "arch_graph_nodes_added": 0,
+        "arch_graph_edges_added": 0,
+        "arch_graph_status": {},
+        "coverage": {},
         "node_time": datetime.now().isoformat(),
     }
 
@@ -1332,12 +1373,72 @@ def document(self) -> Dict[str, Any]:
 
         logger.info("   Document: %s written to %s (L1: %s)", adr_id, adr_path.name, l1_status)
 
+        # ── K3: Generate diagrams (ex-Visualize) ──
+        try:
+            diag_result = _generate_c4_diagrams(self)
+            result["diagram_paths"] = diag_result.get("diagram_paths", [])
+            result["mermaid_diagrams"] = diag_result.get("mermaid_diagrams", [])
+            result["visualization"] = diag_result.get("visualization", {"passed": False})
+            self.state["kosmos_diagrams"] = result["diagram_paths"]
+            logger.info("   K3: %d diagrams generated", len(result["diagram_paths"]))
+        except Exception as exc:
+            logger.warning("   K3: Diagram generation failed (non-blocking): %s", exc)
+
+        # ── K3: Generate triples + populate KG (ex-Govern) ──
+        try:
+            tags_list = self.state.get("tags", ["adr", "architecture"])
+            # Extract related ADRs from text
+            related_adrs = list(set(re.findall(r'ADR-\d+', adr_text)))
+            if adr_id in related_adrs:
+                related_adrs.remove(adr_id)
+            # Merge L0 refs with text-extracted refs
+            all_related = list(set(refs + related_adrs))
+
+            kg_data = {
+                "adr_id": adr_id,
+                "title": topic,
+                "status": "proposed",
+                "tags": tags_list,
+                "related_adrs": all_related,
+            }
+
+            # Generate RDF triples (Fase 1-2 compatibility)
+            triples = _generate_rdf_triples(kg_data)
+            result["triples"] = triples
+            result["triple_count"] = len(triples)
+
+            # Save triples to disk
+            triples_dir = _CACHE_DIR / "kosmos" / "triples"
+            triples_dir.mkdir(parents=True, exist_ok=True)
+            triples_path = triples_dir / f"{slug}-triples.nt"
+            triples_path.write_text("\n".join(triples), encoding="utf-8")
+            result["triples_filepath"] = str(triples_path)
+
+            # Populate ArchKnowledgeGraph (Fase 3)
+            kg_metrics = self._populate_arch_graph(
+                adr_id=adr_id,
+                topic=topic,
+                tags=tags_list,
+                related=all_related,
+                adr_text=adr_text,
+            )
+            result["arch_graph_nodes_added"] = kg_metrics.get("nodes_added", 0)
+            result["arch_graph_edges_added"] = kg_metrics.get("edges_added", 0)
+            result["arch_graph_status"] = kg_metrics.get("status", {})
+            result["coverage"] = kg_metrics.get("coverage", {})
+
+            logger.info("   K3: %d triples, %d KG nodes, %d KG edges",
+                       len(triples), result["arch_graph_nodes_added"], result["arch_graph_edges_added"])
+        except Exception as exc:
+            logger.warning("   K3: Triple/KG generation failed (non-blocking): %s", exc)
+
     except Exception as exc:
         logger.warning("   Document failed: %s", exc)
         self.errors["document"] = str(exc)
         result["error"] = str(exc)
 
     self.node_results["document"] = result
+    self.state["document"] = result
     self.state["adr"] = result
     return result
 
@@ -1347,20 +1448,32 @@ def document(self) -> Dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 
 def govern(self) -> Dict[str, Any]:
-    """Nodo 7: Govern — población del Architecture Knowledge Graph (Fase 3).
+    """Nodo 7: Govern — wrapper K3 (K3 fusion).
 
-    Fase 1-2: Genera tripletas RDF NT-like del ADR.
-    Fase 3 (actual): Usa arch_graph.py para poblar el KG real con:
-      - Nodo ADR con metadata completa
-      - Edges: references, implements, detects, depends_on
-      - Consulta coverage post-inserción
-    Mantiene compatibilidad hacia atrás con triples NT.
+    Si Document ya fue ejecutado, retorna los triples/KG desde alli.
+    Si no, ejecuta la generacion standalone (modo independiente).
 
     Returns:
         Dict with keys: triples, triple_count, filepath, arch_graph_status,
         coverage, metrics.
     """
-    logger.info("▶️ Nodo 7: Govern (Fase 3 — ArchKnowledgeGraph)")
+    # If Document already ran, extract triples/KG from its results
+    if "document" in self.node_results:
+        doc = self.node_results["document"]
+        logger.info("▶️ Nodo 7: Govern (K3 — leyendo desde Document)")
+        return {
+            "triples": doc.get("triples", []),
+            "triple_count": doc.get("triple_count", 0),
+            "filepath": doc.get("triples_filepath", ""),
+            "arch_graph_status": doc.get("arch_graph_status", {}),
+            "coverage": doc.get("coverage", {}),
+            "arch_graph_nodes_added": doc.get("arch_graph_nodes_added", 0),
+            "arch_graph_edges_added": doc.get("arch_graph_edges_added", 0),
+            "node_time": datetime.now().isoformat(),
+        }
+
+    # Standalone mode (backward compatibility — if Document hasn't run yet)
+    logger.info("▶️ Nodo 7: Govern (K3 standalone)")
     result: Dict[str, Any] = {
         "triples": [],
         "triple_count": 0,
@@ -1378,18 +1491,15 @@ def govern(self) -> Dict[str, Any]:
         adr_id = adr_data.get("adr_id", "ADR-XXX")
         topic = self.state.get("topic", "Untitled")
 
-        # Extract tags from state
         tags = self.state.get("tags", ["adr"])
         if self.memory is not None:
             stats = self.memory.get_stats()
             top_tags = list(stats.get("por_tag", {}).keys())[:3]
             tags.extend(top_tags)
 
-        # Extract related ADRs from text
         related = []
         if adr_text:
             related = list(set(re.findall(r'ADR-\d+', adr_text)))
-            # Remove self-reference
             if adr_id in related:
                 related.remove(adr_id)
 
@@ -1401,25 +1511,21 @@ def govern(self) -> Dict[str, Any]:
             "related_adrs": related,
         }
 
-        # ── Fase 3: Poblar ArchKnowledgeGraph ──
+        # Populate ArchKnowledgeGraph
         arch_graph_metrics = self._populate_arch_graph(
-            adr_id=adr_id,
-            topic=topic,
-            tags=tags,
-            related=related,
-            adr_text=adr_text or "",
+            adr_id=adr_id, topic=topic, tags=tags,
+            related=related, adr_text=adr_text or "",
         )
         result["arch_graph_nodes_added"] = arch_graph_metrics.get("nodes_added", 0)
         result["arch_graph_edges_added"] = arch_graph_metrics.get("edges_added", 0)
         result["arch_graph_status"] = arch_graph_metrics.get("status", {})
         result["coverage"] = arch_graph_metrics.get("coverage", {})
 
-        # ── Fase 1-2: RDF triples (backward compatibility) ──
+        # RDF triples (backward compat)
         triples = _generate_rdf_triples(kg_data)
         result["triples"] = triples
         result["triple_count"] = len(triples)
 
-        # Save triples (backward compat)
         slug = re.sub(r'[^a-z0-9]+', '-', topic.lower())[:40]
         triples_dir = _CACHE_DIR / "kosmos" / "triples"
         triples_dir.mkdir(parents=True, exist_ok=True)

@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-29 19:00*
+*Auto-generated: 2026-05-29 21:01*
 
 ## Agentes
 
@@ -188,12 +188,14 @@
 - [aletheia-quality-report-20260529](../raw/aletheia-quality-report-20260529.md) - 2026-05-29
 - [analisis-arquitectonico-anthropic-kaos](../raw/analisis-arquitectonico-anthropic-kaos.md) - 2026-05-29
 - [arquitectura-anthropic-claude-ecosistema](../raw/arquitectura-anthropic-claude-ecosistema.md) - 2026-05-29
+- [arquitectura-gemini-kaos-integracion](../raw/arquitectura-gemini-kaos-integracion.md) - 2026-05-29
 - [data-farming-codeexperience](../raw/data-farming-codeexperience.md) - 2026-05-29
 - [deep-reinforcement-learning](../raw/deep-reinforcement-learning.md) - 2026-05-29
 - [deepseek-v4-flash-test](../raw/deepseek-v4-flash-test.md) - 2026-05-29
 - [diagrama-arquitectura-claude-kaos](../raw/diagrama-arquitectura-claude-kaos.md) - 2026-05-29
 - [dossier-anthropic-kaos](../raw/dossier-anthropic-kaos.md) - 2026-05-29
 - [estrategia-anthropic-kaos](../raw/estrategia-anthropic-kaos.md) - 2026-05-29
+- [estrategia-openai-kaos](../raw/estrategia-openai-kaos.md) - 2026-05-29
 - [evaluacion-plugins-ecosistema](../raw/evaluacion-plugins-ecosistema.md) - 2026-05-29
 - [investigacion-anthropic-gaps](../raw/investigacion-anthropic-gaps.md) - 2026-05-29
 - [investigacion-c4-model-arquitectura](../raw/investigacion-c4-model-arquitectura.md) - 2026-05-29
@@ -215,6 +217,7 @@
 - [investigacion-token-tracking-telegram-sessions](../raw/investigacion-token-tracking-telegram-sessions.md) - 2026-05-29
 - [MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026](../raw/MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026.md) - 2026-05-29
 - [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-29
+- [plan-gemini-kaos-implementacion](../raw/plan-gemini-kaos-implementacion.md) - 2026-05-29
 - [test-telegram](../raw/test-telegram.md) - 2026-05-24
 - [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-29
 - [wiki-wiki-superconducting-quantum-computing](../raw/wiki-wiki-superconducting-quantum-computing.md) - 2026-05-29
@@ -264,4 +267,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-29 19:00*
+*Ultima actualizacion: 2026-05-29 21:01*

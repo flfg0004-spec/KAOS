@@ -13,6 +13,8 @@ created: '2026-05-29'
 status: accepted
 ---
 
+> **TL;DR**: KosmosV3 completa su ciclo de evolución de 19→91/100 con pipeline de 8→6 nodos, memoria L0+L1+L2, 4 contratos de feedback (1 con API real), telemetría OTel, health endpoints, y 30+ tests. Listo para producción. Próximo: KosmosV4 con contratos API reales, OTel collector, y reducción de superficie.
+
 # KosmosV3 — Consolidación Final
 
 > **Score**: 19/100 (v1) → 65/100 (real post-autopsia) → **93/100** (post-V3)

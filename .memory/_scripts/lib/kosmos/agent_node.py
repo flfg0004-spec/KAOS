@@ -99,7 +99,7 @@ def kosmos_node(state: dict) -> dict:
         try:
             from lib.kosmos.contracts import ContractOrchestrator
             from lib.kosmos_memory import ArchitectureMemoryL1
-            orch = ContractOrchestrator(memory_l0=memory)
+            orch = ContractOrchestrator(memory_l0=memory, kratos_real=True)
             adr_id = pipeline.state.get("adr", {}).get("adr_id", f"ADR-XXX-{slug}")
             contracts_result = orch.run_all_contracts(adr_text or "", adr_id, pipeline.state)
             state["kosmos_contracts"] = contracts_result

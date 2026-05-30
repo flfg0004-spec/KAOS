@@ -10,7 +10,7 @@ import re
 from lib.config import LLM_DIRECT_ENABLED, HERMES_ENABLED
 from lib.llm import agent_llm_call
 from lib.hermes_bridge import pipeline_notify
-from lib.kosmos_quality import record as verify_record
+from lib.quality.agent import record as verify_record
 
 _CRITIC_THRESHOLD = 40
 

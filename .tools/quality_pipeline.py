@@ -21,7 +21,7 @@ VAULT_ROOT = Path(__file__).resolve().parent.parent
 def run_score_pipeline():
     """Evalua calidad de todo el vault y persiste resultados."""
     print("=== Quality Pipeline: Score ===")
-    from lib.quality import calculate
+    from lib.quality.vault import calculate
     q = calculate()
     score = q.get("score", q.get("composite", 0))
     print(f"  Score compuesto: {score}/100")
@@ -68,7 +68,7 @@ def run_auto_tune():
 def run_quality_gate() -> bool:
     """Quality gate: score > 80 pasa, < 80 bloquea."""
     print("=== Quality Pipeline: Gate ===")
-    from lib.quality import calculate
+    from lib.quality.vault import calculate
     q = calculate()
     score = q.get("score", q.get("composite", 0))
 

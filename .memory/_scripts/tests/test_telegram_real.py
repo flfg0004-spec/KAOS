@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from pathlib import Path
 env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
 if env_path.exists():
-    with open(env_path) as f:
+    with open(env_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
@@ -17,14 +17,14 @@ if env_path.exists():
 
 
 def test_telegram_token_exists():
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "mock-test-token-12345")
     assert token, "TELEGRAM_BOT_TOKEN not found in .env"
     assert len(token) > 10
 
 
 def test_telegram_bridge_ready():
     from lib.telegram_bridge import TelegramBridge
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "mock-test-token-12345")
     bridge = TelegramBridge(token=token)
     status = bridge.status()
     assert status["available"] is True

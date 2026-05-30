@@ -1,0 +1,37 @@
+﻿{
+  "success": true,
+  "data": {
+    "web": [
+      {
+        "title": "Agent2Agent (A2A) Protocol - Official Documentation",
+        "url": "https://a2a-protocol.org/latest/",
+        "description": "Official documentation for the Agent2Agent (A2A) Protocol, an open standard designed to enable seamless communication and collaboration between AI agents. Originally developed by Google and now donated to the Linux Foundation.",
+        "content": "A2A is an open standard for agent-to-agent communication. Originally developed by Google, now under Linux Foundation governance. Provides the definitive common language for agent interoperability. Supports complex workflows where agents delegate sub-tasks, exchange information, and coordinate actions. Works alongside MCP (Model Context Protocol) — MCP handles agent-to-tool, A2A handles agent-to-agent."
+      },
+      {
+        "title": "Agent2Agent - Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Agent2Agent",
+        "description": "Agent2Agent (A2A) is an open protocol that defines how artificial intelligence agents communicate with each other across different systems.",
+        "content": "Open protocol for AI agent interoperability. Announced by Google in April 2025. Transferred to Linux Foundation in June 2025. Uses Agent Cards (metadata documents describing agent capabilities). Built on HTTP and JSON messaging. Supports TLS, JWTs, and OpenID Connect for auth. Over 100 companies announced support at launch. Microsoft, AWS among supporters. Often discussed alongside MCP — MCP focuses on agent-to-tool, A2A on agent-to-agent."
+      },
+      {
+        "title": "Agentic commerce - Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Agentic_commerce",
+        "description": "Agentic commerce — supports A2A, MCP, and Agent Payments Protocol (AP2).",
+        "content": "Agentic commerce involves autonomous agents in commerce, supporting Agent2Agent (A2A), Model Context Protocol (MCP), and Agent Payments Protocol (AP2)."
+      },
+      {
+        "title": "ZDNet — Linux Foundation adopts A2A protocol (2025-07-08)",
+        "url": "https://www.zdnet.com/article/linux-foundation-adopts-a2a-protocol-to-help-solve-one-of-ais-most-pressing-challenges/",
+        "description": "ZDNet article on Linux Foundation adopting the A2A protocol.",
+        "content": "Linux Foundation adopts A2A protocol to help solve one of AI's most pressing challenges — agent interoperability."
+      },
+      {
+        "title": "The Graph (Wikipedia) — AI agents built on Coinbase x402 and Google A2A",
+        "url": "https://en.wikipedia.org/wiki/The_Graph",
+        "description": "The Graph — AI agents built on Coinbase x402 protocol and Google A2A framework.",
+        "content": "The Graph's AI agent framework is built on Coinbase's x402 protocol and Google's agent-to-agent (A2A) framework, developed in collaboration with Coinbase, Google, and others."
+      }
+    ]
+  }
+}

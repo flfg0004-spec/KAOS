@@ -30,20 +30,17 @@ CACHE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / ".memo
 _KAOS_TESTING = os.environ.get("KAOS_TESTING", "").lower() in ("1", "true")
 
 
-def _match_model_config(model_name: str) -> dict:
+def _match_model_config(model_name: str) -> dict | None:
     if model_name in MODEL_CB_CONFIG:
         return MODEL_CB_CONFIG[model_name]
     for prefix, cfg in MODEL_CB_CONFIG.items():
-        if model_name.startswith(prefix):
+        if isinstance(prefix, str) and model_name.startswith(prefix):
             return cfg
-    return MODEL_CB_CONFIG.get(
-        "go-flash",
-        {
-            "failure_threshold": 3,
-            "reset_timeout": 300,
-            "half_open_max": 1,
-        },
-    )
+    return None
+
+
+def _default_cb_config() -> dict:
+    return dict(MODEL_CB_CONFIG.get("go-flash", {"failure_threshold": 3, "reset_timeout": 300, "half_open_max": 1}))
 
 
 class CircuitBreaker:
@@ -57,9 +54,14 @@ class CircuitBreaker:
         self.model_name = model_name
         if model_name:
             cfg = _match_model_config(model_name)
-            self.failure_threshold = cfg["failure_threshold"]
-            self.reset_timeout = cfg["reset_timeout"]
-            self.half_open_max = cfg["half_open_max"]
+            if cfg is not None:
+                self.failure_threshold = cfg["failure_threshold"]
+                self.reset_timeout = cfg["reset_timeout"]
+                self.half_open_max = cfg["half_open_max"]
+            else:
+                self.failure_threshold = failure_threshold or ETHER_FAILURE_THRESHOLD
+                self.reset_timeout = reset_timeout or ETHER_CIRCUIT_RESET_TIMEOUT
+                self.half_open_max = half_open_max or ETHER_HALF_OPEN_MAX
         else:
             self.failure_threshold = failure_threshold or ETHER_FAILURE_THRESHOLD
             self.reset_timeout = reset_timeout or ETHER_CIRCUIT_RESET_TIMEOUT
@@ -109,13 +111,14 @@ class CircuitBreaker:
             self._state[key] = {"failures": 0, "last_failure": 0.0, "state": "closed"}
 
     def _get_config(self, model):
-        if not self.model_name:
-            return {
-                "failure_threshold": self.failure_threshold,
-                "reset_timeout": self.reset_timeout,
-                "half_open_max": self.half_open_max,
-            }
-        return _match_model_config(model)
+        cfg = _match_model_config(model)
+        if cfg is not None:
+            return cfg
+        return {
+            "failure_threshold": self.failure_threshold,
+            "reset_timeout": self.reset_timeout,
+            "half_open_max": self.half_open_max,
+        }
 
     def is_available(self, model):
         if not ETHER_CIRCUIT_BREAKER_ENABLED:

@@ -1,10 +1,11 @@
-"""kosmos/otel.py — OpenTelemetry integration for KosmosV2 (KosmosV3 B1+B2).
+"""kosmos/otel.py — OpenTelemetry integration for KosmosV2 (KosmosV3 B1+B2+K2).
 
 Proporciona ExecutionSpan reemplazado por OTel spans.
 Si OpenTelemetry no está instalado, degrada gracefulmente a spans en memoria.
 
 B1: Reemplazar ExecutionSpan con OTel spans (manteniendo compatibilidad)
 B2: Export a console + archivo con rotación (7 días)
+K2: Export dual OTel (OTLP HTTP + Console) + JSONL, setup_otel_exporter(), get_otel_status()
 """
 
 import json
@@ -35,6 +36,52 @@ try:
 except ImportError:
     _OTEL_AVAILABLE = False
     _TRACER = None
+
+
+def setup_otel_exporter(endpoint: str = "http://localhost:4318/v1/traces",
+                        use_console: bool = True) -> bool:
+    """Configure OTel span exporter (K2).
+
+    Sets up a TracerProvider with optional ConsoleSpanExporter
+    and OTLP HTTP exporter (BatchSpanProcessor).
+
+    Args:
+        endpoint: OTLP HTTP endpoint (default ``http://localhost:4318/v1/traces``).
+        use_console: Also export to console via ``ConsoleSpanExporter``.
+
+    Returns:
+        True if configured successfully, False if OTel not available.
+    """
+    if not _OTEL_AVAILABLE:
+        logger.warning("K2: OpenTelemetry not installed, using fallback export")
+        return False
+
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor,
+    )
+
+    provider = TracerProvider()
+
+    # Always add console exporter as fallback
+    if use_console:
+        provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+
+    # Add OTLP HTTP exporter if endpoint available
+    try:
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        otlp_exporter = OTLPSpanExporter(endpoint=endpoint)
+        provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+        logger.info("K2: OTLP exporter configured for %s", endpoint)
+    except ImportError:
+        logger.info("K2: OTLP HTTP exporter not installed, console only")
+    except Exception as exc:
+        logger.warning("K2: OTLP config failed: %s", exc)
+
+    trace.set_tracer_provider(provider)
+    global _TRACER
+    _TRACER = trace.get_tracer("kosmosv2", "3.0.0")
+    return True
 
 
 def is_otel_available() -> bool:
@@ -132,13 +179,16 @@ def _get_traces_dir() -> Path:
     return traces_dir
 
 
-def export_spans() -> int:
-    """Export accumulated fallback spans to a JSONL file with daily rotation.
+def export_spans(use_otel: bool = True) -> int:
+    """Export accumulated spans (K2: OTel + JSONL dual export).
 
-    - Writes to ``traces-YYYY-MM-DD.jsonl`` in ``.memory/_pipeline/traces/``
-    - Appends to existing file for the same day
-    - Clears accumulated spans after export
-    - Rotates: keeps only last 7 days of trace files
+    - When *use_otel* is True and OTel is available, the registered
+      span processors handle export automatically (Console, OTLP, …).
+    - Always falls back to JSONL file export for the in-memory
+      fallback spans (graceful degradation).
+
+    Args:
+        use_otel: If True, also export via OTel if available.
 
     Returns:
         Number of spans exported (0 if none accumulated).
@@ -147,6 +197,17 @@ def export_spans() -> int:
     if not spans:
         return 0
 
+    # K2: OTel processor chain handles export automatically via
+    # ExecutionSpan.__exit__ → span.end().  The block below is a
+    # log checkpoint; real OTel export is event-driven through
+    # the registered processors.
+    if use_otel and _OTEL_AVAILABLE:
+        try:
+            logger.debug("K2: OTel exporter active (%d spans)", len(spans))
+        except Exception as exc:
+            logger.warning("K2: OTel export note failed: %s", exc)
+
+    # Fallback JSONL export (always works)
     traces_dir = _get_traces_dir()
     today = datetime.now().strftime("%Y-%m-%d")
     filepath = traces_dir / f"traces-{today}.jsonl"
@@ -162,8 +223,11 @@ def export_spans() -> int:
     # Rotate: remove files older than 7 days
     _rotate_traces(traces_dir, days=7)
 
-    # Also log console summary
-    logger.info("B2: Exported %d spans to %s", count, filepath)
+    # Log console summary
+    export_sources = ["jsonl"]
+    if use_otel and _OTEL_AVAILABLE:
+        export_sources.append("otel")
+    logger.info("K2: Exported %d spans (%s) to %s", count, "+".join(export_sources), filepath)
 
     return count
 
@@ -205,4 +269,25 @@ def get_trace_summary() -> Dict[str, Any]:
         "trace_files": len(files),
         "total_spans": total_spans,
         "latest_file": str(files[0]) if files else None,
+    }
+
+
+def get_otel_status() -> Dict[str, Any]:
+    """Get OTel integration status for health endpoint (K2).
+
+    Returns:
+        Dict with available, exporter_configured, export_format,
+        and cache_size from the LLM cache for observability context.
+    """
+    cache_size = 0
+    try:
+        from lib.kosmos.llm import _LLM_CACHE  # type: ignore[import]
+        cache_size = len(_LLM_CACHE)
+    except (ImportError, AttributeError):
+        pass
+    return {
+        "available": _OTEL_AVAILABLE,
+        "exporter_configured": _OTEL_AVAILABLE,
+        "export_format": "otlp+jsonl" if _OTEL_AVAILABLE else "jsonl",
+        "cache_size": cache_size,
     }

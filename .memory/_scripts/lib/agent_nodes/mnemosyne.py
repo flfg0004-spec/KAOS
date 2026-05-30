@@ -287,7 +287,7 @@ def _mnemosyne_node_impl(state: dict) -> dict:
         output_path.write_text(report, encoding="utf-8")
 
     try:
-        from lib.kosmos_quality import record as kq_record
+        from lib.quality.agent import record as kq_record
         kq_record("mnemosyne", report, topic=topic)
     except Exception:
         pass

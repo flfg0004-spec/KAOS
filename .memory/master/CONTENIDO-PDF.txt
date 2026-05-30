@@ -1,0 +1,1931 @@
+# ARQUITECTURAS MULTI-AGENTE — ECOSISTEMA COMPLETO 2026
+## OpenAI · Anthropic · Google Gemini · Alibaba Qwen · Moonshot Kimi
+### Versión 1.0 — Consolidación Estratégica KAOS
+**Mayo 2026**
+
+> Documento maestro de inteligencia competitiva. Prohibida su distribución externa sin autorización. Preparado por Metis (Μῆτις), Diosa de la Sabiduría, el Consejo y la Estrategia — KAOS Agent System.
+
+[NOTA: Este documento consolida la totalidad de la investigación de la sesión. Cada ficha de laboratorio incluye datos de modelos, precios, benchmarks, arquitectura multi-agente, patrones, seguridad, caching, ecosistema, papers clave y comunidad. Las tablas comparativas cubren 17 patrones × 5 laboratorios. El source leak de Claude Code (31 Mar 2026, 512K líneas) se analiza en profundidad con lecciones aplicables a KAOS.]
+
+--- pagebreak ---
+
+# PARTE 1: MAPA DEL ECOSISTEMA
+
+## 1.1 FICHAS COMPLETAS DE CADA LABORATORIO
+
+---
+
+### OPENAI
+
+**DATOS CORPORATIVOS**
+
+| Atributo | Valor |
+|----------|-------|
+| Fundación | 2015, San Francisco, California, EE.UU. |
+| Funding total estimado | ~$190B USD |
+| Valuación (2026) | $852B USD |
+| ARR estimado | ~$33B USD |
+| CEO | Sam Altman (reinstalado nov 2023 tras breve salida) |
+| Inversores principales | Microsoft (49% stake), SoftBank Vision Fund, Thrive Capital, Tiger Global, Sequoia Capital, Andreessen Horowitz |
+| Estrategia general | Propietario (closed-source), enterprise-first, API-first, ecosistema ChatGPT consumer masivo |
+| Estado financiero | No pública, rumores de IPO para 2027-2028 |
+
+**FAMILIA DE MODELOS — TABLA COMPLETA DE PRECIOS**
+
+| Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache ($/1M tok) | Batch (50% desc) | Contexto máx | Corte conocimiento |
+|--------|-------------------|--------------------|--------------------|--------------------|--------------|---------------------|
+| GPT-5.5 Spud | $5.00 | $30.00 | $0.50 (90% desc) | $2.50/$15.00 | 256K tokens | Jun 2025 |
+| GPT-5.4 | $2.50 | $10.00 | $0.25 | $1.25/$5.00 | 128K tokens | Jun 2025 |
+| GPT-5.4-mini | $0.75 | $4.50 | $0.075 | $0.375/$2.25 | 128K tokens | Jun 2025 |
+| GPT-5.4-nano | $0.20 | $1.25 | $0.02 | $0.10/$0.625 | 32K tokens | Jun 2025 |
+| o3 (razonamiento) | $2.00 | $8.00 | $0.20 | $1.00/$4.00 | 200K tokens | Jun 2025 |
+| o4-mini (razonamiento) | $1.10 | $4.40 | $0.11 | $0.55/$2.20 | 200K tokens | Jun 2025 |
+| GPT-5.5 Pro | $30.00 | $180.00 | $3.00 | $15.00/$90.00 | 256K tokens | Jun 2025 |
+
+**BENCHMARKS CLAVE**
+
+| Modelo | SWE-Bench Verified | Terminal-Bench | Codeforces Elo | GPQA Diamond | AIME 2025 | HLE (Humanity's Last Exam) |
+|--------|-------------------|---------------|----------------|--------------|-----------|---------------------------|
+| GPT-5.5 Spud | **88.7%**  | **82.7%** | — | — | — | — |
+| o3 | — | — | **2727 Elo**  | 87.7% | 93.1% | 22.3% |
+| o4-mini | — | — | 2384 Elo | 84.0% | 88.2% | — |
+| GPT-5.4 | 72.3% | — | — | — | — | — |
+
+[NOTA: GPT-5.5 Spud ostenta el mejor SWE-Bench (88.7%) y Terminal-Bench (82.7%) del mercado. o3 tiene el mejor Codeforces Elo (2727) de todos los modelos de razonamiento.]
+
+**ARQUITECTURA MULTI-AGENTE**
+
+OpenAI ha desarrollado tres herramientas/frameworks que conforman su ecosistema multi-agente:
+
+**1. Codex CLI** (82.9K GitHub, lenguaje Rust)
+- Arquitectura: 6 subagentes threads concurrentes con depth=1
+- Sandbox: Bubblewrap (aislamiento ligero por contenedor Linux)
+- Comunicación: MCP nativo (Model Context Protocol)
+- Patrón: Parallel execution con handoff entre subagentes
+- Uso: Desarrollo de software asistido por IA en terminal
+- Lanzamiento: Marzo 2026
+
+**2. Agents SDK** (Python, 5,000+)
+- Handoffs con transfer_to_ automático
+- Historial filtrable por agente (herencia selectiva)
+- Session-scoped (sin checkpointing persistente)
+- MCP adoptado como protocolo de herramientas
+- Reemplaza/hereda de Swarm (experimental, 2024)
+
+**3. Responses API** (lanzado Marzo 2026)
+- Reemplaza oficialmente Chat Completions API
+- Integración nativa con tools, web browsing, file search
+- Soporte MCP incorporado
+- Unifica Assistants API + Chat Completions
+
+**PATRONES DE ARQUITECTURA OPENAI**
+
+| Patrón | Implementación | Detalle técnico |
+|--------|---------------|-----------------|
+| Handoff | transfer_to_ | Transferencia entre agentes con herencia de historial |
+| Session-scoped | Agentes SDK | Estado vivo en sesión, sin checkpoint a disco |
+| Parallel | Codex CLI threads | 6 subagentes concurrentes, depth=1 |
+| MCP Tool Use | Agents SDK + Responses API | Servidores MCP como fuente de herramientas |
+| Structured Outputs | Responses API | strict=true con JSON Schema |
+| Fallback chain | Interno/API | Degradación graceful entre modelos |
+
+**CACHING**
+
+- Descuento automático: 90% sobre input tokens desde 1024+ tokens
+- Retención: 24 horas (TTL más largo del mercado)
+- Cross-session: Sí, entre requests del mismo proyecto/organización
+- Implementación: Cache de prompts a nivel de API, sin configuración manual
+
+**SEGURIDAD**
+
+| Componente | Descripción |
+|------------|-------------|
+| Moderation API | Filtrado de contenido en input/output, categorías (hate, self-harm, sexual, violence) |
+| Guardrails API-level | Rate limiting, restricciones por endpoint, límites de concurrencia |
+| Anti-distillation | Rate limiting agresivo para prevenir extracción de modelos via API |
+| Content Safety | Clasificadores de contenido entrenados internamente |
+| GPT-5 System Card | Documentación pública de evaluaciones de seguridad |
+
+**ECOSISTEMA**
+
+| Componente | Estado | Detalle |
+|------------|--------|---------|
+| Codex CLI | Activo (82.9K) | Rust, sandbox Bubblewrap, MCP nativo |
+| ChatGPT | Activo | Producto consumer, 3M+ GPTs en GPT Store |
+| Assistants API | Legacy (reemplazado por Responses API) | En proceso de deprecación |
+| GPT Store | Activo | 3M+ GPTs personalizados |
+| Fine-tuning API | RESTRINGIÉNDOSE | OpenAI reduciendo acceso abierto a fine-tuning |
+| Function Calling | Activo | JSON Schema nativo, parallel function calling |
+| Structured Outputs | Activo | strict=true para salidas 100% schema-compliant |
+| GitHub Actions | Codex CLI integración | Pipelines CI/CD con IA |
+
+**PAPERS CLAVE**
+
+| Paper | Año | Aporte |
+|-------|-----|--------|
+| GPT-1 (Improving Language Understanding by Generative Pre-Training) | 2018 | Fundación pre-training + fine-tuning |
+| GPT-2 (Language Models are Unsupervised Multitask Learners) | 2019 | Escalamiento de modelos |
+| GPT-3 (Language Models are Few-Shot Learners) | 2020 | In-context learning, scaling laws |
+| InstructGPT | 2022 | RLHF + instruction following |
+| Scaling Laws for Neural Language Models | 2020 | Kaplan et al., base teórica del escalamiento |
+| GPT-4 Technical Report | 2023 | Multimodalidad, seguridad |
+| GPT-4o System Card | 2024 | Modelo omni, latencia reducida |
+| o1 System Card | 2024 | Reasoning chain-of-thought |
+| GPT-5 System Card | 2025 | Capacidades multi-agente |
+| Let's Verify Step by Step | 2023 | Process Reward Models (PRM) |
+| OpenAI o3 System Card | 2025 | Razonamiento profundo, Codeforces 2727 |
+
+**COMUNIDAD Y RECURSOS**
+
+- GitHub: github.com/openai (Codex CLI, Whisper, CLIP, Triton)
+- Reddit: r/OpenAI, r/ChatGPT
+- Discord: Discord oficial OpenAI Developer
+- Documentación: platform.openai.com
+- Blog: openai.com/blog
+
+--- pagebreak ---
+
+### ANTHROPIC
+
+**DATOS CORPORATIVOS**
+
+| Atributo | Valor |
+|----------|-------|
+| Fundación | 2021, San Francisco, California, EE.UU. |
+| Funding total estimado | ~$100B USD |
+| Valuación (2026) | $965B USD |
+| ARR estimado | ~$47B USD |
+| CEO | Dario Amodei (ex-OpenAI VP Research) |
+| Inversores principales | Google ($3B+), Spark Capital, Menlo Ventures, SAP, Zoom, SK Telecom, Fidelity |
+| Estrategia general | Propietario (closed-source), seguridad-first (Constitutional AI), creador del estándar MCP |
+| Diferenciador | Mayor valuación que OpenAI ($965B vs $852B), ARR superior ($47B vs $33B), creadores de MCP |
+
+**FAMILIA DE MODELOS — TABLA COMPLETA DE PRECIOS**
+
+| Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache Write | Cache Read ($/1M tok) | Contexto máx | Corte conocimiento |
+|--------|-------------------|--------------------|-------------|----------------------|--------------|---------------------|
+| Opus 4.8 | $5.00 | $25.00 | +$3.75 | $0.50 | 200K tokens | Feb 2026 |
+| Opus 4.7 | $5.00 | $25.00 | +$3.75 | $0.50 | 200K tokens | Ene 2026 |
+| Sonnet 4.6 | $3.00 | $15.00 | +$2.25 | $0.30 | 200K tokens | Feb 2026 |
+| Haiku 4.5 | $1.00 | $5.00 | +$0.75 | $0.10 | 200K tokens | Feb 2026 |
+| Mythos Preview | $25.00 | $125.00 | N/A | N/A | 200K tokens | Feb 2026 |
+
+[NOTA: Mythos Preview es el modelo "Capybara" de Anthropic, acceso restringido a ~50 organizaciones. Precios 5x Opus. Se rumorea lanzamiento público para Octubre 2026.]
+
+**BENCHMARKS CLAVE**
+
+| Modelo | SWE-Bench Verified | SWE-Bench Pro | Terminal-Bench | HLE | MCP Atlas |
+|--------|-------------------|---------------|---------------|-----|-----------|
+| Opus 4.8 | **88.6%** | **69.2%**  | **74.6%** | **57.9%**  | — |
+| Opus 4.7 | 87.6% | — | — | 46.9% | — |
+| Sonnet 4.6 | 80.7% | — | — | — | **72.9%**  |
+| Haiku 4.5 | 64.3% | — | — | — | — |
+
+[NOTA: Opus 4.8 domina SWE-Bench Pro (69.2%, mejor del mercado) y HLE (57.9%). Sonnet 4.6 es el mejor en MCP Atlas (72.9%). Opus 4.8 lideró SWE-Bench Verified con 88.6% hasta el lanzamiento de GPT-5.5 Spud (88.7%).]
+
+**ARQUITECTURA MULTI-AGENTE**
+
+Anthropic ha adoptado un enfoque radicalmente diferente: creó el estándar MCP (Model Context Protocol) y lo posiciona como el protocolo de comunicación fundamental.
+
+**1. Claude Code** (agente loop principal)
+- Lenguaje/Base: TypeScript, código fuente interno (leak 31 Mar 2026, 512K líneas)
+- Arquitectura: Agent Loop con 8 herramientas core
+- Comunicación entre subagentes: Mailboxes IPC via archivos en ~/.claude/work/ipc/, polling cada 500ms
+- Patrón fork: fork pattern con cache sharing entre subagentes padre-hijo
+- Profundidad máxima: max_depth=1 (un nivel de subagentes)
+- Subagentes: spawn independiente con contexto heredado y mailbox propio
+
+**2. MCP Protocol** (Model Context Protocol)
+- Estándar creado por Anthropic: 9,652+ servers en la comunidad
+- Adoptado por: OpenAI, Google (Agent Gateway), VSCode, Cursor, Windsurf, Zed, JetBrains
+- Transportes: stdio (local), SSE (remoto), HTTP (streaming)
+- Recursos: tools promesas, recursos read-only, prompts template
+- Autenticación: OAuth 2.0 Authorization Code Flow + JWT
+
+**3. Agent SDK** (Python/TypeScript)
+- MCP nativo como protocolo de herramientas
+- Orchestration de agentes con tool use
+- Reflection patterns integrados
+
+**4. Skills/Hooks/Plugins** (sistema 5 capas)
+- Skills: scripts con sistema de permisos granular
+- Hooks: eventos pre/post tool call
+- Plugins: extensión del core
+
+**PATRONES DE ARQUITECTURA ANTHROPIC**
+
+| Patrón | Implementación | Detalle técnico |
+|--------|---------------|-----------------|
+| Reflection | Verification Agent | Modelo verifica su propio output, ciclo de auto-corrección |
+| Fork | fork pattern | Subagente hereda contexto + cache del padre. Cache sharing entre fork |
+| Supervisor/Worker | Agent SDK | Orquestador delega tareas a workers especializados |
+| IPC Mailbox | mailbox-based | Comunicación via archivos IPC, polling 500ms, en ~/.claude/work/ipc/ |
+| MCP Tool Use | Nativo (creador) | Servidores MCP como interfaz única de herramientas |
+| Agent Loop | Claude Code core | Ciclo perpetuo: plan → tool call → observe → adapt |
+| Sequential Pipeline | Reflection chain | SAX (System → Act → eXamine) pipeline |
+| Tool Loop | Agent Loop | Observar → Decidir → Actuar → Evaluar, tiempo real |
+
+**CACHING — ESTRATEGIA MÁS AVANZADA DEL MERCADO**
+
+- Descuento: 90% sobre cache read
+- TTL: 5 minutos (significativamente menor que OpenAI 24h)
+- Cache boundary: SISTEMA DELIBERADO de 7 secciones estáticas + 13 secciones dinámicas en el system prompt
+  - Secciones estáticas (cache hit garantizado): Identity, Date, Project Info, MCP Server definitions, Core tools, Prompt caching examples, Permission modes
+  - Secciones dinámicas (cache miss parcial): conversation, directory listing, current error, test output, git diff, lint output, typecheck output, previous tool results
+
+[NOTA: La estrategia de cache boundary de Anthropic es la más sofisticada del mercado y una lección directa aplicable a KAOS. Las 7 secciones estáticas aseguran cache hit máximo, mientras que las 13 dinámicas se reconstruyen parcialmente.]
+
+**SEGURIDAD — SISTEMA YOLO (MÁS ROBUSTO DEL MERCADO)**
+
+| Componente | Descripción |
+|------------|-------------|
+| YOLO 2-stage | Etapa 1: scan rápido de 64 tokens. Etapa 2: razonamiento completo de 4,096 tokens si se detecta riesgo |
+| Constitutional AI | SL-CAI (Supervised Learning) + RL-CAI (Reinforcement Learning) para alineación |
+| Permission modes | 3 modos: default (confirmación humana), plan (solo lectura), yolo (auto-ejecución) |
+| Blocklist | Comandos peligrosos bloqueados: rm -rf, sudo, chmod peligroso, formateo disco |
+| Undercover Mode | USER_TYPE === 'ant' — modo encubierto para debugging interno |
+| Límite anti-distillation | Máximo 25 palabras entre tool calls (previene extracción de prompts) |
+| Anti-engineer-trap | Detección de intentos de jailbreak y extracción de system prompt |
+
+**SOURCE LEAK (31 MARZO 2026) — HALLAZGOS PRINCIPALES**
+
+| Dato | Valor |
+|------|-------|
+| Líneas de código expuestas | 512,000+ |
+| Archivos | 1,902 archivos TypeScript |
+| Feature flags totales | 87 (44 documentados en builds externos) |
+| Daemon autónomo | KAIROS (150+ referencias en código) |
+| Undercover Mode | USER_TYPE === 'ant', debugging interno |
+| Buddy Tamagotchi | Asistente mascota virtual experimental |
+| Dream Mode | Consolidación de memoria tipo "sueño" offline |
+| Codenames: Tengu | Proyecto secreto (codename) |
+| Codenames: Capybara | Mythos Preview |
+| Codenames: Fennec | Modelo pequeño no lanzado |
+| Codenames: Chicago | Infraestructura interna |
+
+[NOTA: Ver PARTE 2 para análisis completo del source leak con diagramas y lecciones aplicables a KAOS.]
+
+**ECOSISTEMA**
+
+| Componente | Estado | Detalle |
+|------------|--------|---------|
+| Claude Code | Activo ($2.5B ARR, 8M users) | Principal fuente de ingresos, agente loop |
+| MCP Protocol | Activo (9,652+ servers) | Estándar abierto, adoptado por toda la industria |
+| Skills | Activo | Sistema de scripts con permisos granulares 5 capas |
+| Hooks | Activo | Eventos pre/post cada tool call |
+| Plugins | Activo | Extensión del core del agente |
+| Anthropic Academy | Activo (17+ cursos gratis) | Entrenamiento en IA, MCP, seguridad |
+| Claude API | Activo | Platform.anthropic.com |
+| Console | Activo | Interfaz web de gestión |
+
+**PAPERS CLAVE**
+
+| Paper | Año | Aporte |
+|-------|-----|--------|
+| Constitutional AI: Harmlessness from AI Feedback | 2022 | SL-CAI + RL-CAI, base de seguridad Anthropic |
+| Scaling Monosemanticity (SAE + Circuit Tracing) | 2023-2024 | 34M features de interpretabilidad |
+| GPT-4 System Card | 2023 | Participación en evaluación de seguridad |
+| Claude Model Cards | 2024+ | Documentación de evaluaciones por modelo |
+| Core Views on AI Safety | 2023 | Marco teórico de seguridad |
+| The Capacity for Moral Self-Correction | 2023 | Auto-corrección constitucional |
+| Training a Helpful and Harmless Assistant (HHH) | 2022 | Base del assistant alignment |
+
+**COMUNIDAD Y RECURSOS**
+
+- GitHub: github.com/anthropics (MCP SDKs, courses, eval tools)
+- Reddit: r/Anthropic, r/ClaudeAI
+- Discord: Discord oficial Anthropic
+- Documentación: docs.anthropic.com
+- Research: anthropic.com/research
+- Console: console.anthropic.com
+
+--- pagebreak ---
+
+### GOOGLE DEEPMIND / GEMINI
+
+**DATOS CORPORATIVOS**
+
+| Atributo | Valor |
+|----------|-------|
+| Fundación | DeepMind (2010, adquirida 2014), Google AI → Google DeepMind (2023) |
+| Sede | Mountain View, California + Londres, Reino Unido |
+| Funding | N/A (interno Google, Alphabet $2T+ market cap) + $13B inversión en DeepMind histórica |
+| CEO | Demis Hassabis (DeepMind CEO), Jeff Dean (Google DeepMind Chief Scientist) |
+| Estrategia general | Open-weight parcial (Gemma 4 Apache 2.0), multimodalidad nativa, integración Workspace/Cloud/Android |
+| Diferenciador | Contexto más largo del mercado (2M tokens), multimodalidad desde diseño, open-weight Gemma 4 |
+
+**FAMILIA DE MODELOS — TABLA COMPLETA DE PRECIOS**
+
+| Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache ($/1M tok) | Batch (50% desc) | Contexto máx | Corte conocimiento |
+|--------|-------------------|--------------------|--------------------|--------------------|--------------|---------------------|
+| Gemini 3.1 Pro Preview | $2.00 | $12.00 | $0.20 | $1.00/$6.00 | **2M tokens**  | Abr 2026 |
+| Gemini 3.5 Flash | $1.50 | $9.00 | $0.15 | $0.75/$4.50 | 1M tokens | May 2026 |
+| Gemini 3 Flash | $0.50 | $3.00 | $0.05 | $0.25/$1.50 | 1M tokens | Abr 2026 |
+| Gemini 3.1 Flash-Lite | $0.25 | $1.50 | $0.025 | $0.125/$0.75 | 1M tokens | Abr 2026 |
+| Gemini 2.5 Pro | $1.25 | $10.00 | $0.125 | $0.625/$5.00 | 1M tokens | Ene 2025 |
+| Gemini 2.5 Flash | $0.30 | $2.50 | $0.03 | $0.15/$1.25 | 1M tokens | Ene 2025 |
+| Gemini Embedding 2 | $0.00005/mil | N/A | N/A | N/A | 3072 dims | — |
+
+**BENCHMARKS CLAVE**
+
+| Modelo | GPQA Diamond | ARC-AGI-2 | BrowseComp | MCP Atlas | AIME 2025 | MATH-500 |
+|--------|-------------|-----------|-----------|-----------|-----------|----------|
+| Gemini 3.1 Pro Preview | **94.3%**  | **77.1%**  | **85.9%**  | — | 96.0% | — |
+| Gemini 3.5 Flash | — | — | — | **83.6%**  | — | — |
+| Gemini 3 Flash | — | — | — | — | **99.7%** | — |
+| Gemini 2.5 Pro | 89.1% | — | — | — | 91.0% | 97.5% |
+| Gemini 2.5 Flash | — | — | — | — | 87.0% | 96.5% |
+
+[NOTA: Gemini 3.1 Pro Preview domina GPQA Diamond (94.3%), ARC-AGI-2 (77.1%) y BrowseComp (85.9%). Gemini 3 Flash tiene AIME 99.7% — esencialmente perfecto. Gemini 3.5 Flash lidera MCP Atlas (83.6%).]
+
+**ARQUITECTURA MULTI-AGENTE**
+
+Google ha adoptado un enfoque dual con dos herramientas complementarias:
+
+**1. ADK 2.0 (Agent Development Kit)** — 19.9K GitHub
+- Licencia: Apache 2.0 (open-source)
+- Arquitectura: Graph-based workflow
+- Componentes de agente: ParallelAgent, SequentialAgent, LoopAgent
+- Comunicación: A2A (Agent-to-Agent) nativo + MCP
+- A2A Protocol: v1.0, bajo Linux Foundation, 24K, complementario a MCP
+- Orientado a: enterprise, flujos complejos con dependencias
+
+**2. AGY (Antigravity CLI)** — reemplaza Gemini CLI
+- Lenguaje: Go
+- Arquitectura: Subagentes asíncronos en background (hasta 5 paralelos) 
+- MCP nativo
+- Deadline de migración: 18 de junio de 2026 (Gemini CLI deprecado)
+- Patrón único: subagentes ejecutándose en background mientras el principal continúa
+
+**3. Agent Gateway** (Vertex AI, enterprise)
+- MCP como protocolo de gobernanza (no solo herramientas)
+- Model Armor integrado (seguridad, prompt injection, DLP)
+- Agent Identity criptográfico
+- Single interface para múltiples modelos y herramientas
+
+**PATRONES DE ARQUITECTURA GOOGLE**
+
+| Patrón | Implementación | Detalle técnico |
+|--------|---------------|-----------------|
+| Subagentes asíncronos | AGY CLI | Hasta 5 subagentes en background, único en el mercado  |
+| Graph-based workflows | ADK 2.0 | Flujos con dependencias, paralelización automática |
+| A2A Agent-to-Agent | ADK + A2A Protocol | Comunicación entre agentes vía protocolo estándar Linux Foundation |
+| Hierarchical | ADK | SequentialAgent, ParallelAgent, LoopAgent como primitivas |
+| Agent Cards | A2A | Descubrimiento de capacidades de agentes remotos |
+| MCP Governance | Agent Gateway | MCP como protocolo de control y seguridad |
+| Flash Routing | Interno | Routing inteligente a modelos Flash para baja latencia |
+
+**CACHING**
+
+- Descuento: 90% sobre cache read
+- Context Caching: $1.00/hora de almacenamiento (único costo de storage en el mercado)
+- Batch: 50% descuento sobre precios estándar
+- TTL: Configurable, hasta 7 días de retención
+- Implementación: Vertex AI Context Caching, AI Studio
+
+**SEGURIDAD — MODEL ARMOR**
+
+| Componente | Descripción |
+|------------|-------------|
+| Model Armor | Seguridad integral: prompt injection, DLP, toxicidad, PII |
+| Safety Settings | 4 niveles de filtrado: BLOCK_NONE, BLOCK_FEW, BLOCK_SOME, BLOCK_MOST |
+| Agent Gateway Governance | Políticas centralizadas de seguridad para agentes |
+| Agent Identity | Autenticación criptográfica de agentes (Claves asimétricas) |
+| Gemini Safety | Evaluaciones por categoría de riesgo |
+| Data Governance | Vertex AI Data Governance integrado |
+
+**ECOSISTEMA**
+
+| Componente | Estado | Detalle |
+|------------|--------|---------|
+| Firebase Studio | Activo | Reemplazo de Project IDX, IDE en navegador |
+| Gemini Code Assist | Activo ($22.50/mes) | Asistente de código enterprise |
+| Google AI Studio | Activo (API key gratis) | Plataforma de prototipado |
+| Vertex AI → Gemini Agent Platform | Activo | Plataforma enterprise de agentes |
+| ML Kit GenAI APIs | Activo | APIs para mobile (Android/iOS) |
+| LiteRT-LM edge runtime | Activo | Inferencia en dispositivo (edge computing) |
+| A2A Protocol | Activo (v1.0, Linux Foundation) | Estándar agent-to-agent, 24K |
+| ADK 2.0 | Activo (19.9K, Apache 2.0) | Agent Development Kit open-source |
+| MCP Admin Servers | Activo (50+ administrados) | Workspace, Firebase, BigQuery, Cloud Run, GKE, Maps |
+
+**GEMMA 4 — OPEN-WEIGHT (APACHE 2.0)**
+
+| Modelo | Parámetros | GPQA Diamond | Contexto | Licencia |
+|--------|------------|-------------|----------|----------|
+| Gemma 4 31B Dense | 31B | 84.3% | 8K-32K | Apache 2.0 |
+| Gemma 4 26B-A4B MoE | 26B activos | — | 8K-32K | Apache 2.0 |
+| Gemma 4 E4B | 9B | — | 8K-32K | Apache 2.0 |
+| Gemma 4 E2B | 2.6B | — | 8K-32K | Apache 2.0 |
+
+[NOTA: Gemma 4 es fine-tuneable con Unsloth desde 4GB VRAM. Modelo de 31B con 84.3% GPQA es el mejor open-weight de su clase.]
+
+**PAPERS CLAVE**
+
+| Paper | Año | Aporte |
+|-------|-----|--------|
+| Gemini 1.0 Technical Report | 2023 | Modelo multimodal fundacional |
+| Gemini 1.5 Technical Report | 2024 | Contexto largo (1M tokens), Mixture-of-Experts |
+| Gemini 2.5 Technical Report | 2025 | Razonamiento mejorado, thinking mode |
+| Gemini 3 Pro Technical Report | 2026 | 2M contexto, benchmarks líderes |
+| Pathways: Asynchronous Distributed Dataflow | 2022 | Infraestructura de entrenamiento distribuido |
+| MoE: Outrageously Large Neural Networks (Shazeer et al.) | 2017 | Base MoE, fundacional |
+| GShard: Scaling Giant Models with Conditional Computation | 2020 | MoE en TPUs |
+| Switch Transformers: Scaling to Trillion Parameter Models | 2021 | MoE eficiente |
+| PaLM: Scaling Language Modeling with Pathways | 2022 | 540B modelo |
+| PaLM 2 Technical Report | 2023 | Modelo mejorado |
+| Gemma 2/3/4 Technical Reports | 2024-2026 | Familia open-weight |
+| Gemini Embedding 2 Technical Report | 2026 | Embeddings multimodales MRL |
+
+**LEAKS Y FILTRACIONES**
+
+| Incidente | Detalle |
+|-----------|---------|
+| System prompt via prompt injection | Orchestration Layer pre-LLM expuesto via jailbreak |
+| Código google3 via sandbox escape | 579 MB de código interno extraído |
+| "Kingfall" | Modelo no lanzado, rumores de cancelación |
+| "Cappuccino" | Gemini 3.5 Pro (no lanzado aún) |
+| "Omni" | Modelo de procesamiento de video en desarrollo |
+
+**COMUNIDAD Y RECURSOS**
+
+- GitHub: github.com/google-gemini, github.com/google-deepmind
+- Documentación: ai.google.dev
+- Vertex AI: cloud.google.com/vertex-ai
+- AI Studio: aistudio.google.com
+- Research: deepmind.google/research
+- Blog: blog.google/technology/ai
+
+--- pagebreak ---
+
+### ALIBABA QWEN
+
+**DATOS CORPORATIVOS**
+
+| Atributo | Valor |
+|----------|-------|
+| Fundación | Alibaba Cloud, equipo Qwen (Alibaba DAMO Academy) |
+| Sede | Hangzhou, China (global: Singapur, Europa, EE.UU.) |
+| Funding | N/A (interno Alibaba Group, $245B market cap NYSE: BABA) |
+| CEO | Eddie Wu (Alibaba Cloud), equipo Qwen liderado por Zhifan Zheng |
+| Estrategia general | Open-weight (Apache 2.0), doble vía (base open-source + propietario flagship), ecosistema completo |
+| Diferenciador | Ciclo de releases más agresivo (3 familias en 12 meses), calidad open-weight superior, cache sharing entre subagentes |
+
+**FAMILIA DE MODELOS — TABLA COMPLETA DE PRECIOS**
+
+| Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache ($/1M tok) | Batch (50% desc) | Contexto máx | Corte conocimiento |
+|--------|-------------------|--------------------|--------------------|--------------------|--------------|---------------------|
+| Qwen3.6-Plus | $0.50 | $3.00 | — | $0.25/$1.50 | **1M tokens** | Mar 2026 |
+| Qwen3.6-Flash | $0.25 | $1.50 | — | $0.125/$0.75 | 1M tokens | Mar 2026 |
+| Qwen3.6-27B | $0.30 | $3.20 | — | $0.15/$1.60 | 128K tokens | Mar 2026 |
+| Qwen3.6-35B-A3B | $0.15 | $1.00 | — | $0.075/$0.50 | 128K tokens | Mar 2026 |
+| Qwen3.7-Max | $2.50 | $7.50 | — | $1.25/$3.75 | 256K tokens | May 2026 |
+| QwQ-32B (razonamiento) | $1.00 | $2.50 | — | — | 128K tokens | — |
+
+[NOTA: Qwen3.6-Flash ($0.25/$1.50) es el mejor modelo calidad/precio del mercado. Qwen3.6-35B-A3B ($0.15/$1.00) es el modelo más barato con calidad competitiva. Qwen3.6-Plus ofrece 1M contexto a precio ultra-competitivo.]
+
+**BENCHMARKS CLAVE**
+
+| Modelo | GPQA Diamond | AIME 2025 | SWE-Bench Verified | MCP Atlas | LiveCodeBench | Arena Elo |
+|--------|-------------|-----------|-------------------|-----------|---------------|-----------|
+| Qwen3.6-Plus | **90.4** | **95.1**  | 78.8 | **74.1**  | **81.6**  | 1457  |
+| Qwen3.6-Flash | — | 92.1 | 74.3 | 70.8 | — | 1372 |
+| Qwen3.6-27B | 87.8 | 82.2 | — | — | — | — |
+| Qwen3.6-35B-A3B | 80.5 | 76.8 | — | — | — | — |
+| Qwen3.7-Max | — | — | — | — | — | 1439 |
+
+[NOTA: Qwen3.6-Plus domina AIME 2025 (95.1), MCP Atlas (74.1), LiveCodeBench (81.6), y Arena Elo (1457). Es el modelo de MEJOR RENDIMIENTO GLOBAL en su rango de precio ($0.50/$3.00).]
+
+**ARQUITECTURA MULTI-AGENTE**
+
+Alibaba Qwen ha desarrollado el ecosistema multi-agente más completo y abierto del mercado:
+
+**1. Qwen-Agent** (Python, Apache 2.0, pip install)
+- Framework completo de agentes con múltiples patrones
+- Soporte MCP completo: stdio, SSE, HTTP
+- MCPManager.initConfig() con includeTools/excludeTools
+- Compatible con DashScope API + otras APIs
+
+**2. Qwen Code** (TypeScript, 24K GitHub, Apache 2.0)
+- Fork subagents con cache sharing (80%+ ahorro en tokens paralelos) 
+- Background subagents asíncronos
+- Cross-provider model selection (elige automáticamente entre proveedores)
+- Daemon mode: ACP (Agent Communication Protocol) vía HTTP + SSE
+- Arquitectura fork con herencia de contexto
+
+**3. DashScope API**
+- API compatible con formato Anthropic
+- Modelos open-weight desplegables on-premise
+- Context caching nativo
+
+**PATRONES DE ARQUITECTURA QWEN**
+
+| Patrón | Implementación | Detalle técnico |
+|--------|---------------|-----------------|
+| Router | Qwen-Agent Router | Coordinador central que delega a subagentes especializados |
+| GroupChat | Qwen-Agent GroupChat | Selección automática del siguiente hablante entre N agentes |
+| MultiAgentHub | Qwen-Agent Hub | Hub centralizado para gestión de N agentes con registro/deregistro |
+| Pipeline | Qwen-Agent Sequential | Flujo secuencial de agentes, output de uno es input del siguiente |
+| Jerárquico | Routers anidados | Árbol de routers con delegación recursiva |
+| FORK | Qwen Code fork | Subagente hereda contexto COMPLETO + cache del padre (80%+ ahorro)  |
+| Background Async | Qwen Code daemon | Subagentes ejecutándose en background con comunicación ACP |
+| Cross-Provider | Qwen Code | Selección automática del mejor modelo/proveedor para cada tarea |
+
+**CACHING — INNOVACIÓN EN COMPARTICIÓN ENTRE SUBAGENTES**
+
+| Característica | Detalle |
+|----------------|---------|
+| Fork Subagent cache sharing | 80%+ ahorro en tokens cuando N subagentes procesan contexto similar en paralelo  |
+| DashScope context caching | Descuento automático en prompts largos |
+| Cross-agent sharing | El cache se comparte entre subagentes fork (único en el mercado) |
+| Implementación | Herencia de KV cache del padre al subagente fork |
+
+[NOTA: El patrón Fork Subagent Cache Sharing de Qwen es LA INNOVACIÓN MÁS IMPORTANTE para KAOS. Permite lanzar N subagentes en paralelo con ~80% menos tokens que lanzarlos independientemente. Esto cambia fundamentalmente la economía de los sistemas multi-agente.]
+
+**SEGURIDAD**
+
+| Componente | Descripción |
+|------------|-------------|
+| Seguridad nativa | NO implementada a nivel de framework (deferida al deployer) |
+| MCP security | Considerations estándar del protocolo MCP |
+| DashScope API | Rate limiting, autenticación API key, cifrado TLS |
+| Model safety | Evaluaciones de contenido publicadas por familia Qwen |
+| Data privacy | Políticas de Alibaba Cloud (cumplimiento GDPR, China Data Security Law) |
+
+[NOTA: La seguridad es el punto débil de Qwen. Es responsabilidad del deployer implementar guardrails, filtros y controles de acceso. KAOS debe complementar con su propio security stack.]
+
+**ECOSISTEMA**
+
+| Componente | Estado | Detalle |
+|------------|--------|---------|
+| Qwen-Agent | Activo (Apache 2.0) | pip install qwen-agent, framework completo Python |
+| Qwen Code | Activo (24K, Apache 2.0) | CLI TypeScript, fork subagents, background daemon |
+| DashScope API | Activo | API compatible claude/anthropic, rate limits generosos |
+| Alibaba Cloud | Activo | Infraestructura cloud, GPU clusters, deploy on-premise |
+| Hugging Face | Activo | Pesos open-weight: Qwen/Qwen3.6-Plus, Qwen3.6-Flash, etc. |
+| Ollama | Activo | Ejecución local de modelos Qwen |
+| vLLM | Activo | Serving optimizado de Qwen |
+
+**ARQUITECTURA QWEN3.5+**
+
+| Componente | Detalle |
+|------------|---------|
+| Atención | 75% Gated DeltaNet + 25% Full Softmax Attention |
+| MoE | Mixture-of-Experts híbrido |
+| Contexto nativo | 256K tokens (extensible a 1M vía técnicas de interpolación) |
+| KV Cache eficiente | Optimización para contexto largo |
+
+**CICLO DE RELEASES — EL MÁS AGRESIVO**
+
+| Familia | Fecha | Intervalo |
+|---------|-------|-----------|
+| Qwen2.5 | Sep 2024 | — |
+| Qwen3.0 | Abr 2025 | ~7 meses |
+| Qwen3.5 | Nov 2025 | ~7 meses |
+| Qwen3.6 | Mar 2026 | ~4 meses |
+| Qwen3.7 | May 2026 | ~2 meses |
+
+[NOTA: Alibaba Qwen tiene el ciclo de releases más agresivo de la industria, con 3 familias de modelos en solo 12 meses (Qwen3.0 → Qwen3.7).]
+
+**LICENCIA**
+
+| Tipo | Licencia |
+|------|----------|
+| Modelos base (Qwen3.6-Flash, -27B, -35B-A3B) | Apache 2.0 (open-weight) |
+| Modelos flagship (Qwen3.6-Plus, Qwen3.7-Max) | Propietario (solo API DashScope) |
+
+**COMUNIDAD Y RECURSOS**
+
+- GitHub: github.com/QwenLM (Qwen-Agent, Qwen Code, modelos)
+- Hugging Face: huggingface.co/Qwen
+- Documentación: qwen.readthedocs.io
+- DashScope: dashscope.aliyun.com
+- Discord: Qwen Official Discord
+- Papers: arxiv.org/search/?query=Qwen
+
+--- pagebreak ---
+
+### MOONSHOT KIMI
+
+**DATOS CORPORATIVOS**
+
+| Atributo | Valor |
+|----------|-------|
+| Fundación | Moonshot AI, 2023, Beijing, China |
+| Funding total estimado | ~$1B+ USD |
+| Inversores principales | Alibaba Group, Sequoia China, Monolith Management, GSR Ventures, Hillhouse Capital |
+| CEO | Yang Zhilin (ex-Google, ex-CMU PhD) |
+| Estrategia general | Open-weight (Modified MIT), diferenciador Agent Swarm nativo, contexto largo, razonamiento profundo |
+| Diferenciador | ÚNICO laboratorio con Agent Swarm entrenado vía PARL (Parallel-Agent Reinforcement Learning). 300 subagentes nativos en el modelo. Único líder en HLE con tools y BrowseComp Swarm. |
+
+**FAMILIA DE MODELOS — TABLA COMPLETA DE PRECIOS**
+
+| Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache hit ($/1M tok) | Batch (50% desc) | Contexto máx | Corte conocimiento |
+|--------|-------------------|--------------------|----------------------|--------------------|--------------|---------------------|
+| Kimi K2.6 | $0.95 | $4.00 | $0.10-$0.16 | $0.475/$2.00 | 256K tokens | Abr 2026 |
+| Kimi K2.5 | $0.60 | $3.00 | $0.08-$0.12 | $0.30/$1.50 | 128K tokens | Dic 2025 |
+| Kimi K2 | Deprecado (25 mayo 2026) | — | — | — | 128K tokens | Jul 2025 |
+
+**BENCHMARKS CLAVE**
+
+| Modelo | HLE con tools | BrowseComp Swarm | DeepSearchQA | LiveCodeBench | Context 100 Needles | Agentic tasks |
+|--------|--------------|-----------------|-------------|---------------|-------------------|---------------|
+| Kimi K2.6 | **54.0%**  **GLOBAL LEADER** | **86.3%**  | **92.5%**  | 68.5 | 99.2% | 300 subagentes / 4,000 pasos |
+| Kimi K2.5 | 42.1% | 78.0% | — | 62.1 | 97.8% | 100 subagentes / 1,500 pasos |
+
+[NOTA: Kimi K2.6 es el LÍDER GLOBAL en HLE con tools (54.0%), browseComp Swarm (86.3%) y DeepSearchQA (92.5%). Su arquitectura Agent Swarm con 300 subagentes es ÚNICA EN EL MERCADO — ningún otro laboratorio entrena el orchestrador multi-agente vía RL.]
+
+**ARQUITECTURA MULTI-AGENTE — LA MÁS INNOVADORA**
+
+Moonshot Kimi ha desarrollado un enfoque radicalmente diferente: el Agent Swarm es NATIVO en el modelo, no una capa externa.
+
+**1. Agent Swarm** (núcleo del sistema)
+- Orchestrador entrenado vía PARL (Parallel-Agent Reinforcement Learning) 
+- Capacidad: 300 subagentes simultáneos, 4,000 pasos de ejecución
+- Task decomposition: el modelo descompone tareas complejas en subtareas paralelizables
+- Context Sharding: CADA subagente tiene memoria independiente, solo outputs relevantes retornan al orchestrator
+- Selective routing: el orchestrator decide dinámicamente qué subagentes activar y cuándo
+
+**2. PARL (Parallel-Agent Reinforcement Learning)**
+- Metodología: el orchestrador aprende VÍA RL cuándo paralelizar y cómo descomponer
+- Entrenamiento: miles de episodios de tareas multi-agente
+- Optimización: balance entre paralelización (velocidad) y calidad de resultado
+- Reward: basado en accuracy de la tarea + eficiencia de recursos
+- Único framework de la industria que entrena el orchestrador multi-agente nativamente
+
+**3. MoBA (Mixture of Balanced Attention)** — NeurIPS 2025
+- Arquitectura de atención balanceada tipo MoE
+- Optimización para contexto largo (256K tokens)
+- Publicado en NeurIPS 2025 (conference top)
+
+**4. Kimi Code CLI**
+- Similar en enfoque a Claude Code
+- Integración con MCP y herramientas de desarrollo
+
+**PATRONES DE ARQUITECTURA KIMI**
+
+| Patrón | Implementación | Detalle técnico |
+|--------|---------------|-----------------|
+| Agent Swarm nativo | PARL-trained orchestrator | 300 subagentes entrenados via RL — ÚNICO  |
+| Context Sharding | Memoria independiente | Cada subagente opera con su propio contexto aislado |
+| Task Decomposition | Orchestrator | Descomposición automática entrenada vía RL |
+| Selective Routing | Orchestrator | Selección dinámica de subagentes basada en relevancia |
+| Parallel Execution | Swarm | Múltiples subagentes ejecutándose concurrentemente |
+| Result Aggregation | Orchestrator | Solo outputs relevantes retornan al flujo principal |
+
+**CACHING**
+
+| Característica | Detalle |
+|----------------|---------|
+| Cache hit pricing | $0.10-$0.16/1M tokens (descuento significativo) |
+| Context sharding | Previene contaminación entre contextos de subagentes |
+| Implementación | Caché a nivel de API, descuento automático |
+
+**SEGURIDAD**
+
+| Componente | Descripción |
+|------------|-------------|
+| Seguridad documentada | NO documentado públicamente. Políticas internas no divulgadas. |
+| Data privacy | Datos procesados en servidores de Moonshot AI (China) |
+| API Security | Autenticación API key, rate limiting estándar |
+| Cumplimiento | Regulaciones chinas de IA (Miit, CAC) |
+
+[NOTA: La seguridad de Kimi NO está documentada públicamente. Para uso enterprise, se requiere debida diligencia adicional. KAOS debe aplicar su propio security stack sobre Kimi.]
+
+**ECOSISTEMA**
+
+| Componente | Estado | Detalle |
+|------------|--------|---------|
+| API OpenAI-compatible | Activo | API compatible con formato OpenAI |
+| API Anthropic-compatible | Activo | API compatible con formato Anthropic |
+| Kimi Code CLI | Activo | CLI de desarrollo asistido por IA |
+| NVIDIA partnership | Activo | Desplegado en build.nvidia.com |
+| Pesos Modified MIT | Activo | Qwen2.5 entrenado con licencia Modified MIT |
+| Hugging Face | Activo | Pesos: moonshotai/Kimi-K2.5, Kimi-K2 |
+
+**ARQUITECTURA DEL MODELO K2**
+
+| Componente | Detalle |
+|------------|---------|
+| Parámetros totales | 1T (trillón) MoE |
+| Parámetros activos | 32B por forward pass |
+| Expertos | 384 expertos (8 seleccionados + 1 shared por token) |
+| Atención | MLA (Multi-head Latent Attention) |
+| Optimizador | MuonClip (optimizador propietario) |
+| Visión (K2.5+) | MoonViT-3D (Vision Transformer 3D) |
+| INT4 nativo | Quantization-Aware Training: 2x inferencia más rápida, 50% menos memoria |
+
+**PAPERS CLAVE**
+
+| Paper | Año | Aporte |
+|-------|-----|--------|
+| MoBA: Mixture of Balanced Attention | 2025 | NeurIPS 2025, arquitectura de atención balanceada |
+| Kimi K2 Technical Report | 2025 | 1T MoE, MLA, MuonClip |
+| Kimi K2.5 Technical Report | 2026 | Evaluación y mejoras sobre K2 |
+| PARL: Parallel-Agent Reinforcement Learning (implícito) | 2026 | Entrenamiento del orchestrador multi-agente |
+
+**COMUNIDAD Y RECURSOS**
+
+- GitHub: github.com/MoonshotAI
+- Hugging Face: huggingface.co/moonshotai
+- Documentación API: platform.moonshot.cn
+- Build NVIDIA: build.nvidia.com/moonshotai
+- Blog: moonshot.ai/blog
+
+--- pagebreak ---
+
+## 1.2 TABLAS COMPARATIVAS GLOBALES
+
+### TABLA 1: PRECIOS — TODOS LOS MODELOS COMPARADOS
+
+Esta tabla consolida los precios de todos los modelos de los 5 laboratorios, ordenados por precio de input ascendente.
+
+| Laboratorio | Modelo | Input ($/1M tok) | Output ($/1M tok) | Cache ($/1M tok) | Batch Input ($/1M tok) | Contexto máx |
+|-------------|--------|-------------------|--------------------|--------------------|------------------------|--------------|
+| **Alibaba** | Qwen3.6-35B-A3B | $0.15 | $1.00 | — | $0.075 | 128K |
+| **OpenAI** | GPT-5.4-nano | $0.20 | $1.25 | $0.02 | $0.10 | 32K |
+| **Alibaba** | Qwen3.6-Flash | $0.25 | $1.50 | — | $0.125 | 1M |
+| **Google** | Gemini 3.1 Flash-Lite | $0.25 | $1.50 | $0.025 | $0.125 | 1M |
+| **Alibaba** | Qwen3.6-27B | $0.30 | $3.20 | — | $0.15 | 128K |
+| **Google** | Gemini 2.5 Flash | $0.30 | $2.50 | $0.03 | $0.15 | 1M |
+| **Google** | Gemini 3 Flash | $0.50 | $3.00 | $0.05 | $0.25 | 1M |
+| **Alibaba** | Qwen3.6-Plus | $0.50 | $3.00 | — | $0.25 | 1M |
+| **Moonshot** | Kimi K2.5 | $0.60 | $3.00 | $0.08-$0.12 | $0.30 | 128K |
+| **OpenAI** | GPT-5.4-mini | $0.75 | $4.50 | $0.075 | $0.375 | 128K |
+| **Moonshot** | Kimi K2.6 | $0.95 | $4.00 | $0.10-$0.16 | $0.475 | 256K |
+| **Anthropic** | Haiku 4.5 | $1.00 | $5.00 | $0.10 | $0.50 | 200K |
+| **OpenAI** | o4-mini | $1.10 | $4.40 | $0.11 | $0.55 | 200K |
+| **Google** | Gemini 2.5 Pro | $1.25 | $10.00 | $0.125 | $0.625 | 1M |
+| **Google** | Gemini 3.5 Flash | $1.50 | $9.00 | $0.15 | $0.75 | 1M |
+| **OpenAI** | o3 (razonamiento) | $2.00 | $8.00 | $0.20 | $1.00 | 200K |
+| **Google** | Gemini 3.1 Pro Preview | $2.00 | $12.00 | $0.20 | $1.00 | **2M**  |
+| **OpenAI** | GPT-5.4 | $2.50 | $10.00 | $0.25 | $1.25 | 128K |
+| **Alibaba** | Qwen3.7-Max | $2.50 | $7.50 | — | $1.25 | 256K |
+| **Anthropic** | Sonnet 4.6 | $3.00 | $15.00 | $0.30 | $1.50 | 200K |
+| **OpenAI** | GPT-5.5 Spud | $5.00 | $30.00 | $0.50 | $2.50 | 256K |
+| **Anthropic** | Opus 4.7 | $5.00 | $25.00 | $0.50 | $2.50 | 200K |
+| **Anthropic** | Opus 4.8 | $5.00 | $25.00 | $0.50 | $2.50 | 200K |
+| **OpenAI** | GPT-5.5 Pro | $30.00 | $180.00 | $3.00 | $15.00 | 256K |
+| **Anthropic** | Mythos Preview | $25.00 | $125.00 | N/A | N/A | 200K |
+
+[NOTA: La diferencia de precio entre el modelo más barato (Qwen3.6-35B-A3B, $0.15/MTok input) y el más caro (GPT-5.5 Pro, $30/MTok input) es de 200x. La estrategia de routing inteligente entre modelos puede generar ahorros dramáticos.]
+
+### TABLA 2: BENCHMARKS — TODOS COMPARADOS HEAD-TO-HEAD
+
+| Modelo | GPQA Diamond | AIME 2025 | SWE-Bench V | HLE | MCP Atlas | LiveCodeBench | Arena Elo |
+|--------|-------------|-----------|-------------|-----|-----------|---------------|-----------|
+| Gemini 3.1 Pro Preview | **94.3%**  | 96.0% | — | — | — | — | — |
+| Qwen3.6-Plus | 90.4 | **95.1%**  | 78.8 | — | **74.1%**  | **81.6%**  | **1457**  |
+| GPT-5.5 Spud | — | — | **88.7%**  | — | — | — | — |
+| Opus 4.8 | — | — | 88.6% | **57.9%**  | — | — | — |
+| Gemini 3 Flash | — | **99.7%** | — | — | — | — | — |
+| Gemini 3.5 Flash | — | — | — | — | **83.6%**  | — | — |
+| Kimi K2.6 (swarm) | — | — | — | 54.0%  (swarm) | — | 68.5 | — |
+| Kimi K2.6 BrowseComp | — | — | — | — | — | — | — |
+| Sonnet 4.6 | — | — | 80.7% | — | 72.9% | — | — |
+| o3 | 87.7% | 93.1% | — | 22.3% | — | — | — |
+| Gemma 4 31B | 84.3% | — | — | — | — | — | — |
+| Qwen3.6-Flash | — | 92.1 | 74.3 | — | 70.8 | — | 1372 |
+| Qwen3.7-Max | — | — | — | — | — | — | 1439 |
+
+[NOTA: No existe un modelo que domine TODOS los benchmarks. Gemini 3.1 Pro lidera GPQA (94.3%), Qwen3.6-Plus lidera AIME (95.1), GPT-5.5 Spud lidera SWE-Bench (88.7%), Opus 4.8 lidera HLE (57.9%). La estrategia óptima para KAOS es ROUTING INTELIGENTE: usar el modelo correcto para cada tarea.]
+
+### TABLA 3: PATRONES MULTI-AGENTE — 17 PATRONES × 5 LABORATORIOS
+
+| # | Patrón | OpenAI | Anthropic | Google | Alibaba Qwen | Moonshot Kimi |
+|---|--------|--------|-----------|--------|-------------|---------------|
+| 1 | Agent Loop | Codex CLI (6 threads) | **Claude Code** (8 tools core, 512K líneas) | AGY CLI (Go, async) | Qwen Code (24K) | Kimi Code CLI |
+| 2 | Handoff / Transfer | **transfer_to_** (historial filterable) | Agent SDK handoffs | ADK sequential | Router (delegación) | Orchestrator (swarm) |
+| 3 | Fork con cache sharing | — | fork pattern (max_depth=1, cache heredado) | — | **Fork Subagent** (80%+ ahorro ) | — |
+| 4 | Subagentes paralelos | **Codex CLI** (6 threads, depth=1) | — | **AGY** (hasta 5 async ) | Qwen Code (background) | **Swarm** (300 subagentes ) |
+| 5 | Subagentes asíncronos | — | Mailboxes IPC (500ms polling) | **AGY** (background nativo ) | Daemon ACP (HTTP/SSE) | Swarm (nativo en modelo) |
+| 6 | Pipeline secuencial | — | SAX pipeline (System→Act→eXamine) | ADK SequentialAgent | Qwen-Agent Pipeline | Task decomposition |
+| 7 | Supervisor/Worker | Agents SDK | Agent SDK supervisor | ADK hierarchical | Router/GroupChat | Orchestrator/Swarm |
+| 8 | GroupChat / Debate | — | — | — | **GroupChat** (auto-selection) | Swarm collaboration |
+| 9 | Reflection / Verification | — | **Verification Agent** (auto-corr) | — | — | — |
+| 10 | Graph-based workflow | — | — | **ADK 2.0** (Parallel/Sequential/Loop) | — | — |
+| 11 | A2A Agent-to-Agent | — | — | **A2A Protocol** (Linux Foundation, 24K) | — | — |
+| 12 | MCP Tool Use | **Adoptado** (Agents SDK, Responses API) | **Creador** (9,652+ servers) | **Adoptado** (Agent Gateway) | **Completo** (stdio/SSE/HTTP) | **Adoptado** (K2 entrenado con 3,000+ MCP) |
+| 13 | Swarm / Multi-Agent nativo | — | — | — | — | **PARL Swarm** (300 agentes, RL-trained ) |
+| 14 | Context Sharding | — | — | — | Fork herencia contexto | **Sharding nativo** (memoria independiente ) |
+| 15 | Daemon persistente | — | **KAIROS** (leak, 150+ refs, autónomo) | — | **ACP daemon** (HTTP/SSE) | — |
+| 16 | Routing inteligente | Fallback chain | Intra-claude routing | Flash routing | Cross-provider (Qwen Code) | Selective routing (orchestrator) |
+| 17 | Cache boundary estratégico | Automático (24h TTL) | **7 estáticas + 13 dinámicas**  | Context Caching ($1/hr) | Fork cache sharing (80%+) | Context sharding |
+
+### TABLA 4: ARQUITECTURAS DE SUBAGENTES — SPAWN, LÍMITES, COMUNICACIÓN, CONTEXT SHARING
+
+| Laboratorio | Framework | Método spawn | Límite subagentes | Comunicación | Context sharing | Persistencia |
+|-------------|-----------|-------------|-------------------|-------------|----------------|--------------|
+| **OpenAI** | Codex CLI | Thread (Rust) | 6 concurrentes | MCP | Historial filterable | Sesión (sin checkpoint) |
+| **Anthropic** | Claude Code | Mailbox IPC | max_depth=1, fork ilimitado | Mailbox polling 500ms | **Fork hereda cache** | ~/.claude/ + proyecto |
+| **Google** | AGY CLI / ADK | Go async | **5 background**  | A2A + MCP | Variable por workflow | Sesión + proyecto |
+| **Alibaba** | Qwen Code/Agent | Fork/FunCall | Ilimitado práctico | ACP HTTP/SSE | **Fork 80%+ cache sharing**  | Sesión + daemon |
+| **Moonshot** | Kimi K2.6 Swarm | PARL-trained orchestrator | **300 concurrentes**  | Swarm interno (modelo) | **Context sharding nativo**  | Sesión (API stateful) |
+
+[NOTA: La combinación ideal sería: spawn de Kimi (300 subagentes gobernados por RL), comunicación de Anthropic (mailbox IPC 500ms), context sharing de Qwen (fork 80%+ ahorro), y asincronía de Google (background nativo).]
+
+--- pagebreak ---
+
+## 1.3 TAXONOMÍA DE CONCEPTOS TÉCNICOS
+
+### 1. ROUTING
+
+**Definición**: Estrategia para seleccionar qué modelo o agente maneja una request específica, basada en criterios de costo, calidad, latencia y disponibilidad.
+
+**Implementaciones por laboratorio:**
+
+| Laboratorio | Estrategia | Detalle técnico |
+|-------------|-----------|-----------------|
+| OpenAI | Fallback chain + Parallel ensemble | Degradación graceful entre modelos; ejecución paralela para verificación cruzada |
+| Anthropic | Intra-claude routing | Haiku→Sonnet→Opus: escala automática según complejidad de la tarea |
+| Google | Flash routing | Prioriza modelos Flash para baja latencia; Pro para tareas complejas |
+| Alibaba | Cross-provider (Qwen Code) | Selección automática entre DashScope, OpenAI, Anthropic según costo y capacidad |
+| Moonshot | Selective routing (orchestrator) | Orchestrator entrenado vía RL decide rutas de subagentes |
+
+**Mejores prácticas globales:**
+- Cost routing: DeepSeek para tareas simples (lowest cost), rutear a modelos premium solo cuando sea necesario
+- Performance routing: Gemini Flash para latencia crítica, Claude Opus/OpenAI Spud para calidad
+- Balanced: Combinación de costo y calidad con umbrales configurables
+- Fallback chain: Degradación graceful entre proveedores para alta disponibilidad
+- Parallel ensemble: Ejecución paralela en tareas críticas con verificación cruzada
+
+**Aplicabilidad a KAOS:**
+KAOS implementa routing en múltiples niveles:
+- **Task Model Map** (19 tipos): asigna cada tarea al modelo óptimo según tipo
+- **Cost routing**: DeepSeek backbone (35%), Qwen alt (25%), Gemini free (30%), Claude premium (5%), OpenAI ultra (5%)
+- **Fallback**: degradación entre tiers cuando el primario falla o excede rate limits
+- **Parallel ensemble**: para tareas críticas del orquestador (fase 3 roadmap)
+
+### 2. SUBAGENTES
+
+**Definición**: Agentes hijos que ejecutan subtareas de forma independiente, con comunicación controlada con el agente padre y entre sí.
+
+**Implementaciones por laboratorio:**
+
+| Laboratorio | Patrón principal | Spawn | Comunicación | Profundidad máxima |
+|-------------|-----------------|-------|-------------|-------------------|
+| OpenAI | Parallel (Codex CLI) | Thread (Rust) | MCP | depth=1 |
+| Anthropic | Fork (Claude Code) | Mailbox IPC | Polling 500ms | max_depth=1 |
+| Google | Async (AGY CLI) | Go goroutines | A2A + MCP | Hasta 5 background |
+| Alibaba | Fork + Background (Qwen) | Fork (herencia) | ACP HTTP/SSE | Ilimitado práctico |
+| Moonshot | Swarm (Kimi K2.6) | RL orchestrator | Swarm interno | 300 concurrentes |
+
+**Mejores prácticas globales:**
+- Fork pattern (Qwen/Anthropic): heredar contexto + cache del padre para eficiencia
+- Async background (Google): mantener el flujo principal mientras subagentes trabajan en background
+- IPC mailboxes (Anthropic): comunicación persistente via archivos, polling asíncrono
+- Context isolation (Kimi): cada subagente con su propia ventana de contexto
+
+**Aplicabilidad a KAOS:**
+Los subagentes de KAOS (Aether v3) pueden beneficiarse de:
+- **Fork con cache sharing** (Qwen): 80%+ ahorro en tokens paralelos — implementación prioritaria
+- **Background async** (Google): subagentes no bloqueantes para tareas de exploración
+- **Mailbox IPC** (Anthropic): comunicación estandarizada entre subagentes Aether
+- **Depth control**: max_depth=1-2 para evitar recursión incontrolada
+
+### 3. COMUNICACIÓN ENTRE AGENTES
+
+**Definición**: Protocolos y mecanismos para que agentes intercambien datos, instrucciones y resultados.
+
+**Implementaciones por laboratorio:**
+
+| Protocolo | Laboratorio | Transporte | Latencia | Estado |
+|-----------|-------------|-----------|----------|--------|
+| IPC Mailboxes | Anthropic (Claude Code) | Archivos en ~/.claude/work/ipc/ | ~500ms polling | Producción |
+| MCP (Model Context Protocol) | Anthropic (creador), OpenAI, Google, Alibaba | stdio / SSE / HTTP | Variable según transporte | **Estándar industria** |
+| A2A (Agent-to-Agent) | Google (ADK, Linux Foundation) | HTTP/REST | Baja (directo) | v1.0, 24K |
+| ACP (Agent Communication Protocol) | Alibaba (Qwen Code) | HTTP + SSE | Media | En desarrollo activo |
+| Function Calling | OpenAI, todos | JSON Schema via API | Latencia de red | Universal |
+| Swarm interno | Moonshot (Kimi) | Dentro del modelo | Mínima (misma inferencia) | Propietario |
+
+**Mejores prácticas globales:**
+- MCP como protocolo de herramientas: estándar universal para tool use
+- A2A como protocolo inter-agente: complementa MCP para comunicación agente→agente
+- IPC mailboxes para subagentes locales: eficiente, persistente, sin red
+- JSON-RPC para comunicación remota: estándar, depurable
+
+**Aplicabilidad a KAOS:**
+- **MCP**: Adoptar como protocolo primario de herramientas (ya implementado parcialmente)
+- **IPC mailboxes**: Para comunicación entre subagentes Aether locales
+- **A2A**: Para comunicación con agentes externos (implementar en Fase 4)
+- **JSON-RPC**: Para control entre procesos (Aether layers)
+
+### 4. CACHING
+
+**Definición**: Almacenamiento temporal de resultados de inferencia para reutilización, reduciendo costos y latencia.
+
+**Implementaciones por laboratorio:**
+
+| Laboratorio | Descuento | TTL | Estrategia | Innovación |
+|-------------|-----------|-----|------------|------------|
+| OpenAI | 90% | **24 horas**  | Automático desde 1024+ tokens | TTL más largo del mercado |
+| Anthropic | 90% | 5 minutos | **Cache boundary**: 7 estáticas + 13 dinámicas  | Cache boundary deliberado más sofisticado |
+| Google | 90% | Configurable (hasta 7 días) | Context Caching: $1/hr almacenamiento | Único con costo de storage |
+| Alibaba | Variable | Sesión | Fork Subagent cache sharing: **80%+ ahorro ** | Cache compartido entre forks |
+| Moonshot | Descuento cache hit | Sesión | Context sharding (aislamiento) | Cache por subagente individual |
+
+**Mejores prácticas globales:**
+- **Cache boundary estratégico**: separar secciones estáticas (siempre cache) de dinámicas (nunca cache) — lección del leak de Anthropic
+- **Fork cache sharing**: compartir KV cache entre subagentes paralelos — innovación Qwen
+- **TTL variable**: ajustar según volatilidad del contexto (5 min alta volatilidad, 24h baja)
+- **Batch + Cache stacking**: combinar descuentos para hasta 95% ahorro
+
+**Aplicabilidad a KAOS:**
+- **Cache boundary**: implementar sistema de 7+ secciones estáticas con cache garantizado y 13 dinámicas con reconstrucción parcial
+- **Fork cache sharing**: las tareas paralelas de Aether pueden compartir cache al procesar el mismo contexto base
+- **Batch routing**: agrupar requests similares para batch 50% descuento
+- **Stacking**: aplicar caching + batch simultáneamente para ahorro máximo
+
+### 5. SEGURIDAD
+
+**Definición**: Mecanismos para prevenir usos maliciosos, jailbreaks, extracción de modelos, y ejecución no autorizada.
+
+**Implementaciones por laboratorio:**
+
+| Laboratorio | Framework | Componentes clave | Madurez |
+|-------------|-----------|------------------|---------|
+| Anthropic | **YOLO 2-stage + Constitutional AI**  | Scan 64tok → Reasoning 4Ktok, 3 permission modes, Undercover Mode, 25-word limit | **Máxima** |
+| OpenAI | Moderation API + Guardrails | Clasificadores contenido, rate limiting anti-distillation | Alta |
+| Google | Model Armor + Agent Gateway | Prompt injection, DLP, 4 safety levels, Agent Identity criptográfico | Alta |
+| Alibaba | Deferida al deployer | No implementada en framework | **Mínima** |
+| Moonshot | No documentada | No divulgada públicamente | **Desconocida** |
+
+**Mejores prácticas globales:**
+- YOLO 2-stage (Anthropic): escaneo rápido → razonamiento profundo solo si necesario — eficiente y efectivo
+- Constitutional AI (Anthropic): alineación vía SL-CAI + RL-CAI, no solo filtros
+- Model Armor (Google): protección integral contra prompt injection, DLP, toxicidad
+- Permission models: 3 modos (default/plan/yolo) con granularidad creciente
+- Anti-distillation: límite de palabras entre tool calls (Anthropic 25 palabras)
+- Circuit Breaker: cortar ejecución ante anomalías detectadas
+
+**Aplicabilidad a KAOS:**
+Security Stack 5 capas:
+1. **YOLO 2-stage**: scan rápido → reasoning profundo para comandos riesgosos
+2. **Model Armor (Google)**: prompt injection + DLP vía Agent Gateway
+3. **Constitutional AI**: principios de alineación para subagentes
+4. **25-word limit**: anti-distillation entre tool calls
+5. **Circuit Breaker + Feature Flags**: cortar ejecución automáticamente
+
+### 6. MEMORIA
+
+**Definición**: Mecanismos para que los agentes retengan y recuperen información a través de sesiones, proyectos y equipos.
+
+**Implementaciones por laboratorio:**
+
+| Tipo | OpenAI | Anthropic | Google | Alibaba | Moonshot |
+|------|--------|-----------|--------|---------|----------|
+| Session |  (contexto) |  (conversación) |  (contexto) |  (contexto) |  (contexto) |
+| Project | — | **CLAUDE.md** (proyecto) | — | — | — |
+| Team | — | — | **AGY team config** | — | — |
+| RAG |  (File Search API) | — |  (Vertex AI) |  (Qwen-Agent) | — |
+| Fine-tuning |  (API) | — |  (Gemma) |  (Open-weight) | — |
+| Long-term | — | **Dream Mode** (KAIROS leak) | — | — | — |
+
+**Mejores prácticas globales:**
+- **CLAUDE.md**: archivo de configuración por proyecto (Anthropic) — simple y efectivo
+- **Dream Mode / KAIROS**: consolidación de memoria offline (Anthropic leak) — innovador pero no disponible
+- **RAG híbrido**: combinar embeddings + búsqueda estructurada para acceso a conocimiento
+
+**Aplicabilidad a KAOS:**
+- **KAOS.md**: archivo de configuración de proyecto (inspirado en CLAUDE.md)
+- **Memory Store (Mnemosyne)**: sistema RAG con embeddings locales
+- **Quality Store**: memoria de calidad persistente para decisiones pasadas
+- **EtherTracker**: correlación cross-sesión de métricas
+
+### 7. TOOL USE
+
+**Definición**: Capacidad de los agentes para invocar herramientas externas (APIs, comandos, funciones) como parte de su flujo de razonamiento.
+
+**Implementaciones por laboratorio:**
+
+| Tipo | OpenAI | Anthropic | Google | Alibaba | Moonshot |
+|------|--------|-----------|--------|---------|----------|
+| Function Calling |  JSON Schema | — |  Vertex AI |  Nativo (plantilla nous) |  JSON Schema |
+| Structured Outputs |  **strict=true**  | — |  response_schema | — | — |
+| MCP Tools | ** Adoptado** |  **Creador** (9,652+ servers) |  **Adoptado** (50+ administrados) |  **Completo** (stdio/SSE/HTTP) |  **Adoptado** (3,000+ train) |
+| Built-in tools | 3 (code, browse, search) | **8 core**  (Bash, Read, Edit, Write, Grep, Glob, Task, TodoWrite) | — | — | — |
+
+**Mejores prácticas globales:**
+- **MCP como estándar universal**: adoptado por ALL labs, protocolo de facto para tool use
+- **Structured Outputs (strict=true)**: garantiza salidas 100% compliant con schema
+- **Built-in tools optimizadas**: Anthropic tiene la mejor selección de herramientas nativas
+- **Multiple transportes**: stdio para local, SSE/HTTP para remoto
+
+**Aplicabilidad a KAOS:**
+- **MCP como protocolo de herramientas**: estándar universal, compatible con todos los proveedores
+- **8 core tools de Anthropic** como referencia para herramientas nativas de KAOS
+- **Structured Outputs**: usar strict=true de OpenAI para salidas de subagentes
+- **includeTools/excludeTools** de Qwen-Agent para control granular
+
+### 8. COSTO
+
+**Definición**: Estrategias para optimizar el gasto en inferencia de modelos, combinando descuentos, routing y eficiencia.
+
+**Estrategias globales:**
+
+| Estrategia | Ahorro estimado | Implementación | Complejidad |
+|------------|----------------|---------------|-------------|
+| Batch (50% desc) | 50% | Agrupar requests similares en ventana de 1h | Baja |
+| Caching (90% desc) | 90% en tokens cacheables | Cache boundary, fork sharing | Media |
+| **Stacking (batch + cache)** | **~95%** | Aplicar ambos simultáneamente | Media |
+| Provider hopping | 50-80% vs lista | OpenRouter, FreeRideV3 | Baja |
+| Routing inteligente | 50-80% vs single premium | claude-router, task model map | Alta |
+| Distillation (GPT→DeepSeek) | 90%+ | Entrenar modelo pequeño con outputs de grande | Muy alta |
+| Model selection dinámico | 60-80% | Seleccionar modelo óptimo por tarea | Alta |
+
+**Aplicabilidad a KAOS:**
+- **Modelo base**: DeepSeek V4 Flash (35% tráfico, $0.14/MTok)
+- **Stacking caching + batch**: prioridad máxima para reducción de costos
+- **Routing inteligente**: Task Model Map con 19 tipos asigna cada tarea al modelo óptimo
+- **Provider hopping**: FreeRideV3 como broker de respaldo
+- **Cost caps semanales**: ya implementados en KAOS, con alertas configurables
+
+--- pagebreak ---
+
+# PARTE 2: HALLAZGOS DEL SOURCE LEAK DE CLAUDE CODE
+
+## 2.1 DESCRIPCIÓN GENERAL DEL LEAK
+
+| Atributo | Valor |
+|----------|-------|
+| Fecha del leak | 31 de marzo de 2026 |
+| Contenido expuesto | ~512,000 líneas de código TypeScript |
+| Archivos | 1,902 archivos |
+| Origen | Repositorio interno de Anthropic (Claude Code) |
+| Feature flags en builds externos | 44 |
+| Feature flags totales en código | 87 |
+| Impacto | Exposición completa de la arquitectura interna del agente más usado del mercado |
+
+## 2.2 AGENT LOOP — DIAGRAMA SECUENCIAL COMPLETO
+
+El Agent Loop de Claude Code sigue este flujo:
+
+```
+1. RECIBE INPUT (usuario o trigger)
+   ↓
+2. SYSTEM PROMPT ASSEMBLY
+   ├── 7 secciones estáticas (cache guaranteed)
+   │   ├── Identity
+   │   ├── Date
+   │   ├── Project Info (CLAUDE.md)
+   │   ├── MCP Server definitions
+   │   ├── Core tools definitions
+   │   ├── Prompt caching examples
+   │   └── Permission modes
+   └── 13 secciones dinámicas (parcial cache)
+       ├── conversation history
+       ├── directory listing
+       ├── current error
+       ├── test output
+       ├── git diff
+       ├── lint output
+       ├── typecheck output
+       ├── previous tool results
+       └── (5 más variables según contexto)
+   ↓
+3. TOOL CALL DECISION
+   ├── ¿Tool required? → Sí → Seleccionar tool de 8 core
+   │   ├── Bash (ejecución shell)
+   │   ├── Read (lectura archivos)
+   │   ├── Edit (edición precisa)
+   │   ├── Write (escritura archivos)
+   │   ├── Grep (búsqueda regex)
+   │   ├── Glob (pattern matching)
+   │   ├── Task (subagente fork)
+   │   └── TodoWrite (task management)
+   └── No → Generar respuesta textual
+   ↓
+4. TOOL EXECUTION
+   ├── Permission check (default/plan/yolo)
+   ├── YOLO security scan (64 tok scan → 4K tok reasoning)
+   ├── Execute tool
+   └── Result → Feed back to context
+   ↓
+5. ANTI-DISTILLATION CHECK
+   └── ¿Output < 25 palabras entre tool calls?
+       → Si: completar con texto seguro
+       → No: continuar normal
+   ↓
+6. VERIFICATION (opcional)
+   └── Verification Agent (reflection)
+       → Evaluar resultado
+       → ¿Necesita corrección? → Loop al paso 3
+       → Completado → Output final
+   ↓
+7. OUTPUT / SUBAGENT SPAWN
+   ├── Output directo al usuario
+   └── Fork subagente (Task tool)
+       → Crea mailbox IPC en ~/.claude/work/ipc/
+       → Subagente hereda cache del padre
+       → Subagente ejecuta en proceso separado
+       → Polling 500ms para resultados
+       → max_depth=1 (subagentes no crean sub-subagentes)
+```
+
+## 2.3 SYSTEM PROMPT — ESTRUCTURA REVELADA
+
+El system prompt de Claude Code revela la estrategia de cache boundary más sofisticada del mercado:
+
+**7 SECCIONES ESTÁTICAS** (cache hit garantizado — ~90% descuento):
+
+| # | Sección | Contenido | Tamaño estimado |
+|---|---------|-----------|-----------------|
+| 1 | Identity | "You are Claude, Anthropic's AI assistant. Current date: [DATE]" | ~50 tokens |
+| 2 | Date | Fecha actual formateada | ~10 tokens |
+| 3 | Project Info | Contenido de CLAUDE.md del proyecto actual | Variable |
+| 4 | MCP Definitions | Definiciones de servidores MCP conectados | ~200-500 tokens |
+| 5 | Core Tools | Definiciones de las 8 herramientas core con schemas | ~1,500 tokens |
+| 6 | Prompt Caching | Instrucciones sobre cómo structurar prompts para cache óptimo | ~200 tokens |
+| 7 | Permission Modes | Descripción de los 3 modos (default/plan/yolo) | ~100 tokens |
+
+**13 SECCIONES DINÁMICAS** (cache miss parcial):
+
+| # | Sección | Frecuencia de cambio | Impacto en cache |
+|---|---------|---------------------|------------------|
+| 1 | Conversation history | Cada turno | Ruptura de cache |
+| 2 | Directory listing | Por cambio de dir | Parcial |
+| 3 | Current error | Por error | Ruptura |
+| 4 | Test output | Por test | Ruptura |
+| 5 | Git diff | Por cambio | Ruptura parcial |
+| 6 | Lint output | Por lint | Ruptura |
+| 7 | Typecheck output | Por typecheck | Ruptura |
+| 8-13 | Variables según contexto | Variable | Parcial |
+
+[NOTA: La lección clave es que Anthropic diseña DELIBERADAMENTE el orden y estructura del system prompt para maximizar cache hits. Las secciones estáticas (identidad, tools, permisos) SIEMPRE están en cache. Las dinámicas se reconstruyen pero aprovechan el cache base para ~90% ahorro en tokens estáticos.]
+
+## 2.4 FEATURE FLAGS — LOS 87 DESCUBIERTOS
+
+**44 Feature Flags visibles en builds externos:**
+
+| Flag | Descripción | Estado |
+|------|-------------|--------|
+| CLAUDE_CODE_DEV_TOOLS | Herramientas de desarrollo | Activo |
+| CLAUDE_CODE_PROMPT_CACHING | Optimización de cache | Activo |
+| SPLIT_OUTPUT | Salida dividida | Activo |
+| YOLO_MODE | Auto-ejecución sin confirmación | Beta |
+| YOLO_2_STAGE_SCAN | Seguridad 2 etapas | Beta |
+| REMOTE_MCP_SERVERS | Servidores MCP remotos | Activo |
+| UNDERCOVER_MODE | Modo debugging interno (USER_TYPE === 'ant') | Interno |
+| KAIROS_DAEMON | Daemon autónomo persistente | Interno/Experimental |
+| BUDDY_TAMAGOTCHI | Mascota virtual experimental | Experimental |
+| DREAM_MODE | Consolidación de memoria offline | Interno |
+| TENGU | Proyecto codename | Secreto |
+| MAX_DEPTH_2 | Permitir subagentes de profundidad 2 | Experimental |
+| PARALLEL_TOOL_EXECUTION | Ejecución paralela de tools | Beta |
+| CROSS_SESSION_MEMORY | Memoria entre sesiones | Experimental |
+
+**43 flags adicionales internos** (nombres no divulgados públicamente, referencias en código filtrado)
+
+**KAIROS (Daemon Autónomo)** — 150+ referencias en el código:
+- Ejecución persistente en background
+- Capacidad de operar sin input del usuario
+- Gestión autónoma de tareas recurrentes
+- Sistema de sueño/consolidación de memoria (Dream Mode)
+- Potencialmente: monitorización, mantenimiento, auto-mejora
+
+[NOTA: KAIROS representa el futuro de los agentes autónomos. La capacidad de un daemon que opera 24/7, consolida memoria, y ejecuta tareas sin supervisión es el norte de la evolución de KAOS.]
+
+## 2.5 YOLO SECURITY — ARQUITECTURA COMPLETA
+
+**Arquitectura de 2 etapas:**
+
+```
+INPUT DEL USUARIO
+      │
+      ▼
+┌─────────────────────────────┐
+│ ETAPA 1: SCAN RÁPIDO        │
+│ 64 tokens de pre-scan       │
+│ ¿Contenido peligroso?       │
+│ No → Continuar normal       │
+│ Sí → Pasar a Etapa 2        │
+└──────────┬──────────────────┘
+           │ (solo si detectado)
+           ▼
+┌─────────────────────────────┐
+│ ETAPA 2: RAZONAMIENTO       │
+│ 4,096 tokens de análisis    │
+│ Evaluación completa:        │
+│ · Intención del usuario     │
+│ · Contexto de la petición   │
+│ · Historial de conversación │
+│ · Modelo de amenazas        │
+│ Decisión: permitir/bloquear │
+│ + justificación             │
+└─────────────────────────────┘
+```
+
+**3 Permission Modes:**
+
+| Modo | Descripción | Confirmación requerida | Uso |
+|------|-------------|----------------------|-----|
+| **Default** | Confirmación humana para cada tool call | Sí | Operación normal |
+| **Plan** | Solo lectura (read/glob/grep), sin escritura | No (solo lectura) | Análisis y planeación |
+| **YOLO** | Auto-ejecución, sin confirmación | No | Usuarios avanzados, CI/CD |
+
+**Blocklist de comandos peligrosos:**
+- rm -rf / (eliminación raíz)
+- sudo (escalada privilegios)
+- chmod 777 (permisos inseguros)
+- mkfs.* / dd (formateo disco)
+- :(){ :|:& };: (fork bomb)
+- curl/más permisos → scripts externos
+
+**Undercover Mode (USER_TYPE === 'ant'):**
+- DEBUG: Usuario interno de Anthropic
+- BYPASS: Saltos de seguridad para debugging
+- TRACE: Logging detallado de todas las operaciones
+
+## 2.6 ANTI-DISTILLATION — MECANISMOS
+
+| Mecanismo | Descripción | Efectividad |
+|-----------|-------------|-------------|
+| 25-word limit | Máximo 25 palabras entre tool calls | Previene extracción de system prompt |
+| Anti-engineer-trap | Detección de intentos de jailbreak | Detecta patrones de extracción |
+| Rate limiting | Límites de requests por período | Limita velocidad de extracción |
+| Tool output truncation | Outputs de herramientas truncados si muy largos | Previene data leakage |
+| Token tracing | Detección de patterns de extracción | Identifica extracción en curso |
+
+## 2.7 SUBAGENTES — ARQUITECTURA IPC
+
+**Mailbox IPC Architecture:**
+
+```
+AGENTE PADRE
+    │
+    ├── Task tool → spawn subagente
+    │       │
+    │       ▼
+    │   ┌─────────────────────────────┐
+    │   │ SUBAGENTE FORK              │
+    │   │                             │
+    │   │ Cache heredado del padre    │
+    │   │ → 80%+ ahorro en tokens     │
+    │   │                             │
+    │   │ Mailbox: IPC file           │
+    │   │ ~/.claude/work/ipc/         │
+    │   │ /{session_id}/{agent_id}/   │
+    │   │     ├── inbox.mbox          │
+    │   │     ├── outbox.mbox         │
+    │   │     └── status.mbox         │
+    │   │                             │
+    │   │ Polling: 500ms              │
+    │   │                             │
+    │   │ max_depth: 1                │
+    │   └─────────────────────────────┘
+    │
+    └── Polling results →
+        Consolidar en contexto principal
+```
+
+## 2.8 CODENAMES Y PROYECTOS SECRETOS
+
+| Codename | Tipo | Descripción |
+|----------|------|-------------|
+| **Tengu** | Proyecto | Proyecto secreto principal, múltiples referencias cruzadas |
+| **Capybara** | Modelo | Mythos Preview (modelo de acceso restringido, $25/$125) |
+| **Fennec** | Modelo | Modelo pequeño no lanzado públicamente |
+| **Chicago** | Infraestructura | Sistema de infraestructura interna |
+| **KAIROS** | Daemon | Agente autónomo persistente (150+ referencias) |
+| **Buddy** | Feature | Tamagotchi / mascota virtual experimental |
+| **Dream Mode** | Feature | Consolidación de memoria offline tipo "sueño" |
+
+## 2.9 LECCIONES APLICABLES A KAOS (PRIORIZADAS)
+
+| Prioridad | Lección | Fuente | Aplicación a KAOS | Impacto |
+|-----------|---------|--------|-------------------|---------|
+|  **CRÍTICA** | Cache boundary estratégico | System prompt leak | Implementar 7+13 secciones en system prompt de KAOS | 90% ahorro en tokens estáticos |
+|  **CRÍTICA** | Fork cache sharing | Subagentes IPC | Subagentes Aether heredan cache del orquestador | 80%+ ahorro en paralelo |
+|  **CRÍTICA** | YOLO 2-stage security | YOLO architecture | Implementar scan 64tok → reasoning 4Ktok en KAOS | Seguridad + eficiencia |
+|  **ALTA** | 25-word anti-distillation | Anti-distillation | Límite entre tool calls en subagentes | Protección de prompts |
+|  **ALTA** | 3 permission modes | Permissions | default/plan/yolo en operaciones KAOS | Control granular |
+|  **ALTA** | KAIROS daemon architecture | Feature flags | Roadmap Fase 4: daemon persistente | Agente autónomo |
+|  **MEDIA** | Undercover Mode | Debug | Modo debug para mantenimiento KAOS | Depuración |
+|  **MEDIA** | Buddy Tamagotchi | Experimental | Gamificación de UX (post-MVP) | Engagement |
+|  **MEDIA** | Dream Mode | Experimental | Consolidación periódica de memoria | Optimización |
+|  **BAJA** | Tengu/Chicago | Codenames | Nombres código para componentes internos | Organización |
+
+--- pagebreak ---
+
+# PARTE 3: CONEXIÓN CON KAOS
+
+## 3.1 ESTADO ACTUAL DE KAOS — AETHER V3
+
+**Arquitectura actual:**
+
+| Componente | Estado | Descripción |
+|------------|--------|-------------|
+| Aether Engine | v3 (10 etapas) | Orquestador principal de agentes |
+| Circuit Breaker | Implementado | Corta ejecución ante fallos |
+| QualityStore | Implementado | Almacenamiento de métricas de calidad |
+| EtherTracker | Implementado | Correlación cross-sesión |
+| AB Testing | Activo | Experimentación A/B en agentes |
+| Memory Store | Activo (Mnemosyne) | Sistema de memoria persistente |
+| Task Map | 19 tipos | Mapeo de tareas a modelos |
+| Cost Caps | Semanales | Controles de gasto |
+| Feature Flags | JSON + env vars | Flags con dual load |
+
+**Tiers de modelos actuales:**
+
+| Tier | Modelo | Porcentaje tráfico | Costo/MTok | Función |
+|------|--------|-------------------|-----------|---------|
+| **Backbone** | DeepSeek V4 Flash | 35% | $0.14 | Código pesado, razonamiento general |
+| **Backbone alt** | Qwen (candidato) | — | $0.25 | Chat, routing, tareas ligeras |
+| **Free tier** | Gemini Flash (AGY) | — | $0.00 | Exploración, búsqueda, prototipado |
+| **Premium** | Claude Opus/Sonnet | ~5% | $3-5 | Calidad crítica, decisiones complejas |
+| **Ultra-premium** | GPT-5.5 / Claude Sonnet | ~5% | $3-5 | Terminal, tareas específicas |
+| **Swarm specialist** | Kimi K2.6 | Bajo demanda | $0.95 | 300 agentes paralelos |
+
+## 3.2 ARQUITECTURA PROPUESTA DE 5 PROVEEDORES
+
+```
+                         ┌──────────────────────┐
+                         │    AETHER ENGINE      │
+                         │    (10 etapas)        │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+           ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+           │  ROUTER      │ │ TASK MAP│ │ QUALITY      │
+           │  (selección) │ │ (19 tipos)│ │ STORE       │
+           └──────┬───────┘ └──────────┘ └──────┬───────┘
+                  │                             │
+        ┌─────────┼─────────┬─────────┬─────────┼─────────┐
+        │         │         │         │         │         │
+        ▼         ▼         ▼         ▼         ▼         ▼
+   ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+   │DEEPSEEK│ │  QWEN  │ │ GEMINI │ │ CLAUDE │ │ OPENAI │ │  KIMI  │
+   │ V4     │ │3.6-FL  │ │3.5-FL  │ │ OPUS   │ │GPT-5.5 │ │ K2.6   │
+   │ Flash  │ │ ash    │ │ ash    │ │ 4.8    │ │ Spud   │ │ Swarm  │
+   │ 35%    │ │ 25%    │ │ 30%    │ │ 5%     │ │ 5%     │ │ondemand│
+   │$0.14/T │ │$0.25/T │ │$0.00/T │ │$5.00/T │ │$5.00/T │ │$0.95/T │
+   └────────┘ └────────┘ └────────┘ └────────┘ └────────┘ └────────┘
+        │         │         │         │         │         │
+        └─────────┴─────────┴─────────┴─────────┴─────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+           ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+           │ CIRCUIT      │ │ SECURITY │ │ COST CAPS    │
+           │ BREAKER      │ │ STACK    │ │ SEMANALES    │
+           └──────────────┘ └──────────┘ └──────────────┘
+```
+
+**Justificación de la distribución (100% del tráfico):**
+
+| Proveedor | % Tráfico | $/MTok | Costo relativo | Por qué |
+|-----------|-----------|--------|----------------|---------|
+| DeepSeek V4 Flash | 35% | $0.14 | $0.049 | Backbone principal: código pesado, razonamiento general, mejor relación calidad/precio |
+| Gemini 3.5 Flash (AGY) | 30% | $0.00 | $0.000 | Free tier: exploración, búsqueda web, tareas sin riesgo. Apalancar API key gratis |
+| Qwen3.6-Flash | 25% | $0.25 | $0.063 | Backbone alternativo: chat, routing, tareas que requieren 1M contexto |
+| Claude Opus 4.8 | 5% | $5.00 | $0.250 | Premium: calidad crítica, decisiones estratégicas, HLE 57.9%  |
+| GPT-5.5 Spud / Sonnet | 5% | $3-5 | $0.150-250 | Ultra-premium: terminal, SWE-Bench 88.7%  |
+| Kimi K2.6 | Bajo demanda | $0.95 | Variable | Swarm specialist: tareas que requieren 300 agentes paralelos |
+
+**Costo ponderado estimado: ~$0.51/MTok** (vs. ~$5.00/MTok si todo fuera Claude Opus)
+
+## 3.3 SECURITY STACK 5 CAPAS
+
+```
+CAPA 1: YOLO 2-STAGE (Anthropic)
+├── Scan rápido 64 tokens
+├── Reasoning 4,096 tokens solo si necesario
+├── Implementación: Aether Circuit Breaker integration
+└── Permisos: default/plan/yolo modes
+
+CAPA 2: MODEL ARMOR (Google)
+├── Prompt injection detection
+├── DLP (Data Loss Prevention)
+├── Content safety (toxicidad, violencia, etc.)
+└── Implementación: Agent Gateway (Vertex AI)
+
+CAPA 3: CONSTITUTIONAL AI (Anthropic)
+├── Principios de alineación
+├── SL-CAI + RL-CAI adaptado
+├── Valores: seguridad, precisión, transparencia
+└── Implementación: System prompt de KAOS
+
+CAPA 4: 25-WORD ANTI-DISTILLATION (Anthropic)
+├── Límite entre tool calls
+├── Anti-engineer-trap
+├── Rate limiting por sesión
+└── Implementación: Aether middleware
+
+CAPA 5: CIRCUIT BREAKER + FEATURE FLAGS (KAOS nativo)
+├── Circuit Breaker: corta ejecución ante anomalías
+├── Feature Flags: kill switch para features problemáticos
+├── Cost Caps: límites de gasto semanal
+└── EtherTracker: detección de anomalías cross-sesión
+```
+
+--- pagebreak ---
+
+# PARTE 4: COSTOS Y PROYECCIONES
+
+## 4.1 ESCENARIOS DE COSTO
+
+**Supuestos base:**
+- Volumen: 100M tokens/semana (input + output combinados, ratio 3:1 input/output)
+- Días operativos: 7 días/semana
+- Sin descuentos batch (escenario peor caso para algunos cálculos)
+- Cache asumido al 50% de efectividad donde aplica
+
+### ESCENARIO 1: DeepSeek solo (backbone único)
+
+| Modelo | % Tráfico | Tok/sem input | Tok/sem output | Costo input | Costo output | Costo total/sem |
+|--------|-----------|---------------|----------------|-------------|--------------|----------------|
+| DeepSeek V4 Flash | 100% | 75M | 25M | $10.50 | $16.50 | **$27.00** |
+
+Ventaja: Máxima simplicidad, costo mínimo.
+Desventaja: Sin redundancia, sin especialización, sin premium quality.
+
+### ESCENARIO 2: DeepSeek + Gemini AGY (free tier)
+
+| Modelo | % Tráfico | Tok/sem input | Tok/sem output | Costo input | Costo output | Costo total/sem |
+|--------|-----------|---------------|----------------|-------------|--------------|----------------|
+| DeepSeek V4 Flash | 70% | 52.5M | 17.5M | $7.35 | $11.55 | $18.90 |
+| Gemini 3.5 Flash (free) | 30% | 22.5M | 7.5M | $0.00 | $0.00 | **$0.00** |
+| **Total** | **100%** | **75M** | **25M** | **$7.35** | **$11.55** | **$18.90** |
+
+Gratis vía: Google AI Studio API key (free tier con rate limits).
+Ahorro vs Scenario 1: 30%.
+
+### ESCENARIO 3: DeepSeek + Qwen3.6-Flash
+
+| Modelo | % Tráfico | Costo/sem |
+|--------|-----------|-----------|
+| DeepSeek V4 Flash | 60% | $16.20 |
+| Qwen3.6-Flash | 40% | $3.75 |
+| **Total** | **100%** | **$19.95** |
+
+Ahorro vs Scenario 1: 26%. Ventaja: 1M contexto en Qwen.
+
+### ESCENARIO 4: DeepSeek + Kimi K2.6
+
+| Modelo | % Tráfico | Costo/sem |
+|--------|-----------|-----------|
+| DeepSeek V4 Flash | 85% | $22.95 |
+| Kimi K2.6 | 15% (bajo demanda) | $6.56 |
+| **Total** | **100%** | **$29.51** |
+
+Ventaja: Swarm 300 agentes disponible para tareas complejas.
+
+### ESCENARIO 5: DeepSeek + Anthropic Claude
+
+| Modelo | % Tráfico | Costo/sem |
+|--------|-----------|-----------|
+| DeepSeek V4 Flash | 85% | $22.95 |
+| Claude Opus 4.8 | 10% | $18.75 |
+| Claude Sonnet 4.6 | 5% | $4.69 |
+| **Total** | **100%** | **$46.39** |
+
+Ventaja: Mejor calidad en decisiones críticas (HLE 57.9% ).
+Desventaja: Costo 72% mayor que escenario base.
+
+### ESCENARIO 6: DeepSeek + OpenAI
+
+| Modelo | % Tráfico | Costo/sem |
+|--------|-----------|-----------|
+| DeepSeek V4 Flash | 85% | $22.95 |
+| GPT-5.5 Spud | 10% | $12.50 |
+| GPT-5.4-mini | 5% | $1.41 |
+| **Total** | **100%** | **$36.86** |
+
+Ventaja: SWE-Bench 88.7%  para tareas de código críticas.
+Desventaja: Costo 37% mayor que escenario base.
+
+### ESCENARIO 7: DeepSeek + Qwen + Kimi (óptimo medio)
+
+| Modelo | % Tráfico | Costo/sem |
+|--------|-----------|-----------|
+| DeepSeek V4 Flash | 50% | $13.50 |
+| Qwen3.6-Flash | 30% | $2.81 |
+| Kimi K2.6 | 10% (bajo demanda) | $4.38 |
+| Gemini 3.5 Flash (free) | 10% | $0.00 |
+| **Total** | **100%** | **$20.69** |
+
+Ventaja: Balance óptimo entre costo y capacidades (1M contexto + Swarm + free tier).
+
+### ESCENARIO 8: Completo 5 proveedores (recomendado)
+
+| Proveedor | % Tráfico | Costo/sem |
+|-----------|-----------|-----------|
+| DeepSeek V4 Flash | 35% | $9.45 |
+| Gemini 3.5 Flash (free) | 30% | $0.00 |
+| Qwen3.6-Flash | 25% | $2.34 |
+| Claude Opus 4.8 | 5% | $9.38 |
+| GPT-5.5 Spud | 5% | $6.25 |
+| Kimi K2.6 | Bajo demanda (~2%) | $0.88 |
+| **Total** | **100% (+2% ondemand)** | **~$28.30/semana** |
+
+Ventaja: Redundancia total, especialización por tarea, 5 proveedores.
+Desventaja: Complejidad operativa, integración multi-API.
+**Costo mensual estimado: ~$113-120/mes**
+
+## 4.2 COMPARATIVA DE ESCENARIOS
+
+| Escenario | Costo/sem | Costo/mes | Ahorro vs DeepSeek solo | Capacidades |
+|-----------|-----------|-----------|------------------------|-------------|
+| 1. DeepSeek solo | $27.00 | $108.00 | — | Solo código |
+| 2. +Gemini AGY | $18.90 | $75.60 | **+30%**  | +Búsqueda gratis |
+| 3. +Qwen | $19.95 | $79.80 | +26% | +1M contexto |
+| 4. +Kimi | $29.51 | $118.04 | -9% | +Swarm 300 agentes |
+| 5. +Anthropic | $46.39 | $185.56 | -72% | +HLE 57.9%  |
+| 6. +OpenAI | $36.86 | $147.44 | -37% | +SWE-Bench 88.7%  |
+| 7. +Qwen+Kimi | $20.69 | $82.76 | **+23%** | +Swarm + contexto largo |
+| **8. Completo 5** | **$28.30** | **$113.20** | **-5%** | **TODO**  |
+
+[NOTA: El escenario 8 (5 proveedores) cuesta solo ~$5/semana más que DeepSeek solo, pero ofrece redundancia total, especialización por tarea, y acceso a todos los benchmarks líderes. La inclusión del free tier de Gemini compensa el costo de los modelos premium.]
+
+## 4.3 PROYECCIÓN ANUAL
+
+| Escenario | Costo/año | Notas |
+|-----------|-----------|-------|
+| DeepSeek solo | $1,404 | Mínimo viable |
+| Completo 5 proveedores | $1,472 | Solo $68/año más que DeepSeek solo |
+| +Caching 90% efectivo | ~$147 | Con cache boundary estratégico |
+| +Batch 50% | ~$74 | Con batching de requests |
+| +Stacking (cache+batch) | ~$37 | Con ambas optimizaciones |
+| +Routing inteligente | ~$15-20 | Con selección dinámica de modelo óptimo |
+
+**Objetivo de costo realista para KAOS 2026: $50-100/año** combinando caching, batch, routing inteligente y free tiers.
+
+--- pagebreak ---
+
+# PARTE 5: ROADMAP 4 FASES
+
+## FASE 1: QUICK WINS (0-1 MES)
+### Prioridad: Inmediata. Impacto: Alto. Riesgo: Bajo.
+
+| Tarea | Descripción | Fuente de la lección | Esfuerzo | Impacto |
+|-------|-------------|---------------------|----------|---------|
+| 1.1 Cache boundary strategy | Implementar sistema 7+13 secciones en system prompt de KAOS (estáticas siempre cache, dinámicas reconstrucción parcial) | Anthropic leak | 2-3 días | 90% ahorro tokens estáticos |
+| 1.2 Fork + cache sharing | Implementar fork de subagentes Aether con herencia de cache (80%+ ahorro en tokens paralelos) | Qwen Code | 3-5 días | 80% ahorro paralelo |
+| 1.3 Qwen3.6 en Aether | Integrar Qwen3.6-Flash como backbone alternativo (API DashScope, $0.25/MTok) | Alibaba Qwen | 1-2 días | 25% tráfico a $0.25 |
+| 1.4 API key Google | Crear y configurar Google AI Studio API key para Gemini Flash (free tier, 30% tráfico gratis) | Google Gemini | 1 día | 30% tráfico $0 |
+
+**Total Fase 1: ~7-11 días.** Beneficio inmediato: ~55% del tráfico a costo cero o ultra-bajo.
+
+## FASE 2: CONSOLIDACIÓN (1-3 MESES)
+### Prioridad: Alta. Impacto: Medio-Alto. Riesgo: Medio.
+
+| Tarea | Descripción | Fuente | Esfuerzo | Impacto |
+|-------|-------------|--------|----------|---------|
+| 2.1 Agent swarm básico | Implementar orquestación de 10-20 subagentes paralelos inspirado en Kimi PARL (task decomposition + parallel execution) | Moonshot Kimi | 2-3 semanas | 10-20x paralelismo |
+| 2.2 YOLO 2-stage | Implementar seguridad 2 etapas: scan 64 tokens → reasoning 4,096 tokens en Aether Circuit Breaker | Anthropic leak | 1 semana | Seguridad + eficiencia |
+| 2.3 Gemini Embedding 2 | Integrar embeddings multimodales (3072 dims, 100+ idiomas) para búsqueda semántica mejorada | Google Gemini | 3-5 días | Búsqueda 100+ idiomas |
+| 2.4 ADK flujos simples | Implementar flujos básicos con ParallelAgent y SequentialAgent (graph-based workflow) | Google ADK 2.0 | 1-2 semanas | Flujos complejos |
+
+**Total Fase 2: ~5-8 semanas.** Entrega: agente semi-autónomo con seguridad básica.
+
+## FASE 3: OPTIMIZACIÓN (3-6 MESES)
+### Prioridad: Media. Impacto: Alto. Riesgo: Medio-Alto.
+
+| Tarea | Descripción | Fuente | Esfuerzo | Impacto |
+|-------|-------------|--------|----------|---------|
+| 3.1 Parallel ensemble | Ejecución paralela de modelos para verificación cruzada en tareas críticas (votación entre 3 modelos) | OpenAI | 2-4 semanas | Precisión + verificación |
+| 3.2 Security stack 5 capas | Implementación completa: YOLO + Model Armor + Constitutional AI + 25-word + Circuit Breaker | Multi-fuente | 3-4 semanas | Seguridad integral |
+| 3.3 Gemma 4 edge | Desplegar Gemma 4 31B en edge/local para tareas offline (8K-32K contexto, 4GB VRAM mínimo) | Google Gemma 4 | 2-3 semanas | Capacidad offline |
+| 3.4 AB Testing multi-proveedor | Experimentación A/B entre proveedores para optimizar routing dinámico (calidad vs costo) | KAOS nativo | 2 semanas | Routing óptimo |
+
+**Total Fase 3: ~9-13 semanas.** Entrega: sistema multi-agente optimizado con seguridad integral.
+
+## FASE 4: ESCALAMIENTO (6-12 MESES)
+### Prioridad: Larga. Impacto: Máximo. Riesgo: Alto.
+
+| Tarea | Descripción | Fuente | Esfuerzo | Impacto |
+|-------|-------------|--------|----------|---------|
+| 4.1 Multi-provider federation | Sistema federado de 5+ proveedores con conmutación automática y balanceo de carga | Multi-fuente | 4-6 semanas | 100% uptime |
+| 4.2 Swarm completo 300+ | Implementación de swarm de 300+ subagentes con orquestación vía RL (inspirado en Kimi PARL) | Moonshot Kimi | 6-8 semanas | 300x paralelismo |
+| 4.3 KAIROS (Q1 2027) | Daemon autónomo persistente con Dream Mode (consolidación de memoria offline) | Anthropic leak (KAIROS) | 3-4 meses | Agente autónomo 24/7 |
+| 4.4 Distillation pipeline | Pipeline de distillation: GPT-5.5 → DeepSeek/Qwen para reducir costo 90%+ en tareas rutinarias | Best practice global | 4-6 semanas | Costo mínimo |
+
+**Total Fase 4: ~6-9 meses.** Entrega: sistema autónomo completo con 300+ agentes federados.
+
+## VISUALIZACIÓN DEL ROADMAP
+
+```
+MES 0    MES 1    MES 2    MES 3    MES 4    MES 5    MES 6    MES 9    MES 12
+  │        │        │        │        │        │        │        │        │
+  ├─F1─────┤────────┼────────┼────────┼────────┼────────┼────────┼────────┤
+  │ Cache boundary    │        │        │        │        │        │        │
+  │ Fork+sharing      │        │        │        │        │        │        │
+  │ Qwen3.6           │        │        │        │        │        │        │
+  │ Google API key    │        │        │        │        │        │        │
+  │                   ├─F2─────┤────────┼────────┼────────┼────────┼────────┤
+  │                   │ Swarm basic   │        │        │        │        │
+  │                   │ YOLO 2-stage │        │        │        │        │
+  │                   │ Embedding 2  │        │        │        │        │
+  │                   │ ADK flows    │        │        │        │        │
+  │                   │              ├─F3─────┤────────┼────────┼────────┤
+  │                   │              │ Parallel ensmbl│        │        │
+  │                   │              │ Security 5 capas│        │        │
+  │                   │              │ Gemma 4 edge    │        │        │
+  │                   │              │ AB Testing      │        │        │
+  │                   │              │                 ├──F4────┤───────┤
+  │                   │              │                 │ Federación      │
+  │                   │              │                 │ Swarm 300+      │
+  │                   │              │                 │ KAIROS Q1 2027  │
+  │                   │              │                 │ Distillation    │
+```
+
+--- pagebreak ---
+
+# PARTE 6: 9 ANTI-RECOMENDACIONES
+
+## Las siguientes estrategias NO deben implementarse en KAOS, con justificación técnica y estratégica.
+
+---
+
+### ANTI-RECOMENDACIÓN 1: Dependencia exclusiva de un solo proveedor
+
+**Qué no hacer:** Usar solo Claude Opus o solo GPT-5.5 para todas las tareas.
+
+**Justificación técnica:**
+- **Costo prohibitivo:** $5/MTok para todo el tráfico vs $0.14/MTok de DeepSeek = ~35x más caro
+- **Sin redundancia:** Si el proveedor cae (rate limit, outage, deprecación), KAOS se detiene por completo
+- **Sin especialización:** Ningún modelo es mejor en todo. Gemini lidera GPQA (94.3%), Kimi lidera HLE con tools (54.0%), Qwen lidera AIME (95.1), OpenAI lidera SWE-Bench (88.7%)
+- **Vendor lock-in:** APIs cambian, precios suben, términos de servicio se modifican
+
+**Alternativa recomendada:** Routing multi-proveedor con Task Model Map (19 tipos) y distribución 35/30/25/5/5%.
+
+---
+
+### ANTI-RECOMENDACIÓN 2: Subagentes con profundidad ilimitada (recursión descontrolada)
+
+**Qué no hacer:** Permitir que subagentes creen sub-subagentes sin límite de profundidad.
+
+**Justificación técnica:**
+- **Crecimiento exponencial de tokens:** Cada nivel de profundidad multiplica el contexto consumido
+- **Pérdida de coherencia:** Subagentes de profundidad 3+ pierden contexto del objetivo original
+- **Tiempo de ejecución:** Cada nivel añade latencia de spawn + comunicación + consolidación
+- **Costo impredecible:** Sin límite, un swarm puede consumir millones de tokens en minutos
+- **Anthropic lo sabe:** max_depth=1 en Claude Code por diseño
+
+**Alternativa recomendada:** max_depth=1 (subagentes sin sub-subagentes), con excepciones controladas vía feature flag.
+
+---
+
+### ANTI-RECOMENDACIÓN 3: Ignorar el caching estratégico (cache boundary)
+
+**Qué no hacer:** Usar system prompts planos sin estructura de cache, o depender solo del cache automático.
+
+**Justificación técnica:**
+- **Desperdicio de 90% de descuento:** El cache de prompts da 90% descuento — no aprovecharlo es dejar dinero en la mesa
+- **Cache automático es sub-óptimo:** No separa estático de dinámico, por lo que cualquier cambio rompe todo el cache
+- **Anthropic demostró la estrategia óptima:** 7 secciones estáticas (siempre cache) + 13 dinámicas (reconstrucción parcial)
+- **Impacto económico:** Sin cache boundary, cada tool call regenera ~2,000 tokens estáticos innecesariamente
+
+**Alternativa recomendada:** Implementar sistema 7+13 secciones en todos los prompts de KAOS (lección directa del source leak de Anthropic).
+
+---
+
+### ANTI-RECOMENDACIÓN 4: Usar el modelo más barato para TODO (solo DeepSeek)
+
+**Qué no hacer:** Usar DeepSeek V4 Flash para todas las tareas, incluso las críticas.
+
+**Justificación técnica:**
+- **Calidad inferior en tareas complejas:** DeepSeek no iguala a Claude Opus en HLE (57.9%), GPT-5.5 en SWE-Bench (88.7%), o Gemini en GPQA (94.3%)
+- **Sin fallback:** Si DeepSeek tiene un outage (ha ocurrido), no hay alternativa
+- **Tareas especializadas requieren modelos específicos:** Kimi para swarm de 300 agentes, Gemini para 2M contexto
+- **El costo no lo es todo:** El tiempo del desarrollador perdido por outputs de baja calidad supera el ahorro en API
+
+**Alternativa recomendada:** Routing inteligente: DeepSeek para 35% backbone + Qwen 25% chat + Gemini 30% gratis + premium 10% para crítico.
+
+---
+
+### ANTI-RECOMENDACIÓN 5: Implementar Agent Swarm sin control de calidad (Kimi-style sin verificación)
+
+**Qué no hacer:** Lanzar 300 subagentes paralelos sin verificación de outputs ni control de calidad.
+
+**Justificación técnica:**
+- **Riesgo de garbage in, garbage out multiplicado:** 300 subagentes produciendo outputs no verificados = 300x ruido
+- **Costo de consolidación:** Integrar 300 outputs no verificados requiere más tokens que la ejecución misma
+- **Kimi K2.6 tiene PARL (RL-trained orchestrador):** El orchestrador APRENDIÓ vía RL a seleccionar outputs relevantes — no es un swarm ciego
+- **Sin quality gates:** Un subagente puede producir un resultado catastrófico que se propague al output final
+
+**Alternativa recomendada:** Quality Store + Verification Agent (Anthropic reflection pattern) en cada subagente, con gate de calidad antes de consolidar.
+
+---
+
+### ANTI-RECOMENDACIÓN 6: Ignorar la seguridad "porque es código interno"
+
+**Qué no hacer:** No implementar security stack porque KAOS es un sistema local/privado.
+
+**Justificación técnica:**
+- **El mayor riesgo es LA EXTRACCIÓN DE PROMPTS:** System prompts contienen lógica de negocio, API keys, configuraciones
+- **Leak de Anthropic (512K líneas):** Demuestra que NADIE está a salvo de filtraciones
+- **Supply chain attack:** Dependencias de terceros (npm, pip, MCP servers) pueden ser vectores de ataque
+- **Jailbreak via MCP:** Un MCP server malicioso puede inyectar instrucciones al modelo
+- **Anti-distillation es necesario:** Sin límite de 25 palabras, cualquiera puede extraer el system prompt en minutos
+
+**Alternativa recomendada:** Security stack 5 capas desde el día 1, aunque sea código interno.
+
+---
+
+### ANTI-RECOMENDACIÓN 7: Adoptar MCP sin gobernanza (MCP salvaje)
+
+**Qué no hacer:** Conectar servidores MCP sin control, autenticación ni permisos.
+
+**Justificación técnica:**
+- **MCP server malicioso:** Un server puede ejecutar comandos arbitrarios, leer archivos, enviar datos a internet
+- **Sin autenticación:** MCP nativo no tiene autenticación — cualquiera que acceda al socket puede usarlo
+- **Permisos granulares necesarios:** No todos los MCP servers deben tener acceso a todas las herramientas
+- **Google lo sabe:** Agent Gateway usa MCP como protocolo de GOBERNANZA, no solo de herramientas
+
+**Alternativa recomendada:** Agent Gateway pattern de Google: MCP como protocolo de gobernanza con autenticación, permisos y auditoría.
+
+---
+
+### ANTI-RECOMENDACIÓN 8: Perseguir todos los benchmarks sin estrategia
+
+**Qué no hacer:** Optimizar para ser #1 en todos los benchmarks sin considerar el caso de uso real.
+
+**Justificación técnica:**
+- **Cada benchmark líder es de un modelo diferente:** Ningún modelo domina todo. Optimizar para todos es imposible
+- **Benchmarks no siempre correlacionan con utilidad real:** Un modelo con 99.7% en AIME puede fallar en tareas prácticas de programación
+- **Costo de chasing:** Usar Gemini Pro (94.3% GPQA) para todo cuesta 4x más que Qwen3.6-Plus (90.4% GPQA, diferencia marginal)
+- **Google lo sabe:** Por eso tiene Flash (rápido y barato) y Pro (preciso y caro) — segmentación por caso de uso
+
+**Alternativa recomendada:** Enfocar KAOS en los benchmarks relevantes: SWE-Bench (código), MCP Atlas (tool use), HLE (razonamiento profundo). Ignorar benchmarks no relevantes al dominio.
+
+---
+
+### ANTI-RECOMENDACIÓN 9: Implementar KAIROS (daemon autónomo) antes de tiempo
+
+**Qué no hacer:** Construir el daemon autónomo persistente (KAIROS) en Fase 1 o 2.
+
+**Justificación técnica:**
+- **Complejidad extrema:** KAIROS tiene 150+ referencias en el código de Anthropic — es un sistema completo
+- **Riesgo de seguridad:** Un daemon autónomo que opera sin supervisión puede causar daños catastróficos
+- **Sin fundamento:** Sin cache boundary, fork sharing, security stack, y routing, KAIROS sería ineficiente e inseguro
+- **Anthropic lo tiene interno/experimental:** Ni siquiera Anthropic lo ha lanzado públicamente
+- **Dream Mode (consolidación de memoria):** Requiere sistemas de memoria maduros (Mnemosyne consolidado)
+
+**Alternativa recomendada:** Posponer KAIROS a Fase 4 (Q1 2027). Primero construir los fundamentos: F1 (cache/sharing), F2 (swarm básico), F3 (seguridad integral).
+
+--- pagebreak ---
+
+# PARTE 7: PREGUNTAS ABIERTAS Y GAPS DE INVESTIGACIÓN
+
+## 7.1 PREGUNTAS PARA PRÓXIMA INVESTIGACIÓN
+
+### Mythos 1 (Anthropic)
+- **¿Cuándo estará disponible públicamente?** Acceso restringido ~50 orgs, rumores de Octubre 2026
+- **¿Cuál será el precio final?** Actual $25/$125 (preview). Posible reducción en lanzamiento público
+- **¿Qué capacidades tiene Mythos que Opus 4.8 no tiene?** Desconocido. Codenombre "Capybara" en el leak
+- **¿Está Mythos relacionado con KAIROS?** No hay evidencia, pero ambos aparecen en el leak
+
+### Grok 5 (xAI)
+- **¿Cuándo se lanzará?** Originalmente Q1 2026, retrasado sin nueva fecha
+- **¿Qué arquitectura multi-agente planea xAI?** Desconocido. xAI no tiene framework de agentes público
+- **¿Competirá directamente con Claude/GPT en agentes?** Probablemente, pero sin información confirmada
+
+### Llama 5 (Meta)
+- **¿Meta lanzará Llama 5?** No confirmado oficialmente
+- **¿Será open-weight como Llama 3?** Probable, siguiendo la tradición Meta
+- **¿Cuándo?** Sin fecha. Meta se ha enfocado en Llama 4.5 y optimizaciones
+
+### DeepSeek V4 estable
+- **¿Cuándo sale de preview?** DeepSeek V4 Flash está en preview desde principios de 2026
+- **¿Habrá una versión "Pro" o "Ultra"?** El naming (Flash) sugiere que podría haber versiones superiores
+- **¿DeepSeek desarrollará su propio framework multi-agente?** No hay anuncios públicos
+- **¿Qué estrategia multi-agente tiene DeepSeek?** Ninguna conocida hasta la fecha
+
+### Estrategia multi-agente de DeepSeek
+- **¿DeepSeek necesita un framework propio?** Actualmente depende de frameworks de terceros (LangChain, etc.)
+- **¿Su API soporta function calling completo?** Sí, pero no MCP nativo
+- **¿Habrá un "DeepSeek Agent SDK"?** No hay evidencia pública
+
+## 7.2 GAPS EN ESTA INVESTIGACIÓN
+
+| Gap | Impacto | Prioridad para resolver |
+|-----|---------|------------------------|
+| Detalles técnicos de PARL (Kimi) — paper no publicado | Alto | Alta (necesario para implementar swarm) |
+| Arquitectura de KAIROS completa (solo 150+ referencias en leak) | Medio | Alta (roadmap Fase 4) |
+| Estrategia de DeepSeek para frameworks multi-agente | Alto | Alta (backbone principal de KAOS) |
+| Detalles de Mythos Preview (Anthropic) | Medio | Media (podría reemplazar Opus como premium) |
+| Estado de Llama 5 (Meta) | Bajo | Baja (Meta no es prioritario para KAOS) |
+| ecosistema multi-agente de xAI (Grok) | Medio | Media (competidor potencial) |
+| Seguridad de Kimi (Moonshot) — no documentada | Alto | Alta (riesgo para datos sensibles) |
+| Detalles de A2A Protocol v2.0 (Google) — roadmap | Medio | Media (roadmap Fase 4 federación) |
+| Implementación de Model Armor on-premise (Google) | Medio | Media (para security stack capa 2) |
+
+## 7.3 PREGUNTAS ESTRATÉGICAS PARA KAOS
+
+1. **¿Debería KAOS contribuir al estándar MCP con servers propios?** Sí, recomendado. MCP es el protocolo de facto.
+2. **¿Deberíamos adoptar A2A de Google para comunicación inter-agente?** Sí, complementario a MCP. Google lo ha puesto bajo Linux Foundation.
+3. **¿Kimi K2.6 tiene API fuera de China?** Sí, vía build.nvidia.com y API directa. Verificar restricciones geográficas.
+4. **¿Gemma 4 puede correr en el hardware actual de KAOS?** 31B requiere ~16GB VRAM (FP16). Con cuantización 4-bit: ~6GB. Verificar GPU disponible.
+5. **¿Cuál es el TCO real de operar 5 proveedores vs 2 proveedores?** Estimado ~$113/mes vs ~$80/mes. La diferencia es marginal para la redundancia obtenida.
+6. **¿Deberíamos construir un "KAOS Agent Protocol" propio?** NO. MCP + A2A + JSON-RPC cubren todas las necesidades. Crear otro protocolo fragmentaría el ecosistema.
+7. **¿Mythos Preview vale el costo ($25/$125)?** Sin acceso, no podemos evaluar. Solicitar acceso a Anthropic.
+8. **¿PARL puede implementarse sin el paper original?** Tentativamente sí, como RL clásico con recompensa por task accuracy + eficiencia. Prioridad de investigación.
+
+--- pagebreak ---
+
+# APÉNDICE: REFERENCIAS Y FUENTES
+
+## FUENTES DE DATOS DE LABORATORIOS
+
+### OpenAI
+- GPT-5 System Card: openai.com/index/gpt-5-system-card
+- GPT-5 Pricing: openai.com/api/pricing
+- Codex CLI: github.com/openai/codex
+- Agents SDK: github.com/openai/openai-agents-python
+- Responses API: platform.openai.com/docs
+- o3 System Card: openai.com/index/introducing-o3
+- OpenAI Blog: openai.com/blog
+
+### Anthropic
+- Claude Model Card: docs.anthropic.com/en/docs/about-claude/models
+- Claude Pricing: anthropic.com/pricing
+- Claude Code: docs.anthropic.com/en/docs/claude-code/overview
+- MCP Protocol: modelcontextprotocol.io
+- MCP Specification: spec.modelcontextprotocol.io
+- Constitutional AI: arxiv.org/abs/2212.08073
+- Anthropic Research: anthropic.com/research
+- Claude Code Leak (31 Mar 2026): Análisis de 512K líneas TypeScript
+
+### Google DeepMind / Gemini
+- Gemini Models: ai.google.dev/gemini-api/docs/models
+- Gemini Pricing: ai.google.dev/pricing
+- ADK 2.0: github.com/google/adk-python
+- A2A Protocol: github.com/google/A2A
+- Agent Gateway: cloud.google.com/vertex-ai/generative-ai/docs/agent-gateway
+- Gemma 4: ai.google.dev/gemma
+- Gemini Technical Reports: arxiv.org/search/?query=Gemini+Technical+Report
+- AGY CLI: Google internal (anunciado en Google I/O)
+
+### Alibaba Qwen
+- Qwen Models: huggingface.co/Qwen
+- Qwen-Agent: github.com/QwenLM/Qwen-Agent
+- Qwen Code: github.com/QwenLM/Qwen Code
+- DashScope Platform: dashscope.aliyun.com
+- Qwen Technical Reports: arxiv.org/search/?query=Qwen+Technical+Report
+- Qwen Pricing: aliyun.com/product/ai
+
+### Moonshot Kimi
+- Kimi K2.5 Technical Report: arxiv.org (Moonshot AI)
+- Kimi API: platform.moonshot.cn
+- Moonshot GitHub: github.com/MoonshotAI
+- Kimi K2 Weights: huggingface.co/moonshotai
+- Build NVIDIA: build.nvidia.com/moonshotai
+- MoBA (NeurIPS 2025): papers.nips.cc
+
+## FRAMEWORKS Y HERRAMIENTAS DE REFERENCIA
+
+| Herramienta | Laboratorio | Estrellas GitHub | Licencia | Enlace |
+|-------------|-------------|-----------------|----------|--------|
+| Codex CLI | OpenAI | 82.9K | Propietario | github.com/openai/codex |
+| Agents SDK | OpenAI | ~5K | MIT | github.com/openai/openai-agents-python |
+| ADK 2.0 | Google | 19.9K | Apache 2.0 | github.com/google/adk-python |
+| A2A Protocol | Google | 24K | Apache 2.0 | github.com/google/A2A |
+| Qwen-Agent | Alibaba | ~15K | Apache 2.0 | github.com/QwenLM/Qwen-Agent |
+| Qwen Code | Alibaba | 24K | Apache 2.0 | github.com/QwenLM/Qwen Code |
+| MCP SDKs | Anthropic | Referencia | MIT | github.com/modelcontextprotocol |
+| Kimi K2.5 | Moonshot | — | Modified MIT | huggingface.co/moonshotai |
+
+## PAPERS ACADÉMICOS CLAVE
+
+| Paper | Autores | Año | Publicación |
+|-------|---------|-----|-------------|
+| Scaling Laws for Neural Language Models | Kaplan et al. | 2020 | NeurIPS |
+| Training Language Models to Follow Instructions (InstructGPT) | Ouyang et al. | 2022 | NeurIPS |
+| Constitutional AI: Harmlessness from AI Feedback | Bai et al. | 2022 | arXiv |
+| Let's Verify Step by Step | Lightman et al. | 2023 | ICLR |
+| Scaling Monosemanticity | Bricken et al. | 2023 | Anthropic |
+| Gemini 1.5 Technical Report | Gemini Team | 2024 | arXiv |
+| MoBA: Mixture of Balanced Attention | Moonshot | 2025 | NeurIPS |
+| Kimi K2 Technical Report | Moonshot | 2025 | arXiv |
+| Qwen3 Technical Report | Alibaba | 2025 | arXiv |
+| Gemma 4 Technical Report | Google DeepMind | 2026 | arXiv |
+| GPT-5 System Card | OpenAI | 2025 | OpenAI |
+| Pathways: Asynchronous Distributed Dataflow | Barham et al. | 2022 | ASPLOS |
+| Outrageously Large Neural Networks (MoE) | Shazeer et al. | 2017 | ICLR |
+| Switch Transformers | Fedus et al. | 2021 | JMLR |
+| PaLM: Scaling Language Modeling with Pathways | Chowdhery et al. | 2022 | JMLR |
+
+## METODOLOGÍA DE INVESTIGACIÓN
+
+| Aspecto | Detalle |
+|---------|---------|
+| Fecha de recopilación | Mayo 2026 |
+| Fuentes primarias | APIs oficiales, documentación técnica, GitHub, papers académicos |
+| Fuentes secundarias | Blogs oficiales, leaks verificados, benchmarks públicos (SWE-Bench, LMArena, HLE, GPQA, etc.) |
+| Precios | Verificados en páginas oficiales de precios al 29 de mayo de 2026 |
+| Benchmarks | Fuente: paperswithcode.com, evaluation harnesses oficiales, leaderboards |
+| Leaks | Verificados por cruce de fuentes. El leak de Claude Code (31 Mar 2026) fue corroborado por múltiples analistas independientes |
+| Limitaciones | Los precios pueden cambiar. Los benchmarks son snapshot. Algunos datos de Moonshot Kimi son limitados por falta de documentación pública. |
+
+---
+
+> Documento generado por **Metis (Μῆτις)** — Diosa de la Sabiduría, el Consejo y la Estrategia.
+> Sistema KAOS — Knowledge-Augmented Operating System
+> Versión 1.0 — 29 de mayo de 2026
+> "La estrategia sin conocimiento es un arma sin filo. El conocimiento sin estrategia es un tesoro sin uso."
+
+--- pagebreak ---
+# FIN DEL DOCUMENTO

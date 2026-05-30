@@ -123,8 +123,16 @@ def run_monitor():
 
 
 def run_dashboard():
-    dashboard_main()
-    return "dashboard_populated"
+    import sys as _sys
+    _saved = _sys.argv
+    _sys.argv = ["dashboard_populate.py"]
+    try:
+        dashboard_main()
+        return "dashboard_populated"
+    except Exception as e:
+        return f"dashboard_error: {e}"
+    finally:
+        _sys.argv = _saved
 
 
 def run_pipeline(profile="desarrollo", output_file=None):

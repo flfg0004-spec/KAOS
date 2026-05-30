@@ -59,7 +59,7 @@ class TelegramBridge:
 
     async def _quality(self, update, context):
         try:
-            from lib.quality import calculate
+            from lib.quality.vault import calculate
             q = calculate()
             score = q.get("score", q.get("composite", "?"))
             await update.message.reply_text(f"Score de calidad: {score}/100")

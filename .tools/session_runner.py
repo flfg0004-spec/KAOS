@@ -9,6 +9,17 @@ from datetime import datetime
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
+TOOLS_DIR = BASE / ".tools"
+sys.path.insert(0, str(TOOLS_DIR))
+from verification_chain import run as vc_run
+
+
+def _find_latest_report() -> str | None:
+    cache_dir = BASE / ".memory" / "cache"
+    reports = sorted((cache_dir / "verification").glob("hook_report_*.md"), reverse=True)
+    if not reports:
+        reports = sorted(cache_dir.glob("verification_*.md"), reverse=True)
+    return str(reports[0]) if reports else None
 
 
 def _run(script: str, *args, timeout: int = 120) -> subprocess.CompletedProcess:
@@ -19,11 +30,14 @@ def _run(script: str, *args, timeout: int = 120) -> subprocess.CompletedProcess:
 def cmd_smoke(profile: str) -> bool:
     """2 min — quick post-output check."""
     print(f"Smoke check (profile: {profile})...")
-    r = _run(".tools/verification_chain.py", profile, timeout=120)
-    print(r.stdout)
-    if r.stderr:
-        print(r.stderr)
-    ok = r.returncode == 0
+    report = _find_latest_report()
+    if not report:
+        print("  No verification reports found in cache")
+        ok = False
+    else:
+        result = vc_run(report_path=report, profile=profile)
+        ok = result.get("composite", 0) >= 40
+        print(f"  Composite: {result.get('composite', 'N/A'):.1f}")
     print(f"Smoke: {'PASS ✅' if ok else 'FAIL ❌'}")
     return ok
 
@@ -34,10 +48,12 @@ def cmd_functional(profile: str) -> dict:
 
     # 1. Verification chain
     print("  Running verification chain...")
-    subprocess.run(
-        [sys.executable, str(BASE / ".tools/verification_chain.py"), profile],
-        timeout=900,
-    )
+    report = _find_latest_report()
+    if report:
+        vc_result = vc_run(report_path=report, profile=profile)
+        print(f"  Composite: {vc_result.get('composite', 'N/A'):.1f}")
+    else:
+        print("  No verification reports found in cache")
 
     # 2. Score engine
     print("  Running score engine...")

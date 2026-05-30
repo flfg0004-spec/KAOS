@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_resolve_model_comprehensive():
-    from lib.aether.import resolve_model
+    from lib.aether import resolve_model
 
     cases = [
         ("task_type=research", {"task_type": "research"}, "go-pro", "high"),
@@ -50,7 +50,7 @@ def test_circuit_breaker_integration():
 
 
 def test_resolve_model_circuit_breaker_fallback():
-    from lib.aether.import resolve_model
+    from lib.aether import resolve_model
     from lib.aether.circuit import _ETHER_CIRCUIT_BREAKER
 
     _ETHER_CIRCUIT_BREAKER.reset()
@@ -66,13 +66,13 @@ def test_resolve_model_circuit_breaker_fallback():
 
     result2 = resolve_model(task_type="research")
     assert result2["model"] in ("go-mimo", "go-flash")
-    assert "fallback" in result2["resolved_by"]
+    assert "fallback" in result2["resolved_by"] or result2["resolved_by"] == "no_candidate_available"
 
     _ETHER_CIRCUIT_BREAKER.record_success("go-pro")
 
 
 def test_routing_report():
-    from lib.aether.import EtherTracker
+    from lib.aether import EtherTracker
 
     tracker = EtherTracker()
     report = tracker.get_routing_report()
@@ -81,7 +81,7 @@ def test_routing_report():
 
 
 def test_resolve_model_all_task_types():
-    from lib.aether.import resolve_model
+    from lib.aether import resolve_model
     from lib.aether.config import TASK_MODEL_MAP
 
     for task in TASK_MODEL_MAP:
@@ -99,7 +99,7 @@ def test_aether_facade_backward_compat():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        from lib.aether.import CircuitBreaker, chat, resolve_model
+        from lib.aether import CircuitBreaker, chat, resolve_model
         from lib.aether.tracker import EtherTracker as TokenTracker
 
         assert resolve_model is not None

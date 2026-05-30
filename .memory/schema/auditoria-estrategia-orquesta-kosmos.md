@@ -9,11 +9,10 @@ tags:
   - audit
   - architecture
   - strategy
-  - code-agent
-  - langgraph
-  - hermes
-  - adr-review
 ---
+
+> **TL;DR**: Auditoría de Kosmos sobre la estrategia de Metis (Orquesta DAG + Code Agent + Hermes). 3 issues críticos: verificación cruzada rota por topología DAG, integración DSOL incompleta, dependencia frágil de Hermes. Score: 79/100. 11 hallazgos.
+
 
 # Auditoría Arquitectónica: Estrategia Orquesta DAG + Code Agent + Hermes
 

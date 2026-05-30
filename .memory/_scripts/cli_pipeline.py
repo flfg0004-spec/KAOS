@@ -50,7 +50,7 @@ def register(sub, kaos_root):
         r = subprocess.run([PYTHON, script], capture_output=True, text=True, timeout=120)
         print(r.stdout or r.stderr or "")
         try:
-            from lib.quality import calculate
+            from lib.quality.vault import calculate
             q = calculate()
             print(f"Quality score after consolidation: {q.get('score', '?')}/100")
         except Exception:

@@ -126,10 +126,11 @@ class _HealthHandler(BaseHTTPRequestHandler):
         except Exception as e:
             metrics["rate_limiter_error"] = str(e)
 
-        # B1+B2: OpenTelemetry + trace export
+        # B1+B2+K2: OpenTelemetry + trace export
         try:
-            from lib.kosmos.otel import get_trace_summary, is_otel_available
-            metrics["otel"] = {"available": is_otel_available()}
+            from lib.kosmos.otel import get_trace_summary, get_otel_status
+            otel_info = get_otel_status()
+            metrics["otel"] = otel_info
             metrics["traces"] = get_trace_summary()
         except Exception:
             pass

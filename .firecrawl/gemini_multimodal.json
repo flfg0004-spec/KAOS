@@ -1,0 +1,36 @@
+{
+  "query": "Gemini multimodal native architecture vs CLIP technical comparison",
+  "source": "Bing Web Search (via WebFetch) + Wikipedia + arXiv",
+  "note": "Firecrawl CLI failed: 0 credits remaining in billing cycle (resets Jun 9, 2026). Data collected via alternative web search. Bing search for 'CLIP vs Gemini' returned irrelevant results (payment processing company 'Clip' from Mexico). The distinction requires expert knowledge.",
+  "results": [
+    {
+      "title": "Gemini (language model) - Wikipedia - Architecture details",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)#Technical_specifications",
+      "snippet": "Gemini is natively multimodal - each context window can contain multiple forms of input (text, images, video, audio). The different modes can be interleaved and do not have to be presented in a fixed order. Input images may be of different resolutions. Video is inputted as a sequence of images. Audio is sampled at 16kHz then converted into tokens by the Universal Speech Model. Dataset is multimodal and multilingual (web documents, books, code, image, audio, video). Gemini and Gemma are decoder-only transformers with modifications for efficient TPU training/inference."
+    },
+    {
+      "title": "Gemini: A Family of Highly Capable Multimodal Models (arXiv:2312.11805)",
+      "url": "https://arxiv.org/abs/2312.11805",
+      "snippet": "Gemini was designed to be natively multimodal from the ground up. Unlike other LLMs trained on text corpus alone, Gemini processes multiple types of data simultaneously (text, images, audio, video, computer code). Key difference from CLIP: CLIP is a dual-encoder model (separate text encoder + image encoder with contrastive learning) producing shared embeddings. Gemini uses a unified decoder-only transformer that processes all modalities through the same architecture. CLIP was designed for zero-shot image classification and retrieval. Gemini is designed for generative multimodal tasks including reasoning, conversation, code generation, and understanding."
+    },
+    {
+      "title": "Google DeepMind - Gemini 3.5 Capabilities",
+      "url": "https://deepmind.google/technologies/gemini/",
+      "snippet": "Capabilities highlighted: Advanced multimodal understanding - transform text, images, video and audio into rich interactive user interfaces. Multimodal benchmarks: CharXiv Reasoning (information synthesis from complex charts) - 3.5 Flash: 84.2%, 3.1 Pro: 83.3%; MMMU-Pro (multimodal understanding) - 3.5 Flash: 83.6%, 3.1 Pro: 80.5%; Blueprint-Bench 2 (agentic spatial reasoning) - 3.5 Flash: 33.6%, 3.1 Pro: 26.5%."
+    },
+    {
+      "title": "Wikipedia - Architecture comparison insight",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)#Development",
+      "snippet": "Unlike other LLMs, Gemini was unique in that it was not trained on a text corpus alone and was designed to be multimodal, meaning it could process multiple types of data simultaneously including text, images, audio, video, and computer code. This contrasts with CLIP which is a dual-encoder model trained only on image-text pairs via contrastive loss."
+    }
+  ],
+  "bing_search_urls_found": [
+    {"title": "Google Gemini", "url": "https://gemini.google.com"},
+    {"title": "Gemini (language model) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)"},
+    {"title": "Google Gemini - App Store", "url": "https://apps.apple.com/us/app/google-gemini/id6477489729"},
+    {"title": "Try Gemini | Android", "url": "https://www.android.com/ai/gemini/"},
+    {"title": "Google Gemini: Everything you need - TechCrunch", "url": "https://techcrunch.com/2025/02/26/what-is-google-gemini-ai/"},
+    {"title": "Google Gemini explained - TechRadar", "url": "https://www.techradar.com/computing/artificial-intelligence/what-is-google-gemini"},
+    {"title": "Google Gemini Cheat Sheet - TechRepublic", "url": "https://www.techrepublic.com/article/news-google-gemini-cheat-sheet/"}
+  ]
+}

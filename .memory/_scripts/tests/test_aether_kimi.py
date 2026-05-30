@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def test_kimi_config():
     from lib.aether.config import COST_CAPS, ETHER_KIMI_ENABLED, MODEL_TIERS, TASK_MODEL_MAP
 
-    assert TASK_MODEL_MAP["synthesize"]["tier"] == "kimi"
+    assert TASK_MODEL_MAP["synthesize"][0].tier == "kimi"
     assert MODEL_TIERS["kimi"]["target_pct"] == 15
     assert ETHER_KIMI_ENABLED
     assert "kimi" in COST_CAPS
@@ -54,7 +54,7 @@ def test_kimi_no_multimodal_when_disabled():
     os.environ["ETHER_MULTIMODAL_ENABLED"] = "false"
     import importlib
 
-    from lib.aether.import config
+    from lib.aether import config
 
     importlib.reload(config)
     from lib.aether.config import ETHER_MULTIMODAL_ENABLED
@@ -71,7 +71,7 @@ def test_kimi_tracker_content_type():
     )
     ct = t.get_content_type_breakdown()
     assert "image" in ct
-    assert ct["image"]["calls"] == 1
+    assert ct["image"] == 1
 
 
 def test_kimi_cost_rates():
@@ -166,4 +166,3 @@ def test_kimi_full_routing_pipeline():
 
     r = resolve_model(task_type="research", prompt_size=prompt_size, has_images=has_images)
     assert r["model"] in ("go-kimi-latest", "go-pro")
-

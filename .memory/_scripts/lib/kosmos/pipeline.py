@@ -1,6 +1,6 @@
 """kosmos/pipeline.py — KosmosV2 Pipeline class.
 
-Contains the KosmosPipelineV2 class orchestrating the 8-node pipeline,
+Contains the KosmosPipelineV2 class orchestrating the 6-node pipeline (K3 real),
 plus the async entry point run_kosmos_pipeline().
 """
 
@@ -82,8 +82,10 @@ from lib.kosmos.routing import resolve_routing, ROUTING_TABLE
 
 
 class KosmosPipelineV2:
-    """Pipeline de 8 nodos para KosmosV2.
+    """Pipeline de 6 nodos para KosmosV2 (K3 real).
 
+    Nodos: Discover → Model → Analyze → Quality → Document (ADR+diagrams+KG) → Validate.
+    Visualize y Govern están fusionados dentro de Document.
     Cada nodo ejecuta una función específica y actualiza el estado.
     Los nodos son independientes y el pipeline continúa incluso si
     un nodo falla (graceful degradation).
@@ -127,8 +129,11 @@ class KosmosPipelineV2:
         self._results_lock = threading.RLock()
         self._errors_lock = threading.RLock()
 
-        logger.info("KosmosPipelineV2 initialized (topic=%s, skip_eval=%s, cache=%s)",
-                     state.get("topic", "N/A")[:50], self.skip_eval, self.cache_enabled)
+        # K1: CodeExperience real adherence flag
+        self.kratos_real = state.get("kratos_real", True)
+
+        logger.info("KosmosPipelineV2 initialized (topic=%s, skip_eval=%s, cache=%s, kratos_real=%s)",
+                     state.get("topic", "N/A")[:50], self.skip_eval, self.cache_enabled, self.kratos_real)
 
     @staticmethod
     def _build_empty_summary(reason: str, start_time: datetime) -> Dict[str, Any]:
@@ -185,7 +190,7 @@ class KosmosPipelineV2:
                 return {"status": "skipped", "reason": "No ADR text available"}
 
             aletheia_real = getattr(self, 'aletheia_real', False)
-            orchestrator = ContractOrchestrator(memory_l0=self.memory, aletheia_real=aletheia_real)
+            orchestrator = ContractOrchestrator(memory_l0=self.memory, aletheia_real=aletheia_real, kratos_real=getattr(self, 'kratos_real', True))
             contracts_result = orchestrator.run_all_contracts(
                 adr_text=adr_text,
                 adr_id=adr_id,
@@ -443,7 +448,10 @@ class KosmosPipelineV2:
     # ── Pipeline runner ──
 
     def run_all(self) -> Dict[str, Any]:
-        """Execute all 8 pipeline nodes in sequence.
+        """Execute all 6 pipeline nodes in sequence (K3 real).
+
+        Discover → Model → Analyze → Quality → Document → Validate.
+        Visualize y Govern están absorbidos dentro de Document.
 
         Each node is executed with error isolation — if a node fails,
         the pipeline continues with the next node and logs the error.
@@ -453,11 +461,20 @@ class KosmosPipelineV2:
             error log, and metadata.
         """
         logger.info("=" * 60)
-        logger.info("🚀 KosmosV2 Pipeline: Starting 8-node execution")
+        logger.info("🚀 KosmosV2 Pipeline: Starting 6-node execution (K3 real — Visualize+Govern inside Document)")
         logger.info("=" * 60)
 
         start_time = datetime.now()
         topic = self.state.get("topic", "")
+
+        # K1: Init CodeExperience for real adherence checks
+        if hasattr(self, 'kratos_real') and self.kratos_real:
+            try:
+                from lib.code_memory import init as ce_init
+                ce_init()
+                logger.info("K1: CodeExperience initialized for real adherence")
+            except Exception as exc:
+                logger.warning("K1: CodeExperience init failed (fallback to heuristic): %s", exc)
 
         # A4: Rate limiting
         if hasattr(self, 'rate_limiter') and self.rate_limiter:
@@ -496,18 +513,16 @@ class KosmosPipelineV2:
                 ], batch_name="Level 0: Discover+Analyze")
             with ExecutionSpan("model", topic=topic[:50]):
                 self.model()
-            with ExecutionSpan("batch_level_2", batch="Quality+Visualize"):
+            with ExecutionSpan("batch_level_2", batch="Quality"):
                 self._run_parallel_nodes([
                     ("quality", self.quality),
-                    ("visualize", self.visualize),
-                ], batch_name="Level 2: Quality+Visualize")
+                ], batch_name="Level 2: Quality")
             with ExecutionSpan("document", topic=topic[:50]):
                 self.document()
-            with ExecutionSpan("batch_level_4", batch="Govern+Validate"):
+            with ExecutionSpan("batch_level_4", batch="Validate"):
                 self._run_parallel_nodes([
-                    ("govern", self.govern),
                     ("validate", self.validate),
-                ], batch_name="Level 4: Govern+Validate")
+                ], batch_name="Level 4: Validate")
         else:
             with ExecutionSpan("discover", topic=topic[:50]):
                 self.discover()
@@ -517,12 +532,8 @@ class KosmosPipelineV2:
                 self.analyze()
             with ExecutionSpan("quality", topic=topic[:50]):
                 self.quality()
-            with ExecutionSpan("visualize", topic=topic[:50]):
-                self.visualize()
             with ExecutionSpan("document", topic=topic[:50]):
                 self.document()
-            with ExecutionSpan("govern", topic=topic[:50]):
-                self.govern()
             with ExecutionSpan("validate", topic=topic[:50]):
                 self.validate()
 
@@ -540,7 +551,7 @@ class KosmosPipelineV2:
             "routing": {node: resolve_routing(node, self.state) for node in ROUTING_TABLE},
             "node_results": self.node_results,
             "parallel_enabled": self.parallel_enabled,
-            "pipeline_levels": 5 if self.parallel_enabled else 8,
+            "pipeline_levels": 4 if self.parallel_enabled else 6,
             "corrective_actions": self.node_results.get("validate", {}).get("corrective_actions", []),
             "spans": ExecutionSpan.get_spans(),
         }

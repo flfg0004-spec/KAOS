@@ -26,20 +26,23 @@ class ContractOrchestrator:
     Graceful degradation: si un contrato falla, continua con los demás.
     """
 
-    def __init__(self, memory_l0: Any = None, aletheia_real: bool = True, state: dict = None) -> None:
+    def __init__(self, memory_l0: Any = None, aletheia_real: bool = True, state: dict = None,
+                 kratos_real: bool = True) -> None:
         """Initialize the Contract Orchestrator.
 
         G4: aletheia_real flag enables real Aletheia calls with fallback.
         G5: state dict for pipeline context (corrective actions feedback).
+        K1: kratos_real flag enables real Kratos adherence via CodeExperience.
 
         Args:
             memory_l0: Optional ArchitectureMemoryL0 for context.
             aletheia_real: If True, KosmosAletheiaContract uses real Aletheia.
             state: Optional pipeline state dict for context.
+            kratos_real: If True, KosmosKratosContract uses real CodeExperience API.
         """
         self._memory_l0 = memory_l0
         self._state = state or {}
-        self._kratos_contract = KosmosKratosContract(memory_l0=memory_l0)
+        self._kratos_contract = KosmosKratosContract(memory_l0=memory_l0, use_real_api=kratos_real)
         self._metis_contract = KosmosMetisContract(memory_l0=memory_l0)
         self._mnemosyne_contract = KosmosMnemosyneContract()
         self._aletheia_contract = KosmosAletheiaContract(real_mode=aletheia_real)
@@ -148,32 +151,45 @@ class ContractOrchestrator:
             "contracts": {},
         }
 
-        # ── 1. KosmosKratosContract: si hay output de Kratos ──
+        # ── 1. KosmosKratosContract: adherence check (K1: real API + heuristic fallback) ──
         kratos_output = state.get("kratos_output", "") or ""
-        if kratos_output and len(kratos_output) > 100:
+        has_kratos_output = kratos_output and len(kratos_output) > 100
+        if has_kratos_output or adr_text:
             logger.info("▶️ Running KosmosKratosContract...")
             try:
-                # generate brief from ADR
                 brief = self._kratos_contract.generate_brief(adr_text, adr_id)
                 results["contracts"]["kratos_brief"] = {
                     "status": "completed",
                     "recommendations": len(brief.get("recommendations", [])),
                 }
 
-                # parse adherence from kratos output
-                adherence = self._kratos_contract.parse_adherence(kratos_output)
-                results["contracts"]["kratos_adherence"] = {
-                    "status": "completed",
-                    "score": adherence.adherence_score,
-                    "deviations": len(adherence.deviations),
-                    "report": adherence.to_dict(),
-                }
+                # K1: try real CodeExperience API first
+                adherence = None
+                if hasattr(self._kratos_contract, 'real_adherence_check') and adr_text:
+                    try:
+                        adherence = self._kratos_contract.real_adherence_check(adr_id, adr_text)
+                        logger.info("K1: Real adherence via CodeExperience: score=%s",
+                                    adherence.adherence_score if hasattr(adherence, 'adherence_score') else 'N/A')
+                    except Exception as exc:
+                        logger.info("K1: CodeExperience fallback to heuristic: %s", exc)
 
-                # update ADR with adherence if ADR path available
-                adr_path = state.get("adr", {}).get("filepath", "")
-                if adr_path:
-                    update_result = self._kratos_contract.update_adr_with_adherence(adr_path, adherence)
-                    results["contracts"]["kratos_adherence_update"] = update_result
+                # Fallback: heuristic parse of kratos output
+                if adherence is None and has_kratos_output:
+                    adherence = self._kratos_contract.parse_adherence(kratos_output)
+
+                if adherence is not None:
+                    results["contracts"]["kratos_adherence"] = {
+                        "status": "completed",
+                        "score": adherence.adherence_score if hasattr(adherence, 'adherence_score') else 0,
+                        "deviations": len(adherence.deviations) if hasattr(adherence, 'deviations') else 0,
+                        "report": adherence.to_dict() if hasattr(adherence, 'to_dict') else {},
+                        "source": "code_experience" if adherence is not None and hasattr(adherence, 'adherence_score') else "heuristic",
+                    }
+
+                    adr_path = state.get("adr", {}).get("filepath", "")
+                    if adr_path:
+                        update_result = self._kratos_contract.update_adr_with_adherence(adr_path, adherence)
+                        results["contracts"]["kratos_adherence_update"] = update_result
 
             except Exception as exc:
                 logger.warning("KosmosKratosContract failed (non-blocking): %s", exc)
@@ -181,7 +197,7 @@ class ContractOrchestrator:
         else:
             results["contracts"]["kratos"] = {
                 "status": "skipped",
-                "reason": "No Kratos output available (no code to verify)",
+                "reason": "No Kratos output or ADR text available",
             }
 
         # ── 2. KosmosMetisContract: si hay OKRs ──

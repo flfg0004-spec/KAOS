@@ -1,0 +1,36 @@
+{
+  "query": "How Gemini 2M context window works technically architecture",
+  "source": "Bing Web Search (via WebFetch) + Wikipedia + arXiv",
+  "note": "Firecrawl CLI failed: 0 credits remaining in billing cycle (resets Jun 9, 2026). Data collected via alternative web search.",
+  "results": [
+    {
+      "title": "Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context (arXiv:2403.05530)",
+      "url": "https://arxiv.org/abs/2403.05530",
+      "snippet": "The official technical report detailing Gemini 1.5's long context capabilities. Key technical details: - Achieves up to 10 million tokens context (1M in production API) - Uses a Mixture-of-Experts architecture to enable the long context - Submitted March 8, 2024, revised Dec 16, 2024 - Authors: Petko Georgiev, Ving Ian Lei, Ryan Burnell, et al."
+    },
+    {
+      "title": "Wikipedia - Gemini context window specs",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)#Technical_specifications",
+      "snippet": "Context lengths by variant: - 1.0 Nano-1: 32,768 tokens - 1.0 Nano-2: 32,768 tokens - 1.0 Pro: Not publicly known - 1.0 Ultra: Not publicly known - 1.5 Pro: 10,000,000 tokens (10M) internally, 1M tokens in production API - 1.5 Mini: Not publicly known. As Gemini is multimodal, each context window can contain multiple forms of input interleaved in any order (text, picture, video, audio). Audio sampled at 16kHz converted to tokens by Universal Speech Model. Video inputted as sequence of images."
+    },
+    {
+      "title": "Google DeepMind - Current models",
+      "url": "https://deepmind.google/technologies/gemini/",
+      "snippet": "Current lineup: Gemini 3.5 Flash, 3.1 Pro, 3.1 Deep Think, 3.1 Flash-Lite. Benchmark table shows long context performance: MRCR v2 (8-needle) test - 3.5 Flash: 77.3% at 128k (average), 26.6% at 1M (pointwise); 3 Flash: 67.2% at 128k, 22.1% at 1M; 3.1 Pro: 84.9% at 128k, 26.3% at 1M. The models support native audio output (2.5 Pro and Flash+)."
+    },
+    {
+      "title": "Gemini (language model) - Wikipedia - Updates section",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)#Updates",
+      "snippet": "February 2024: Google launched Gemini 1.5 describing it as a more powerful model than 1.0 Ultra. Changes include a new architecture, a mixture-of-experts approach, and a larger one-million-token context window."
+    }
+  ],
+  "bing_search_urls_found": [
+    {"title": "Google Gemini", "url": "https://gemini.google.com"},
+    {"title": "Gemini (language model) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)"},
+    {"title": "Google Gemini - App Store", "url": "https://apps.apple.com/us/app/google-gemini/id6477489729"},
+    {"title": "Try Gemini | Android", "url": "https://www.android.com/ai/gemini/"},
+    {"title": "Google Gemini: Everything you need - TechCrunch Feb 26, 2025", "url": "https://techcrunch.com/2025/02/26/what-is-google-gemini-ai/"},
+    {"title": "Google Gemini explained - TechRadar May 8, 2025", "url": "https://www.techradar.com/computing/artificial-intelligence/what-is-google-gemini"},
+    {"title": "Google Gemini Cheat Sheet - TechRepublic Apr 15, 2026", "url": "https://www.techrepublic.com/article/news-google-gemini-cheat-sheet/"}
+  ]
+}

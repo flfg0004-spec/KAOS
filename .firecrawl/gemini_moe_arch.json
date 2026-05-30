@@ -1,0 +1,43 @@
+{
+  "query": "Gemini MoE mixture of experts architecture technical details 2025 2026",
+  "source": "Bing Web Search (via WebFetch) + Wikipedia + arXiv",
+  "note": "Firecrawl CLI failed: 0 credits remaining in billing cycle (resets Jun 9, 2026). Data collected via alternative web search.",
+  "results": [
+    {
+      "title": "Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context (arXiv:2403.05530)",
+      "url": "https://arxiv.org/abs/2403.05530",
+      "snippet": "Submitted 8 Mar 2024. Gemini 1.5 is described as using a mixture-of-experts (MoE) approach as a key architectural change from 1.0. The paper discusses the new architecture enabling a 1-million-token context window. No whitepapers were published for Gemini 2.0, 2.5, and 3. Authors: Petko Georgiev, Ving Ian Lei, Ryan Burnell, et al. (Gemini Team Google)."
+    },
+    {
+      "title": "Gemini (language model) - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)",
+      "snippet": "Key technical specifications extracted: - Gemini 1.0 Nano-1: 1.8B params, 32K context, distilled from larger Gemini models, 4-bit quantized - Gemini 1.0 Nano-2: 3.25B params - Gemini 1.0 Pro: Unknown param count - Gemini 1.0 Ultra: Unknown param count - Gemini 1.5 Pro: Unknown param count, 10M token context (1M in production API) - Gemini 3 Pro: Sparse mixture-of-experts (Sparse MoE), outputs up to 64K tokens - Gemini and Gemma models are decoder-only transformers with modifications for efficient training/inference on TPUs - 1.0 gen uses multi-query attention"
+    },
+    {
+      "title": "Gemini: A Family of Highly Capable Multimodal Models (arXiv:2312.11805)",
+      "url": "https://arxiv.org/abs/2312.11805",
+      "snippet": "Submitted 19 Dec 2023, last revised 9 May 2025. Author: Gemini Team Google (Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, et al.). Training details: Gemini was trained on multimodal and multilingual dataset consisting of web documents, books, code, image, audio, and video data. Models are decoder-only transformers with multi-query attention. Gemini's dataset is multimodal and multilingual."
+    },
+    {
+      "title": "Google DeepMind - Gemini 3.5",
+      "url": "https://deepmind.google/technologies/gemini/",
+      "snippet": "Current model lineup: Gemini 3.5 Flash (latest, frontier performance for agents and coding), Gemini 3.1 Pro (best for complex tasks), Gemini 3.1 Deep Think (modern challenges across science, research, engineering), Gemini 3.1 Flash-Lite (high-volume tasks). 3.5 Pro coming soon. Models are decoder-only transformers. Gemini 3 Pro described as Sparse Mixture-of-Experts."
+    },
+    {
+      "title": "Wikipedia - Model versions table",
+      "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)#Model_versions",
+      "snippet": "Version history: 1.0 Nano/Pro/Ultra (Dec 2023-Feb 2024, discontinued), 1.5 Pro & Flash (Feb-May 2024, discontinued), 2.0 Flash & Pro (Jan-Feb 2025, supported), 2.5 Pro/Flash/Lite (Mar-Jun 2025, latest), 3 Pro (Nov 2025, discontinued preview, Sparse MoE), 3 Deep Think (Dec 2025, preview), 3 Flash (Dec 2025, preview), 3.1 Pro (Feb 2026, preview), 3.5 Flash (May 2026, preview)"
+    }
+  ],
+  "bing_search_urls_found": [
+    {"title": "Google Gemini", "url": "https://gemini.google.com"},
+    {"title": "Gemini: Tu asistente de IA de Google", "url": "https://gemini.google/mx/about"},
+    {"title": "Google Gemini - App Store", "url": "https://apps.apple.com/us/app/google-gemini/id6477489729"},
+    {"title": "Try Gemini, your personal AI assistant | Android", "url": "https://www.android.com/ai/gemini/"},
+    {"title": "Gemini (language model) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Gemini_(language_model)"},
+    {"title": "Google Gemini for Android Download | TechSpot", "url": "https://www.techspot.com/downloads/7632-google-gemini-for-android.html"},
+    {"title": "Google Gemini: Everything you need to know - TechCrunch", "url": "https://techcrunch.com/2025/02/26/what-is-google-gemini-ai/"},
+    {"title": "Google Gemini explained - TechRadar", "url": "https://www.techradar.com/computing/artificial-intelligence/what-is-google-gemini"},
+    {"title": "Google Gemini Cheat Sheet - TechRepublic", "url": "https://www.techrepublic.com/article/news-google-gemini-cheat-sheet/"}
+  ]
+}

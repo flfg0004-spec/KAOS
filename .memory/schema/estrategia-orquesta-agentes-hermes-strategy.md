@@ -4,18 +4,10 @@ date: 2026-05-21
 type: strategy
 agent: metis
 status: draft
-profile: desarrollo
-tags:
-  - multi-agent
-  - orchestration
-  - code-agent
-  - hermes
-  - langgraph
-  - a2a
-  - mcp
-  - roadmap
-  - strategic-planning
 ---
+
+> **TL;DR**: Plan estratégico de Metis para la Orquesta de Agentes + Integración Hermes. Roadmap H1-H3 con 7 iniciativas. Score ecosistema estimado: 88.5/100. Dependencias críticas: KosmosV3, Kratos PRGII, Mnemosyne consolidación.
+
 
 # Estrategia: Code Agent, Orquesta DAG + Integracion Hermes
 

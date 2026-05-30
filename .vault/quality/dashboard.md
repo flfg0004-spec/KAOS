@@ -3,21 +3,19 @@
 ## Scores
 
 <!-- METIS_SCORES_START -->
-| Métrica | Valor | Threshold | Estado |
-|---------|-------|-----------|--------|
-| BCG Strategy Score | 7.7/10 | ≥ 7.0/10 | ✅ Pasa |
-| OKR Health | 85.7% | ≥ 70% | ✅ OK |
+| BCG Strategy Score | 4.4/10 | ≥ 7.0/10 | ❌ No pasa |
+| OKR Health | 76.2% | ≥ 70% | ✅ OK |
 | Quality Report | — | Semanal | ⏳ Pendiente |
 <!-- METIS_SCORES_END -->
 
 ## Evaluación
 
 <!-- METIS_EVAL_START -->
-- Fecha: 2026-05-27
-- Perfil: desarrollo
+- Fecha: 2026-05-29
+- Perfil: standard
 - Modo: Strategy
-- BCG Score: 7.7/10
-- Observaciones: OKRs bien estructurados con 3 objetivos alineados. Fortaleza en achievement (5/5) y narrowing (4/5). Oportunidad de mejora en synthesis for leadership — agregar sección de conclusiones ejecutivas. Todos los KRs tienen targets numéricos y dueños asignados.
+- BCG Score: 4.4/10
+- Observaciones: —
 <!-- METIS_EVAL_END -->
 
 ## BCG Dimensiones

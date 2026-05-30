@@ -1,13 +1,14 @@
 """kratos.py — KosmosKratosContract: Adherence Check.
 
 Extraído de kosmos_contracts.py (D3).
+K1: Integración con CodeExperience API real con graceful degradation.
 """
 import json
 import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .models import (
     AdherenceReport,
@@ -32,15 +33,20 @@ class KosmosKratosContract:
 
     Kosmos genera recomendaciones arquitectónicas (brief), Kratos las implementa,
     y este contrato verifica qué tanto adhirió el código a las recomendaciones.
+
+    K1: Soporte para API real sobre CodeExperience con graceful degradation.
     """
 
-    def __init__(self, memory_l0: Any = None) -> None:
+    def __init__(self, memory_l0: Any = None, use_real_api: bool = True) -> None:
         """Initialize the Kosmos-Kratos contract.
 
         Args:
             memory_l0: Optional ArchitectureMemoryL0 instance for context.
+            use_real_api: If True, use CodeExperience API for adherence checks.
+                          Falls back to heuristic parsing if CodeExperience unavailable.
         """
         self._memory_l0 = memory_l0
+        self._use_real_api = use_real_api
         self._status: Dict[str, Any] = {
             "active": True,
             "last_run": "",
@@ -50,7 +56,26 @@ class KosmosKratosContract:
         }
         self._contracts_dir = _CONTRACTS_DIR
         self._contracts_dir.mkdir(parents=True, exist_ok=True)
-        logger.debug("KosmosKratosContract initialized")
+
+        # K1: Try to import code_memory for real API mode
+        self._ce_available = False
+        self._code_memory: Any = None
+        if self._use_real_api:
+            try:
+                from lib import code_memory as _ce
+                self._code_memory = _ce
+                self._ce_available = True
+                logger.debug("CodeExperience available for real adherence checks")
+            except ImportError:
+                self._ce_available = False
+                logger.warning(
+                    "CodeExperience not available — will use heuristic fallback"
+                )
+
+        logger.debug(
+            "KosmosKratosContract initialized (use_real_api=%s, ce=%s)",
+            self._use_real_api, self._ce_available,
+        )
 
     # ── Public API ──
 
@@ -60,13 +85,17 @@ class KosmosKratosContract:
         Extrae recomendaciones del ADR y las asigna criterios de adherencia
         según el tipo de recomendación detectado.
 
+        K1: When use_real_api=True and CodeExperience is available, includes
+        evidence from CodeExperience in the brief.
+
         Args:
             adr_text: Texto del ADR del cual extraer recomendaciones.
             adr_id: Identificador del ADR.
 
         Returns:
             Dict con keys: adr_id, recommendations (lista de dicts con id,
-            description, criteria, adherence_type), timestamp.
+            description, criteria, adherence_type), timestamp, y opcionalmente
+            code_experience_evidence y code_experience_summary.
         """
         try:
             recommendations = self._extract_recommendations(adr_text)
@@ -86,11 +115,35 @@ class KosmosKratosContract:
                     "criteria": criteria,
                 })
 
-            brief = {
+            brief: Dict[str, Any] = {
                 "adr_id": adr_id,
                 "recommendations": enriched,
                 "timestamp": datetime.now().isoformat(),
             }
+
+            # K1: Enrich with CodeExperience evidence when available
+            if self._ce_available and self._code_memory and recommendations:
+                try:
+                    ce_evidence = self._gather_code_experience_evidence(recommendations)
+                    brief["code_experience_evidence"] = ce_evidence
+                    total_matches = sum(e.get("matches", 0) for e in ce_evidence)
+                    avg_confidence = (
+                        sum(e.get("avg_confidence", 0) for e in ce_evidence) / len(ce_evidence)
+                        if ce_evidence else 0
+                    )
+                    brief["code_experience_summary"] = {
+                        "total_related_entries": total_matches,
+                        "avg_confidence": round(avg_confidence, 2),
+                        "recommendations_with_evidence": sum(
+                            1 for e in ce_evidence if e.get("matches", 0) > 0
+                        ),
+                    }
+                    logger.info(
+                        "CodeExperience evidence for %s: %d entries, %.0f%% confidence",
+                        adr_id, total_matches, avg_confidence * 100,
+                    )
+                except Exception as exc:
+                    logger.debug("CodeExperience enrichment failed (non-blocking): %s", exc)
 
             # Persist brief
             self._save_brief(brief)
@@ -304,13 +357,162 @@ class KosmosKratosContract:
             logger.error("check_if_implemented failed: %s", exc)
             return {"implemented": False, "evidence": [], "confidence": 0.0, "error": str(exc)}
 
+    def real_adherence_check(self, adr_id: str, adr_text: str) -> AdherenceReport:
+        """Real adherence check via CodeExperience API.
+
+        K1: En lugar de parsear texto de Kratos con regex, busca en CodeExperience
+        entradas relevantes al ADR y computa adherence score basado en evidencia real.
+
+        Para cada recomendación extraída del ADR:
+        - Busca en CodeExperience con search(query=rec_text)
+        - Si hay entradas con resolution_rate > 0.7 y confidence > 0.5 → implementado
+        - Si hay entradas con retrieval_count > 2 y confidence < 0.3 → intentado
+        - Si no hay entradas → no implementado
+
+        Args:
+            adr_id: Identificador del ADR.
+            adr_text: Texto completo del ADR.
+
+        Returns:
+            AdherenceReport con adherence_score real basado en CodeExperience.
+            Si CodeExperience no está disponible, retorna reporte con score 0
+            y deviation indicando que se requiere fallback heurístico.
+        """
+        try:
+            if not self._ce_available or not self._code_memory:
+                logger.warning(
+                    "CodeExperience not available for real_adherence_check — "
+                    "returning empty report"
+                )
+                return AdherenceReport(
+                    adr_id=adr_id,
+                    adherence_score=0.0,
+                    deviations=["CodeExperience API not available — heuristic check required"],
+                    timestamp=datetime.now().isoformat(),
+                    adr_title=self._extract_title(adr_text),
+                )
+
+            # 1. Extract recommendations from ADR
+            recommendations = self._extract_recommendations(adr_text)
+            if not recommendations:
+                logger.info("No recommendations found in ADR %s — neutral score", adr_id)
+                return AdherenceReport(
+                    adr_id=adr_id,
+                    adherence_score=50.0,
+                    timestamp=datetime.now().isoformat(),
+                    adr_title=self._extract_title(adr_text),
+                )
+
+            # 2. For each recommendation, search CodeExperience
+            coverage_by_rec: Dict[str, float] = {}
+            deviations: List[str] = []
+            kratos_decisions: List[str] = []
+            implemented_count = 0
+            total = len(recommendations)
+            ce = self._code_memory
+
+            for i, rec_text in enumerate(recommendations):
+                rec_id = f"{adr_id}-REC-{i+1:02d}"
+
+                # Search CodeExperience for this recommendation
+                try:
+                    results = ce.search(query=rec_text, top_k=5)
+                except Exception as exc:
+                    logger.debug("CodeExperience search failed for %s: %s", rec_id, exc)
+                    results = []
+
+                # Analyze results
+                implemented = False
+                attempted = False
+                best_confidence = 0.0
+                best_rate = 0.0
+
+                for r in results:
+                    conf = r.get("confidence", 0)
+                    rate = r.get("rate", 0)  # resolution_rate
+                    retrievals = r.get("retrievals", 0)
+
+                    if conf > best_confidence:
+                        best_confidence = conf
+                    if rate > best_rate:
+                        best_rate = rate
+
+                    # High resolution rate + high confidence → implemented
+                    if rate > 0.7 and conf > 0.5:
+                        implemented = True
+                    # Many retrievals but low confidence → attempted but problematic
+                    if retrievals > 2 and conf < 0.3:
+                        attempted = True
+
+                if implemented:
+                    coverage_by_rec[rec_id] = 100.0
+                    implemented_count += 1
+                    kratos_decisions.append(
+                        f"{rec_id}: Implementado según CodeExperience "
+                        f"(confianza: {best_confidence:.2f}, resolución: {best_rate:.0%})"
+                    )
+                elif attempted:
+                    coverage_by_rec[rec_id] = 30.0
+                    deviations.append(
+                        f"{rec_id}: Intentado pero con problemas persistentes en "
+                        f"CodeExperience (confianza: {best_confidence:.2f})"
+                    )
+                else:
+                    coverage_by_rec[rec_id] = 0.0
+                    deviations.append(
+                        f"{rec_id}: Sin evidencia de implementación en CodeExperience"
+                    )
+
+            # 3. Compute adherence score
+            adherence_score = (implemented_count / total) * 100.0 if total > 0 else 50.0
+
+            # 4. Build report
+            report = AdherenceReport(
+                adr_id=adr_id,
+                recommendations=[{"description": r} for r in recommendations],
+                adherence_score=round(adherence_score, 1),
+                coverage_by_rec=coverage_by_rec,
+                deviations=deviations,
+                kratos_decisions=kratos_decisions,
+                timestamp=datetime.now().isoformat(),
+                adr_title=self._extract_title(adr_text),
+            )
+
+            self._status["last_run"] = datetime.now().isoformat()
+            self._status["last_score"] = report.adherence_score
+            self._status["total_runs"] += 1
+            self._save_report(report)
+            logger.info(
+                "Real adherence for %s: score=%.1f, implemented=%d/%d, deviations=%d",
+                adr_id, report.adherence_score, implemented_count, total, len(deviations),
+            )
+            return report
+
+        except Exception as exc:
+            logger.error("real_adherence_check failed: %s", exc)
+            self._status["errors"] += 1
+            return AdherenceReport(
+                adr_id=adr_id,
+                adherence_score=0.0,
+                deviations=[f"Error en real_adherence_check: {exc}"],
+                timestamp=datetime.now().isoformat(),
+                adr_title=self._extract_title(adr_text),
+            )
+
     def status(self) -> Dict[str, Any]:
         """Return contract status.
 
+        K1: Includes real_api_available and code_experience_available flags.
+
         Returns:
-            Dict con keys: active, last_run, last_score, total_runs, errors.
+            Dict con keys: active, last_run, last_score, total_runs, errors,
+            real_api_available, code_experience_available.
         """
-        return dict(self._status)
+        return {
+            **self._status,
+            "real_api_available": self._use_real_api,
+            "code_experience_available": self._ce_available,
+        }
 
     # ── Internal helpers ──
 
@@ -416,3 +618,51 @@ class KosmosKratosContract:
             path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
         except (OSError, IOError) as exc:
             logger.warning("Failed to save adherence report: %s", exc)
+
+    # ── K1 Helpers ──────────────────────────────────────────────
+
+    def _gather_code_experience_evidence(
+        self, recommendations: List[str]
+    ) -> List[Dict[str, Any]]:
+        """Search CodeExperience for each recommendation and gather evidence.
+
+        Args:
+            recommendations: List of recommendation text strings.
+
+        Returns:
+            List of dicts with rec_text, matches, avg_confidence, top_entries keys.
+        """
+        if not self._code_memory:
+            return []
+
+        evidence = []
+        for i, rec_text in enumerate(recommendations):
+            try:
+                results = self._code_memory.search(query=rec_text, top_k=5)
+                match_count = len(results)
+                avg_confidence = (
+                    sum(r.get("confidence", 0) for r in results) / match_count
+                    if match_count > 0 else 0
+                )
+                evidence.append({
+                    "index": i,
+                    "rec_text": rec_text[:100],
+                    "matches": match_count,
+                    "avg_confidence": round(avg_confidence, 2),
+                    "top_entries": [
+                        {
+                            "error": r.get("error", "")[:80],
+                            "confidence": r.get("confidence", 0),
+                            "rate": r.get("rate", 0),
+                        }
+                        for r in results[:3]
+                    ],
+                })
+            except Exception as exc:
+                evidence.append({
+                    "index": i,
+                    "rec_text": rec_text[:100],
+                    "matches": 0,
+                    "error": str(exc),
+                })
+        return evidence
