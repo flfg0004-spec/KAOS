@@ -6,17 +6,18 @@ Each function:
   3. Updates context.json for cross-agent memory
   4. Returns augmented KAOSState
 """
-import json, re, os, subprocess, tempfile
+import json, logging, re, os, subprocess, tempfile
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
+logger = logging.getLogger("agent_executor")
+
 from lib.config import VAULT_ROOT, LLM_DIRECT_ENABLED, EXECUTOR_ENABLED, RAG_ENABLED, HERMES_ENABLED, EXECUTOR_TIMEOUT, HYBRID_PRO_ENABLED
-from lib.llm import agent_llm_call, AGENT_MODELS
 from lib.rag_injector import inject_context
 from lib.hermes_bridge import pipeline_notify
 from lib.code_memory import search as ce_search
-from lib.verification_hook import record as verify_record
+from lib.quality.agent import record as verify_record
 
 RAW_DIR = VAULT_ROOT / "_pipeline" / "raw"
 CONTEXT_PATH = VAULT_ROOT / "_pipeline" / "context.json"
@@ -140,6 +141,7 @@ def _executor_call(prompt: str, agent_name: str, model_override: str = "") -> st
             return output
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
+    from lib.llm import agent_llm_call
     return agent_llm_call(agent_name, prompt, model_override=model_override)
 
 def _llm_or_executor_call(agent_name: str, prompt: str, model_override: str = "", step_type: str = None) -> str:
@@ -156,6 +158,8 @@ def _llm_or_executor_call(agent_name: str, prompt: str, model_override: str = ""
 
 def _call_with_langfuse(agent_name: str, prompt: str, trace_id: str = "", **kwargs):
     """Execute LLM call with Langfuse tracing."""
+    from lib.llm import agent_llm_call
+    
     try:
         handler = getattr(__import__('lib.orchestrator', fromlist=['_LANGFUSE_HANDLER']), '_LANGFUSE_HANDLER', None)
         if handler:
@@ -343,16 +347,137 @@ def aletheia_node(state: dict) -> dict:
     }
 
 def kosmos_node(state: dict) -> dict:
+    """KosmosV2 pipeline node — 8-node architecture analysis with memory, evaluation, and reflection.
+
+    Uses KosmosPipelineV2 for full pipeline execution when LLM_DIRECT_ENABLED,
+    with graceful fallback to v1 prompt-gen mode when tools are unavailable.
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
     topic = state.get("topic", "")
     slug = _slugify(topic)
     aletheia_output = state.get("aletheia_output", "")
-    
-    sources_summary = ""
+
     ctx = _load_context()
     a_ctx = ctx.get("context_summary", {}).get("aletheia", {})
+
+    # Attempt KosmosV2 pipeline
+    pipeline_result = None
+    memory = None
+    try:
+        from lib.kosmos_memory import ArchitectureMemoryL0
+        from lib.kosmos_node_v2 import KosmosPipelineV2
+        from lib.kosmos_evaluator_v2 import DimensionalEvaluator
+        from lib.kosmos_reflect import ReflectionEngine
+
+        memory = ArchitectureMemoryL0()
+        if LLM_DIRECT_ENABLED:
+            memory.index_all_adrs()
+
+        pipeline = KosmosPipelineV2(state, memory=memory)
+        pipeline_result = pipeline.run_all()
+        _log.info("KosmosV2 pipeline completed: %d nodes, %d errors",
+                   len(pipeline_result.get("node_results", {})),
+                   len(pipeline_result.get("errors", {})))
+    except Exception as exc:
+        _log.warning("KosmosV2 pipeline failed, falling back to v1: %s", exc)
+        pipeline_result = None
+
+    if pipeline_result and pipeline_result.get("node_results"):
+        pipeline.state["pipeline_status"] = pipeline_result
+        state["pipeline_status"] = pipeline_result
+        adr_text = pipeline.state.get("kosmos_adr", "")
+        diagrams = pipeline.state.get("kosmos_diagrams", [])
+        errors = pipeline_result.get("errors", {})
+        quality = pipeline_result.get("node_results", {}).get("quality", {})
+
+        # G2: Extract evaluation from pipeline state (computed in quality() node)
+        eval_v2 = pipeline.state.get("kosmos_eval_v2", {})
+        if eval_v2 and eval_v2.get("scores"):
+            state["kosmos_eval_v2"] = eval_v2
+            _log.info("G2: Using pipeline-computed evaluation")
+        else:
+            evaluator = DimensionalEvaluator(profile=state.get("profile", "standard"))
+            eval_result = evaluator.evaluate(adr_text or topic)
+            state["kosmos_eval_v2"] = {
+                "scores": eval_result.scores,
+                "weighted_score": eval_result.weighted_score,
+                "passed": eval_result.passed,
+                "profile": eval_result.profile_used,
+            }
+
+        # G2: Extract reflection from pipeline state (computed in validate() node)
+        reflection = pipeline.state.get("kosmos_reflection", {})
+        if reflection and reflection.get("total_score") is not None:
+            state["kosmos_reflection"] = reflection
+        elif adr_text:
+            try:
+                reflector = ReflectionEngine(memory=memory)
+                r = reflector.evaluate_adr(adr_text)
+                state["kosmos_reflection"] = {
+                    "total_score": r.total_score,
+                    "gaps": r.gaps,
+                    "improvement_plan": r.improvement_plan,
+                }
+            except Exception as exc_ref:
+                _log.warning("Reflection fallback failed: %s", exc_ref)
+
+        # Fase 2: Execute contracts (Kratos adherence, Metis OKR, Mnemosyne curation, Aletheia factual)
+        contracts_result = {}
+        try:
+            from lib.kosmos_contracts import ContractOrchestrator
+            from lib.kosmos_memory import ArchitectureMemoryL1
+            orch = ContractOrchestrator(memory_l0=memory)
+            adr_id = pipeline.state.get("adr", {}).get("adr_id", f"ADR-XXX-{slug}")
+            contracts_result = orch.run_all_contracts(adr_text or "", adr_id, pipeline.state)
+            state["kosmos_contracts"] = contracts_result
+            _log.info("Contracts executed: %d/%d completed",
+                       len(contracts_result.get("contracts", {})),
+                       len(contracts_result.get("contracts", {})))
+        except Exception as exc_c:
+            _log.warning("Contract orchestration failed (non-blocking): %s", exc_c)
+
+        # Fase 2: Index ADR in L1 (txtai) for semantic search
+        try:
+            l1 = ArchitectureMemoryL1(memory_l0=memory)
+            if adr_text:
+                l1_result = pipeline.sync_with_txtai(adr_text, adr_id)
+                state["kosmos_l1_indexed"] = l1_result.get("indexed", False)
+        except Exception as exc_l1:
+            _log.warning("L1 txtai indexing failed (non-blocking): %s", exc_l1)
+
+        # Build output
+        kosmos_output = adr_text or f"Pipeline ejecutado. Diagramas: {len(diagrams)}. Errores: {len(errors)}"
+        state["kosmos_output"] = kosmos_output
+        state["kosmos_diagrams"] = diagrams
+        state["kosmos_prompt"] = f"KosmosV2 pipeline ejecutado con {len(pipeline_result.get('node_results', {}))} nodos"
+
+        # Save ADR output to file
+        output_path = RAW_DIR / f"{slug}-adr.md"
+        output_path.write_text(kosmos_output or "Pipeline ejecutado sin ADR.", encoding="utf-8")
+
+        eval_score = state.get("kosmos_eval_v2", {}).get("weighted_score")
+        ctx["agents"].append("kosmos")
+        ctx["context_summary"]["kosmos"] = {
+            "started_at": datetime.now().isoformat(),
+            "pipeline_version": "v2-full",
+            "nodes_executed": len(pipeline_result.get("node_results", {})),
+            "errors": len(errors),
+            "eval_score": eval_score,
+            "contracts": {
+                name: st for name, st in contracts_result.get("contracts", {}).items()
+            } if contracts_result else {},
+        }
+        _save_context(ctx)
+        if memory:
+            memory.close()
+        return state
+
+    # Fallback: v1 prompt-gen mode
+    sources_summary = ""
     if a_ctx.get("sources_used"):
         sources_summary = "\n".join(f"- {s}" for s in a_ctx["sources_used"])
-    
+
     prompt = (
         f"# Pipeline: Arquitectura\n\n"
         f"## Tema\n{topic}\n\n"
@@ -364,7 +489,7 @@ def kosmos_node(state: dict) -> dict:
         f"2. Diagramas C4 (contexto y contenedor)\n"
         f"3. Recomendaciones arquitectónicas\n"
     )
-    
+
     output_path = RAW_DIR / f"{slug}-adr.md"
     output_path.write_text(prompt, encoding="utf-8")
 
@@ -375,17 +500,21 @@ def kosmos_node(state: dict) -> dict:
         output_path.write_text(raw, encoding="utf-8")
         ctx = _load_context()
         ctx["agents"].append("kosmos")
-        ctx["context_summary"]["kosmos"] = {"started_at": datetime.now().isoformat()}
+        ctx["context_summary"]["kosmos"] = {"started_at": datetime.now().isoformat(), "pipeline_version": "v1"}
         _save_context(ctx)
         _notify_step(state, "Kosmos Architecture", "completed")
+        if memory:
+            memory.close()
         return {**state, "kosmos_output": raw, "kosmos_prompt": prompt}
-    
+
     ctx["agents"].append("kosmos")
     ctx["context_summary"]["kosmos"] = {
         "started_at": datetime.now().isoformat(),
+        "pipeline_version": "v1-fallback",
     }
     _save_context(ctx)
-    
+    if memory:
+        memory.close()
     return {
         **state,
         "kosmos_output": f"ADR prompt written to {output_path}",
@@ -516,7 +645,7 @@ def metis_node(state: dict) -> dict:
                 kr_assignment = assign_krs(okrs, initiatives)
                 execution_plan = build_execution_plan(okrs, initiatives, kr_assignment)
             except Exception:
-                pass
+                logger.warning("strategy_tools not available, skipping initiative/KR planning")
 
         ctx = _load_context()
         ctx["agents"].append("metis")
@@ -612,7 +741,7 @@ def _resolve_kratos_model(state: dict) -> str:
         return "go-gemini-flash"
     plan = state.get("plan", {})
     complexity = plan.get("complexity", "simple") if plan else "simple"
-    profile = state.get("profile", "desarrollo")
+    profile = state.get("profile", "standard")
     if complexity == "alta" or profile == "produccion":
         return "go-pro"
     return "go-gemini-flash"
@@ -744,12 +873,14 @@ def kratos_node(state: dict) -> dict:
                 f'"severity": "critical|minor|none"}}'
             )
             try:
+                from lib.llm import agent_llm_call
                 review = agent_llm_call("critic", review_prompt)
                 import json as _json
                 review_data = _json.loads(review.strip().strip("```json").strip("```").strip())
                 has_errors = review_data.get("has_errors", False)
                 issues = review_data.get("issues", [])
             except Exception:
+                logger.warning("LLM review call failed, assuming no errors")
                 has_errors = False
                 issues = []
             
@@ -812,31 +943,29 @@ def kratos_node(state: dict) -> dict:
     }
 
 def mnemosyne_node(state: dict) -> dict:
+    """Delegates to the unified curation pipeline (lib/curation_pipeline.py).
+
+    Runs 5 phases: discover → score → synthesize → lint → report.
+    Controlled by feature flags use_knowledge_scorer and use_knowledge_synthesis.
+    Falls back to LLM prompt if pipeline is unavailable.
+    """
+    try:
+        from lib.curation_pipeline import mnemosyne_curation_node
+        return mnemosyne_curation_node(state)
+    except ImportError as e:
+        logger.warning("Curation pipeline not available, falling back to LLM prompt: %s", e)
+    except Exception as e:
+        logger.error("Curation pipeline failed, falling back to LLM prompt: %s", e)
     topic = state.get("topic", "")
     slug = _slugify(topic)
-    
-    ctx = _load_context()
-    kratos_decision = ctx.get("cross_agent", {}).get("kratos_decision", "needs_curation")
-    
     prompt = (
         f"# Pipeline: Curación\n\n"
         f"## Tema\n{topic}\n\n"
         f"## Salidas a Curar\n\n"
         f"1. Investigación: raw/{slug}.md\n"
     )
-    if kratos_decision != "skip":
-        prompt += f"2. Código: code/{slug}.md\n"
-    prompt += (
-        f"\n## Tarea\n\n"
-        f"1. Revisa calidad y consistencia de todas las salidas\n"
-        f"2. Actualiza wikilinks y referencias cruzadas\n"
-        f"3. Actualiza el índice de conocimiento\n"
-        f"4. Reporta calidad y gaps\n"
-    )
-    
     output_path = RAW_DIR / f"{slug}-curation.md"
     output_path.write_text(prompt, encoding="utf-8")
-
     if LLM_DIRECT_ENABLED:
         _notify_step(state, "Mnemosyne Curation", "in_progress")
         raw = _llm_or_executor_call("mnemosyne", prompt)
@@ -847,10 +976,14 @@ def mnemosyne_node(state: dict) -> dict:
         _save_context(ctx)
         _notify_step(state, "Mnemosyne Curation", "completed")
         return {**state, "mnemosyne_output": raw, "mnemosyne_prompt": prompt}
-    
+    ctx = _load_context()
     ctx["agents"].append("mnemosyne")
-    ctx["context_summary"]["mnemosyne"] = {
-        "started_at": datetime.now().isoformat(),
+    ctx["context_summary"]["mnemosyne"] = {"started_at": datetime.now().isoformat()}
+    _save_context(ctx)
+    return {
+        **state,
+        "mnemosyne_output": f"Curation prompt written to {output_path}",
+        "mnemosyne_prompt": prompt,
     }
     _save_context(ctx)
     
@@ -892,7 +1025,7 @@ def bcg_evaluator_node(state: dict) -> dict:
                      "bcg_details": bcg,
                      "okr_quality": okr_result})
         except Exception:
-            pass
+            logger.warning("strategy_analytics tracking failed, skipping")
 
         # Detect knowledge gaps from critique context
         try:

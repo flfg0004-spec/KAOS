@@ -1,20 +1,15 @@
-FROM python:3.12-slim
+# Stage 1: Build dependencies
+FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir \
-    flake8 \
-    mypy \
-    pytest
-
-RUN useradd -m -s /bin/bash sandbox
+# Stage 2: Runtime
+FROM python:3.12-alpine
+WORKDIR /sandbox
+COPY --from=builder /root/.local /usr/local
+RUN adduser -D sandbox
 USER sandbox
-WORKDIR /home/sandbox/workspace
-
-COPY --chown=sandbox:sandbox sandbox_entrypoint.py /home/sandbox/sandbox_entrypoint.py
-
+WORKDIR /home/sandbox
+COPY --chown=sandbox:sandbox sandbox_entrypoint.py .
 ENTRYPOINT ["python", "/home/sandbox/sandbox_entrypoint.py"]

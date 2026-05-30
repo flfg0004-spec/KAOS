@@ -7,7 +7,7 @@ from crewai import Agent, Task, Crew, LLM
 from crewai.memory.unified_memory import Memory
 from lib.config import OPENCODE_GO_ENDPOINT, OPENCODE_GO_KEY, VAULT_ROOT
 from lib.crew_memory import KAOSStorageBackend
-from lib.dsol import TokenTracker
+from lib.aether.tracker import EtherTracker as TokenTracker
 
 class KAOSEmbeddingFunction:
     """

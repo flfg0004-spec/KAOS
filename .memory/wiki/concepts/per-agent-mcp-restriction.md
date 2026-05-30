@@ -30,17 +30,23 @@ Reducción de ~40% de tokens de tool descriptions al eliminar MCPs irrelevantes 
 
 | Agente | MCPs Habilitados |
 |--------|-----------------|
-| **Aletheia** | scholar-search, rss-reader, context7, gptr-deep-research, searxng, crawl4ai, exa-search, depwire, mcp-obsidian-cli, obsidian, sequential-thinking, vault, txtai |
-| **Kosmos** | depwire, structurizr, excalidraw, git, lucidity, mcp-obsidian-cli, obsidian |
-| **Metis** | excalidraw, paperjsx, exa-search, mcp-obsidian-cli, obsidian |
-| **Mnemosyne** | sequential-thinking, mcp-obsidian-cli, obsidian, vault, txtai, knowledge-graph |
-| **Kratos** | vault, sequential-thinking, git, exa-search, mcp-obsidian-cli, obsidian |
+| **Aletheia** | scholar-search, rss-reader, context7, searxng, crawl4ai, exa-search, sequential-thinking, vault, txtai, knowledge-graph, hermes-gateway, firecrawl, agy-bridge |
+| **Kosmos** | depwire, structurizr, excalidraw, git, lucidity, agy-bridge |
+| **Metis** | excalidraw, paperjsx, exa-search, sequential-thinking, mcp-obsidian-cli, vault, strategy-mcp, strategy-extras, mcp-speed, mcp-dsol, mcp-pandas, agy-bridge |
+| **Mnemosyne** | sequential-thinking, mcp-obsidian-cli, vault, txtai, knowledge-graph, mcp-embed, gaps, contradictions, lifecycle, quality, crossref, agy-bridge, mcp-dsol |
+| **Kratos** | vault, sequential-thinking, git, exa-search, agy-bridge |
 
-### MCPs Activos (19)
-mcp-obsidian-cli, sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, context7, vault, exa-search, gptr-deep-research, searxng, crawl4ai, txtai, structurizr, lucidity, obsidian, knowledge-graph
+### MCPs Activos (25+ en opencode.json)
+Lista representativa: mcp-obsidian-cli, sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, context7, vault, exa-search, searxng, crawl4ai, txtai, structurizr, lucidity, knowledge-graph, mcp-embed, mcp-speed, mcp-dsol, agy-bridge, strategy-mcp, strategy-extras, mcp-pandas, hermes-gateway
 
-### MCPs Planificados (4, disabled)
-github, lucidity, postgres, structurizr
+Nota: `obsidian` (REST) fue deshabilitado en limpieza 2026-05-26. Solo `mcp-obsidian-cli` está activo para Mnemosyne y Metis.
+`gptr-deep-research` fue eliminado 2026-05-25 (no implementado, reemplazado por pipeline multi-tool).
+
+### MCPs Inactivos / No Implementados
+- `github` — No necesario para KAOS. Eliminado.
+- `postgres` — No hay instancia PostgreSQL local.
+- `supermemory` — Requiere API key no configurada.
+- `obsidian` (REST) — Puerto conflict con obsidian-local-rest-api. Deshabilitado.
 
 ## Referencias Cruzadas
 - Relacionado: [[lucidity]]

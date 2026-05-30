@@ -95,4 +95,26 @@ profiles:
       l2_enabled: true
       l3_enabled: true
 
+  qa:
+    label: "QA / Pre-release"
+    description: "Validación de calidad pre-release, compliance"
+    weights:
+      veracidad: 0.30
+      coherencia: 0.25
+      completitud: 0.20
+      reproducibilidad: 0.15
+      utilidad: 0.10
+    thresholds:
+      veracidad_min: 85
+      coherencia_min: 80
+      completitud_min: 80
+      reproducibilidad_min: 75
+      utilidad_min: 50
+      composite_good: 80
+      composite_critical: 65
+    anti_hallucination:
+      l1_enabled: true
+      l2_enabled: true
+      l3_enabled: true
+
 default_profile: desarrollo

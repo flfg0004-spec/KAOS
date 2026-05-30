@@ -72,6 +72,19 @@ class SemanticCache:
                 self._save()
                 return entry["result"]
         return None
+
+    def get_exact(self, key: str) -> Any:
+        """Exact-key lookup — bypasses semantic matching (S3.2).
+        
+        Returns the cached result only if the key matches exactly.
+        Used by KosmosV2 pipeline cache where semantic similarity is undesirable.
+        """
+        for entry in self._cache:
+            if entry.get("query") == key:
+                entry["hits"] = entry.get("hits", 0) + 1
+                self._save()
+                return entry["result"]
+        return None
     
     def put(self, query: str, result: list):
         query_vec = self._get_vec(query)

@@ -38,6 +38,8 @@ LLM_DIRECT_ENABLED: Final[bool] = os.environ.get("LLM_DIRECT_ENABLED", "true").l
 LLM_FALLBACK_ENABLED: Final[bool] = True
 EXECUTOR_ENABLED: Final[bool] = os.environ.get("EXECUTOR_ENABLED", "false").lower() == "true"
 EXECUTOR_TIMEOUT: Final[int] = int(os.environ.get("EXECUTOR_TIMEOUT", "300"))
+XIAOMI_API_KEY: Final[str] = os.environ.get("XIAOMI_API_KEY", "")
+XIAOMI_API_ENDPOINT: Final[str] = os.environ.get("XIAOMI_API_ENDPOINT", "https://token-plan-sgp.xiaomimimo.com/v1")
 RAG_ENABLED: Final[bool] = os.environ.get("RAG_ENABLED", "true").lower() == "true"
 RAG_TOP_K: Final[int] = max(1, int(os.environ.get("RAG_TOP_K", "5")))
 HERMES_ENABLED: Final[bool] = os.environ.get("HERMES_ENABLED", "true").lower() == "true"
@@ -65,3 +67,31 @@ ROUTER_FAILURE_THRESHOLD: Final[int] = int(
 ROUTER_HALF_OPEN_MAX: Final[int] = int(
     os.environ.get("ROUTER_HALF_OPEN_MAX", "1")
 )
+
+# Phase B parallelism
+PHASE_B_WORKERS: Final[int] = int(os.environ.get("KAOS_PHASE_B_WORKERS", "5"))
+
+# Quality engine thresholds
+QUALITY_THRESHOLD_WARN: Final[int] = 80
+QUALITY_THRESHOLD_CRIT: Final[int] = 60
+
+# OPA Governance configuration
+OPA_EVAL_MODE: Final[str] = os.environ.get("OPA_EVAL_MODE", "auto")
+
+# Knowledge Scorer thresholds
+KNOWLEDGE_SCORE_THRESHOLDS: Final[dict] = {
+    "synthesis_threshold": 60,
+    "canonical_min": 91,
+    "curated_min": 76,
+    "review_min": 61,
+    "draft_min": 41,
+    "rough_min": 21,
+    "raw_min": 0,
+}
+KNOWLEDGE_SYNTHESIS_MAX_ATTEMPTS: Final[int] = int(os.environ.get("KAOS_SYNTHESIS_MAX_ATTEMPTS", "3"))
+KNOWLEDGE_SYNTHESIS_MAX_DOCS: Final[int] = int(os.environ.get("KAOS_SYNTHESIS_MAX_DOCS", "5"))
+KNOWLEDGE_SYNTHESIS_MAX_DIFF_RATIO: Final[float] = float(os.environ.get("KAOS_SYNTHESIS_MAX_DIFF_RATIO", "0.5"))
+KNOWLEDGE_SYNTHESIS_TOKEN_BUDGET: Final[int] = int(os.environ.get("KAOS_SYNTHESIS_TOKEN_BUDGET", "100000"))
+
+CACHE_DIR: Final[Path] = VAULT_ROOT / "cache"
+GAP_FEEDBACK_FILE: Path = CACHE_DIR / "gap_feedback.jsonl"

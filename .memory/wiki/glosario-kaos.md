@@ -20,16 +20,17 @@ status: draft
 ### Aletheia (Ἀλήθεια) — Investigación
 - **Propósito**: Búsqueda web, papers académicos, investigación profunda, fact-checking
 - **Modo**: subagent | **Steps**: 15 | **Temperatura**: 0.3
-- **MCPs**: scholar-search, rss-reader, context7, gptr-deep-research, searxng, crawl4ai, exa-search, depwire, mcp-obsidian-cli, obsidian, sequential-thinking, knowledge-graph
+- **MCPs**: scholar-search, rss-reader, context7, searxng, crawl4ai, exa-search, sequential-thinking, vault, txtai, knowledge-graph, hermes-gateway, firecrawl, agy-bridge
 - **Permisos**: websearch/webfetch allow, edit deny
-- **Outputs**: `raw/<slug>.md`
-- **Perfiles**: flash (5min), standard (30min), deep (2-4h), massive (4h+)
+- **Outputs**: `raw/<slug>.md` + matriz de confianza + gap feedback
+- **Perfiles**: flash (5min), standard (30min), deep (1-2h), massive (4h+), estratégico (3h)
+- **Thinking**: agy_ask_gpt55_thinking para perfiles deep y estratégico
 - **Tags**: #aletheia #investigacion
 
 ### Kosmos (Κόσμος) — Arquitectura
 - **Propósito**: Análisis de código, diagramas C4, ADRs, documentación técnica
 - **Modo**: subagent | **Steps**: 10 | **Temperatura**: 0.1
-- **MCPs**: depwire, structurizr, excalidraw, git, lucidity, mcp-obsidian-cli, obsidian, sequential-thinking, vault, knowledge-graph
+- **MCPs**: depwire, structurizr, excalidraw, git, lucidity, agy-bridge
 - **Permisos**: read/glob/grep allow, edit ask
 - **Outputs**: `schema/<slug>-adr.md`
 - **Tags**: #kosmos #arquitectura
@@ -37,7 +38,7 @@ status: draft
 ### Metis (Μῆτις) — Estrategia
 - **Propósito**: Planeación, OKRs, roadmaps, reportes ejecutivos, calidad
 - **Modo**: subagent | **Steps**: 8 | **Temperatura**: 0.4
-- **MCPs**: excalidraw, paperjsx, exa-search, mcp-obsidian-cli, obsidian, sequential-thinking, vault, knowledge-graph
+- **MCPs**: excalidraw, paperjsx, exa-search, sequential-thinking, mcp-obsidian-cli, vault, strategy-mcp, strategy-extras, mcp-speed, mcp-dsol, mcp-pandas, agy-bridge
 - **Permisos**: websearch/webfetch allow, edit ask
 - **Outputs**: `wiki/<slug>-strategy.md`
 - **Tags**: #metis #estrategia
@@ -45,7 +46,7 @@ status: draft
 ### Mnemosyne (Μνημοσύνη) — Curación
 - **Propósito**: Curación de conocimiento, wikilinks, calidad del vault, compresión
 - **Modo**: subagent | **Steps**: 8 | **Temperatura**: 0.1
-- **MCPs**: sequential-thinking, mcp-obsidian-cli, obsidian, vault, txtai, knowledge-graph
+- **MCPs**: sequential-thinking, mcp-obsidian-cli, vault, txtai, knowledge-graph, mcp-embed, gaps, contradictions, lifecycle, quality, crossref, agy-bridge, mcp-dsol
 - **Permisos**: read/glob/grep/edit allow, bash limited
 - **Ciclo**: 8 fases (Ingest→Link→Dedup→Quality→Compress→Index→Lint→Cross-Ref)
 - **Auto-curation**: `run_curation.py` se gatilla al completar pipeline
@@ -54,14 +55,14 @@ status: draft
 ### Kratos (Κράτος) — Código
 - **Propósito**: Generación, depuración, revisión y testeo de código con memoria experiencial APEX-EM
 - **Modo**: subagent | **Steps**: 12 | **Temperatura**: 0.2
-- **MCPs**: vault, sequential-thinking, git, exa-search, mcp-obsidian-cli, obsidian
+- **MCPs**: vault, sequential-thinking, git, exa-search, agy-bridge
 - **Framework**: PRGII (Plan→Retrieve→Generate→Iterate→Ingest)
 - **Memoria**: CodeExperience (FTS5 + vector search + AST signature, contextual bandit feedback)
 - **Tags**: #kratos #codigo #code-agent
 
 ---
 
-## MCPs — 19 activos, 1 disabled
+## MCPs — 25 activos (ver opencode.json para lista completa)
 
 ### mcp-obsidian-cli
 - **Tipo**: local | **Comando**: `npx -y mcp-obsidian-cli`
@@ -92,16 +93,18 @@ status: draft
 
 ### depwire
 - **Tipo**: local | **Comando**: `npx -y @iflow-mcp/depwire-depwire`
-- **Tools**: get_health_score, simulate_change, get_temporal_graph | **Proxy**: No | **Estado**: ✅ Enabled
+- **Tools**: get_health_score, simulate_change, get_temporal_graph | **Proxy**: No | **Estado**: ✅ Enabled (solo Kosmos)
+- **Nota**: Asignado solo a agente Kosmos (arquitectura). No disponible para Aletheia desde 2026-05-25.
 
 ### exa-search
 - **Tipo**: local | **Comando**: `npx -y exa-mcp-server`
 - **Tools**: exa_search | **Proxy**: No | **Estado**: ✅ Enabled
-- **Nota**: EXA_API_KEY en env var + config (belt and suspenders)
+- **Nota**: EXA_API_KEY movida a .env (2026-05-25) — ya no está en opencode.json
 
 ### gptr-deep-research
 - **Tipo**: local | **Comando**: `npx -y gpt-researcher-mcp`
-- **Tools**: deep_research | **Proxy**: No | **Estado**: ✅ Enabled
+- **Tools**: deep_research | **Proxy**: No | **Estado**: ❌ No implementado (tool fantasma eliminado 2026-05-25)
+- **Nota**: Reemplazado por pipeline multi-tool (B2): searxng + crawl4ai + exa + scholar + agy-bridge
 
 ### paperjsx
 - **Tipo**: local | **Comando**: `npx -y @paperjsx/mcp-server`

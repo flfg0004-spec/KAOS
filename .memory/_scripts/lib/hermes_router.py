@@ -15,17 +15,21 @@ _LOG = logging.getLogger(__name__)
 HERMES_BIN = "hermes"
 
 HERMES_AVAILABLE = None
+_HERMES_LAST_CHECK = 0.0
+_HERMES_TTL = 30
 
 
 def _check_hermes() -> bool:
-    global HERMES_AVAILABLE
-    if HERMES_AVAILABLE is not None:
+    global HERMES_AVAILABLE, _HERMES_LAST_CHECK
+    now = __import__("time").time()
+    if HERMES_AVAILABLE is not None and (now - _HERMES_LAST_CHECK) < _HERMES_TTL:
         return HERMES_AVAILABLE
     try:
         r = subprocess.run([HERMES_BIN, "--version"], capture_output=True, text=True, timeout=5)
         HERMES_AVAILABLE = r.returncode == 0
     except Exception:
         HERMES_AVAILABLE = False
+    _HERMES_LAST_CHECK = now
     return HERMES_AVAILABLE
 
 

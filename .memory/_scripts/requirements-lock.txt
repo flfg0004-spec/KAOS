@@ -1,0 +1,22 @@
+# Auto-generated lockfile — regenerar con scripts/freeze-deps.py
+# Generado: Python 3.12.10 | pip freeze
+# Fuente: requirements-lock.txt
+
+Jinja2==3.1.6
+aiohttp==3.13.5
+crewai==1.14.4
+deepeval==3.9.6
+fastembed==0.8.0
+kaleido==1.3.0
+lancedb==0.30.0
+langgraph-checkpoint-sqlite==3.1.0
+langgraph==1.0.10
+mcp==1.26.0
+mem0ai==2.0.2
+networkx==3.6.1
+openai==2.38.0
+playwright==1.59.0
+plotly==6.7.0
+python-dotenv==1.2.2
+txtai==9.9.0
+watchdog==6.0.0

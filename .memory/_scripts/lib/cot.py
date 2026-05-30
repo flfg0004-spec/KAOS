@@ -16,7 +16,7 @@ def generate_with_cot(prompt: str, agent: str = "") -> tuple[str, str]:
         (reasoning, answer) tuple
     """
     try:
-        from lib.dsol import generate_structured
+        from lib.aether.client import generate_structured
         cot_prompt = f"""{prompt}
 
 IMPORTANT: First reason step by step about the problem, then provide your final answer.
@@ -47,7 +47,7 @@ def self_consistency(prompt: str, n: int = 3, agent: str = "") -> str:
         Most consistent answer string
     """
     import random
-    from lib.dsol import generate_structured
+    from lib.aether.client import generate_structured
     
     responses = []
     for i in range(n):

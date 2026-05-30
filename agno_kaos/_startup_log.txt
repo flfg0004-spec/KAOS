@@ -1,0 +1,9 @@
+STDOUT:
+
+
+STDERR:
+Traceback (most recent call last):
+  File "C:\Users\LeonX\Documents\KAOS\agno_kaos\run_escadron.py", line 9, in <module>
+    from agno.os import AgentOS
+ModuleNotFoundError: No module named 'agno'
+

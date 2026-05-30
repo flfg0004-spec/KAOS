@@ -1,0 +1,18 @@
+{
+  "okrs": [
+    {
+      "objective": "Adoptar nueva funcionalidad cloud",
+      "key_results": [
+        {
+          "name": "KR1: Adopcion usuarios",
+          "target_value": 0.7,
+          "variables": [
+            {"name": "adopcion_nueva_funcionalidad", "alpha": 3, "beta": 5},
+            {"name": "engagement_stakeholders", "alpha": 2, "beta": 3}
+          ],
+          "formula": "v0 * 0.6 + v1 * 0.4"
+        }
+      ]
+    }
+  ]
+}

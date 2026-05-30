@@ -27,6 +27,16 @@
       "type": "local",
       "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", ".memory/cache/knowledge-graph"],
       "enabled": true
+    },
+    "kaos-kroki": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_kroki.py"],
+      "enabled": true
+    },
+    "kaos-markmap": {
+      "type": "local",
+      "command": ["py", "-3", ".memory/_scripts/mcp_markmap.py"],
+      "enabled": true
     }
   }
 }

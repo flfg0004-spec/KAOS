@@ -69,7 +69,43 @@ Capa unificada que:
 - **DSOL sin routing**: La implementación actual no incluye routing Flash/Pro porque el modelo es único en el entorno OpenCode. El router está diseñado para cuando haya acceso multi-modelo.
 
 ## Estado
-Aceptada — Implementada en `_scripts/lib/dsol.py`
+Aceptada — Implementada originalmente en `lib/dsol.py` (v1), migrada a `lib/ether/` (v2)
+
+## Evolución: DSOL → Ether (v2.0 — Mayo 2026)
+
+### ¿Qué cambió?
+El sistema fue renombrado de **DSOL** (DeepSeek Optimization Layer) a **Ether** (Environment for Token Harmonization & Execution Regulation). Este cambio refleja que el sistema ya no optimiza solo para DeepSeek, sino que ruthea entre 3 modelos (Flash, Pro, Kimi) vía OpenCode Go.
+
+### Cambios arquitectónicos
+- **Monolito `lib/dsol.py` (807 líneas)** → **Paquete `lib/ether/`** con 6 módulos de responsabilidad única:
+  - `config.py`: Constantes, mapas de modelos, env vars
+  - `router.py`: `resolve_model()`, fallback chain
+  - `circuit.py`: CircuitBreaker unificado con persistencia
+  - `tracker.py`: EtherTracker con thread safety y atomic writes
+  - `limiter.py`: RateLimiter
+  - `client.py`: API client, chat, prompt building
+- **CircuitBreaker unificado**: Fusión del CB de dsol.py (per-model, 3 estados) y cost_optimizer.py (per-provider, timestamp-based). Persistencia compartida.
+- **Thread safety**: `EtherTracker` usa `threading.Lock` y atomic writes (temp + rename).
+- **`lib/dsol.py`** se mantiene como **fachada backward-compatible** que re-exporta de `lib.ether/` (eliminar en v3.0).
+
+### Variables de entorno
+- `ROUTER_*` → `ETHER_*` (nuevas; `ROUTER_*` funcionan como fallback)
+
+### CLI y MCP
+- `vault.py dsol` → `vault.py ether` (nuevo; `dsol` es alias deprecated)
+- `mcp_dsol.py` → `mcp_ether.py` (nuevo; `mcp-dsol` eliminado)
+
+### ADRs afectados
+- ADR-004: Esta actualización
+- ADR-010: Actualizar referencias DSOL → Ether
+- ADR-015: Actualizar "DSOL (Router Multi-Modelo)" → "Ether"
+
+### Timeline de deprecación
+| Versión | Cambio |
+|---------|--------|
+| v1.0 (Mayo 2026) | Paquete `lib/ether/` creado. `lib/dsol.py` como fachada. `ETHER_*` y `ROUTER_*` coexisten. |
+| v2.0 | `lib/dsol.py` emite DeprecationWarning. `ROUTER_*` emite advertencia. |
+| v3.0 | `lib/dsol.py` eliminado. `ROUTER_*` ignorado. Código legacy eliminado. |
 
 ## Referencias
 - ADR-001: Arquitectura de Memoria de KAOS (base del vault)

@@ -1,0 +1,2 @@
+# Dependencias mínimas para sandbox de ejecución de código
+# No incluir herramientas de linting/dev

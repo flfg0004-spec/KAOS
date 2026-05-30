@@ -17,7 +17,7 @@ def hyde_search(query: str, top_k: int = 5) -> list[dict]:
         List of result dicts with path, snippet, score
     """
     try:
-        from lib.dsol import generate_structured
+        from lib.aether.client import generate_structured
         hyde_doc = generate_structured(HYDE_PROMPT.format(query=query))
         if isinstance(hyde_doc, dict) and "error" not in hyde_doc:
             hyde_text = json.dumps(hyde_doc) if isinstance(hyde_doc, dict) else str(hyde_doc)

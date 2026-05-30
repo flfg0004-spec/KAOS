@@ -1,22 +1,15 @@
 {
-  "timestamp": "2026-05-20T22:49:46.556274",
+  "timestamp": "2026-05-20T00:38:42.103596+00:00",
   "session_type": "score",
   "profile": "desarrollo",
   "results": {
-    "composite": 76.6,
+    "composite": 84.4,
     "dimensions": {
-      "veracidad": 85,
-      "coherencia": 78,
-      "completitud": 72,
-      "reproducibilidad": 68,
-      "utilidad": 80
-    },
-    "evaluations": {
-      "veracidad": "pass",
-      "coherencia": "pass",
-      "completitud": "pass",
-      "reproducibilidad": "pass",
-      "utilidad": "pass"
+      "veracidad": 76.4,
+      "coherencia": 66.7,
+      "completitud": 66.1,
+      "reproducibilidad": 68.1,
+      "utilidad": 77.4
     }
   }
 }

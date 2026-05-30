@@ -8,6 +8,31 @@ _pipeline/
 bridge/
 
 research-*.md
+.ruff_cache/
 virtual-audio-*.md
 node_modules/
 *.log
+
+# Obsidian vault — no trackear config de plugins con secrets (data.json contiene API keys + TLS certs)
+KAOS/.obsidian/plugins/*/data.json
+
+# Smart Environment cache
+.smart-env/
+*.ajson
+
+# Python cache
+.coverage
+
+# Build artifacts
+owui.bak/
+.backup/
+04-esquema/
+
+# Editor/IDE
+.aim/
+
+# Test artifacts
+.memory/_scripts/.coverage
+
+# Local config backups
+*.bak

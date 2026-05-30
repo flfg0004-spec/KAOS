@@ -54,7 +54,7 @@ Vector DB madura, filtros avanzados, particionamiento.
 
 ## Estado
 
-Propuesta — Pendiente de implementación cuando vault supere 100 páginas.
+Aceptada — Implementada. La implementación actual utiliza txtai como vector store principal (ver `.memory/_scripts/lib/vectorstore.py`) con embeddings locales via fastembed. sqlite-vec fue la opción inicial, migrada posteriormente a txtai por mejor rendimiento y capacidades de búsqueda híbrida.
 
 ## Detalle Técnico
 

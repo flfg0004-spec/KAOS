@@ -30,13 +30,18 @@
 | **Human-only** | Only humans modify | N/A |
 | **Deferred review** | Change auto-applies, logged in `_pending/` | When human reviews |
 
-## Obsidian Protocol
+## Obsidian Protocol (DEPRECATED)
 
-- Obsidian MCP is available for **human reading** of the vault.
-- **Agents must NOT write to the vault via Obsidian MCP.** Only vault MCP (server-filesystem) is used for writes.
+- **`obsidian` MCP server** (REST API) → ❌ Deshabilitado desde limpieza táctica 2026-05-26.
+  Server `@swarogan/obsidian-mcp-rest` está `enabled: false` en opencode.json.
+  API key rotada. Reemplazado por `mcp-obsidian-cli`.
+- **`mcp-obsidian-cli` MCP server** → ⚠️ Disponible solo para Mnemosyne y Metis.
+  Usa `npx mcp-obsidian-cli` para operaciones que vault MCP no cubre:
+  - `backlinks` — único valor diferencial
+  - `tags` — único valor diferencial
+  - `search` — parcialmente redundante con txtai
+- Agents must NOT write to the vault via Obsidian MCP. Only vault MCP (server-filesystem) is used for writes.
 - Humans may edit `raw/` and `schema/` via Obsidian or any editor.
-- If a human edits an agent-owned file (e.g., a concept), the agent will reconcile on next write.
-- Git log provides full audit trail. Last-writer-wins with git history for rollback.
 
 ## Conflict Resolution
 

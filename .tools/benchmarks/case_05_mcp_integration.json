@@ -1,0 +1,27 @@
+{
+  "problem": "Las herramientas estratégicas de Metis — simulate.py, causal_graph.py, strategy_memory.py, strategy_feedback.py — solo eran invocables via bash manual o scripts independientes. No había integración con el ecosistema MCP del agente. ¿Crear MCP servers formales o mantener la interfaz CLI existente?",
+  "context": {
+    "industry": "agent-integration",
+    "team_size": 1,
+    "constraints": "sin dependencias externas, mismo patron que mcp_pandas existente, stdio JSON-RPC 2.0, registrar en opencode.json",
+    "timeline": "1 semana",
+    "metrics": {
+      "mcp_servers_created": 4,
+      "tools_exposed": 14,
+      "tests_passed": 15,
+      "protocol": "JSON-RPC 2.0 stdio"
+    }
+  },
+  "human_decision": {
+    "dimensions": {
+      "clarity": 9,
+      "measurability": 8,
+      "realism": 8,
+      "risk_awareness": 7,
+      "creativity": 7,
+      "actionability": 9
+    },
+    "composite_score": 8.0
+  },
+  "human_outcome": "4 MCP servers creados (simulate, causal_graph, strategy_memory, strategy_feedback) con protocolo JSON-RPC 2.0 sobre stdio, registrados en opencode.json bajo mcpServers. 14 herramientas expuestas al ecosistema del agente. 15/15 tests de integración MCP pasando. Sync check 10/10 con 15 tools detectadas. Integración completa y funcional sin dependencias externas, siguiendo el mismo patrón de mcp_pandas."
+}

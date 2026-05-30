@@ -170,6 +170,12 @@ class DeerFlowBridge:
             return {"status": "error", "error": str(e), "quality_report": report.to_dict()}
 
     async def _via_sandbox(self, task: dict, task_id: str, start: datetime) -> dict:
+        from lib.feature_flags import is_enabled
+
+        if not is_enabled("ether_sandbox_enabled"):
+            logger.info("Sandbox disabled via feature flag — returning mock")
+            return {"status": "mock", "note": "Sandbox disabled via feature flag"}
+
         import subprocess
         import json as _json
 

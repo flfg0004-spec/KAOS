@@ -1,3 +1,15 @@
+---
+type: concept
+title: Estrategia Multi-Modelo para KAOS
+aliases:
+  - estrategia-multi-modelo
+status: seedling
+tags:
+  - arquitectura
+  - multi-modelo
+  - ether
+---
+
 # Estrategia Multi-Modelo para KAOS
 
 ## Resumen

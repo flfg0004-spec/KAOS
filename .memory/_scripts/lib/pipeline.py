@@ -3,8 +3,11 @@ from pathlib import Path
 import json
 import re
 import os, sys, time
+import logging
 
 from lib.config import VAULT_ROOT
+
+logger = logging.getLogger("pipeline")
 
 # LangGraph orchestrator integration (on-by-default, fallback to legacy)
 USE_LANGGRAPH = True
@@ -16,7 +19,8 @@ def _use_orchestrator() -> bool:
     try:
         from lib import orchestrator
         _LANGGRAPH_AVAILABLE = True
-    except Exception:
+    except ImportError:
+        logger.warning("orchestrator not available — using legacy pipeline")
         _LANGGRAPH_AVAILABLE = False
     return _LANGGRAPH_AVAILABLE and USE_LANGGRAPH
 
@@ -197,34 +201,34 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
     # Track estimated cost
     estimated_cost = 0.0
     try:
-        from lib.dsol import TokenTracker
+        from lib.aether.tracker import EtherTracker as TokenTracker
         tt = TokenTracker()
         stats = tt.get_stats()
         estimated_cost = stats.get("total_cost_usd", 0.0)
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("EtherTracker not available — cost tracking skipped")
     
     # Warm up model cache + seed CodeExperience
     try:
         from lib.vectorstore import warmup_model
         warmup_model()
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("vectorstore not available — model cache warmup skipped")
     try:
         from lib.seed_ce import seed_code_experiences
         seed_code_experiences()
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("seed_ce not available — code experience seed skipped")
     try:
         from lib.kratos_hook import init_code_memory_hook
         init_code_memory_hook()
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("kratos_hook not available — code memory hook skipped")
     try:
         from lib.sleep_cycle import prune_and_consolidate
         prune_and_consolidate()
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("sleep_cycle not available — prune/consolidate skipped")
 
     # Track flash→production link
     if flash_ctx:
@@ -237,7 +241,7 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
                 try:
                     data = json.loads(fps_file.read_text(encoding="utf-8"))
                 except Exception:
-                    pass
+                    logger.warning("flash-production.json read failed — link may be stale")
             data["links"].append({
                 "pipeline_id": pipeline_id,
                 "flash_report": flash_ctx.get("report_path", ""),
@@ -348,7 +352,8 @@ def init(topic: str, profile: str = "standard", check_flash: bool = True) -> str
             from lib.orchestrator import build_graph
             bg = build_graph()
             lg_msg += f"\nNodes: {', '.join(list(bg.nodes.keys())[1:])}"
-        except Exception:
+        except ImportError:
+            logger.warning("orchestrator.build_graph not available — graph info deferred")
             lg_msg += "\nNodes: (graph build deferred)"
     
     return (f"Pipeline {pipeline_id} initialized.\n"
@@ -460,7 +465,7 @@ def step_done(agent: str) -> str:
 
     if not next_agent:
         try:
-            from lib.dsol import TokenTracker
+            from lib.aether.tracker import EtherTracker as TokenTracker
             tt = TokenTracker()
             stats = tt.get_stats()
             qual_dir = VAULT_ROOT.parent / ".vault" / "quality" / "timeseries"
@@ -480,7 +485,7 @@ def step_done(agent: str) -> str:
                     duration_s = int((datetime.now().timestamp() - started) * 1000) / 1000
                 except Exception:
                     pass
-            profile_from_status = "desarrollo"
+            profile_from_status = "standard"
             status_text = "\n".join(_read_status())
             pm = re.search(r"\*\*profile\*\*:\s*(\S+)", status_text)
             if pm: profile_from_status = pm.group(1)
@@ -493,15 +498,15 @@ def step_done(agent: str) -> str:
             })
             data["entries"] = data["entries"][-100:]
             durations_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+        except ImportError:
+            logger.warning("EtherTracker not available — duration tracking skipped")
 
     # Notify Kanban on each pipeline step
     try:
         from lib.kanban_dispatcher import comment as kb_comment
         kb_comment(state.get("ticket_id", ""), f"🔄 {agent_cap}: {status_text.replace('_', ' ')}")
-    except Exception:
-        pass
+    except ImportError:
+        logger.warning("kanban_dispatcher not available")
 
     # Capture Kratos output into CodeExperience
     if agent_cap == "Kratos":
@@ -514,13 +519,13 @@ def step_done(agent: str) -> str:
                     if output_path.exists():
                         capture_agent_output(output_path.read_text(errors="replace"))
                     break
-        except Exception:
-            pass
+        except ImportError:
+            logger.warning("kratos_hook not available — output capture skipped")
 
     # Send Telegram notification when pipeline completes
     if not next_agent:
         try:
-            from lib.telegram import notify_pipeline
+            from lib.hermes_router import notify_pipeline
             topic = "pipeline completed"
             tm = re.search(r"\*\*topic\*\*:\s*(.+?)$", "\n".join(_read_status()), re.MULTILINE)
             if tm: topic = tm.group(1).strip()
@@ -543,8 +548,8 @@ def step_done(agent: str) -> str:
                 pass
 
             notify_pipeline(topic=topic, score=_score, duration_s=_duration_s, passed=True)
-        except Exception:
-            pass
+        except ImportError:
+            logger.warning("hermes_router not available — notification skipped")
 
     # Auto-trigger curation when pipeline completes
     if not next_agent:

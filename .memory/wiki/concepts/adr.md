@@ -1,8 +1,14 @@
 ---
+
 type: concept
 source: KAOS
 related: [kosmos, arquitectura-software, c4-model, vector-store, duplicidad-de-funcionalidad]
 tags: [adr, arquitectura, c4, decisiones, documentacion, embeddings]
+title: ADR (Architecture Decision Record)
+created: 2026-05-29
+modified: 2026-05-29
+confidence: media
+synthesized_at: 2026-05-29
 ---
 
 # ADR (Architecture Decision Record)
@@ -18,3 +24,11 @@ Registro formal de decisiones arquitectónicas. Template estándar: Contexto, Op
 ## Referencias Cruzadas
 - Relacionado: [[vector-store]]
 - Relacionado: [[duplicidad-de-funcionalidad]]
+
+## Véase también
+
+- [[Relacionado]]
+- [[arquitectura|Arquitectura]]
+- [[Decisiones]]
+- [[kosmos]]
+- [[Adrs]]

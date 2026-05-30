@@ -13,7 +13,6 @@ role: research
 description: Agente de investigación — búsqueda web, papers, noticias, investigación profunda
 mode: subagent
 mcp-servers:
-- brave-search
 - sequential-thinking
 - scholar-search
 - rss-reader
@@ -23,6 +22,8 @@ mcp-servers:
 - exa-search
 - searxng
 - crawl4ai
+- txtai
+- knowledge-graph
 permission: websearch/webfetch allow, edit deny
 skill: aletheia SKILL.md
 ---

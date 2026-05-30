@@ -80,7 +80,7 @@ async def cmd_kaosstart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not topic:
         await update.message.reply_text("Uso: /kaosstart <tema> [--profile produccion]")
         return
-    profile = "desarrollo"
+    profile = "standard"
     args_list = context.args
     if "--profile" in args_list:
         idx = args_list.index("--profile")

@@ -34,10 +34,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
+          cache-dependency-path: .memory/_scripts/requirements-lock.txt
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r _scripts/requirements.txt
+          pip install -r _scripts/requirements-lock.txt
       - name: Run KAOS Pipeline
         run: |
           python ../ci/pipeline_runner.py \
@@ -105,8 +106,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
+          cache-dependency-path: .memory/_scripts/requirements-lock.txt
       - name: Install dependencies
-        run: pip install -r _scripts/requirements.txt
+        run: pip install -r _scripts/requirements-lock.txt
       - name: Run DAG tests
         run: python _scripts/tests/run.py --fast
       - name: Health check

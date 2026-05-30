@@ -11,7 +11,7 @@ from datetime import datetime
 BASE = Path(__file__).resolve().parent.parent.parent
 
 
-def validate_content(text: str, profile: str = "desarrollo") -> dict:
+def validate_content(text: str, profile: str = "standard") -> dict:
     """Validate a text content using Gemini Flash. Returns structured scores.
 
     Args:
@@ -62,12 +62,12 @@ def validate_content(text: str, profile: str = "desarrollo") -> dict:
         return {"error": str(e), "avg_score": 0}
 
 
-def run(output_path: str = "", profile: str = "desarrollo") -> str:
+def run(output_path: str = "", profile: str = "standard") -> str:
     """Run cross-validation on an output file using Gemini Flash.
 
     Args:
         output_path: Path to the markdown output to validate
-        profile: Evaluation profile (desarrollo/produccion/auditoria)
+        profile: Evaluation profile (exploracion/standard/produccion/auditoria)
 
     Returns:
         Validation report as string

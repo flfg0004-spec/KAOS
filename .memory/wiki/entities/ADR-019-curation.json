@@ -1,0 +1,15 @@
+{
+  "id": "ADR-019",
+  "title": "ADR-019: test E2E cache",
+  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\test-e2e-cache-adr.md",
+  "type": "adr",
+  "tags": [
+    "adr",
+    "architecture",
+    "test-e2e-cache"
+  ],
+  "existing_wikilinks": [],
+  "needs_curation": true,
+  "requested_at": "2026-05-29T18:05:49.143981",
+  "priority": "medium"
+}

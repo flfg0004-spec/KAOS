@@ -6,13 +6,18 @@ Flujo:
   3. Invoke LangGraph orchestrator con ticket como input
   4. Reportar progreso via kanban_comment
   5. Completar ticket al finalizar
+
+Fallback local: si Hermes no está disponible, usa cola local JSON.
 """
 
 import asyncio
 import json
 import logging
+import os
 import subprocess
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 _LOG = logging.getLogger(__name__)
@@ -20,54 +25,122 @@ _LOG = logging.getLogger(__name__)
 HERMES_BIN = "hermes"
 POLL_INTERVAL = 30
 CLAIM_TIMEOUT = 300
+FALLBACK_FILE = Path(__file__).resolve().parent.parent.parent / ".memory" / "cache" / "kanban_queue.json"
 
 
-def _hermes(*args: str, timeout: int = 15) -> tuple[bool, str]:
+def _hermes(*args: str, timeout: int = 15, title: str = "") -> tuple[bool, str]:
     try:
-        r = subprocess.run([HERMES_BIN, *args], capture_output=True, text=True, timeout=timeout)
+        cmd = [HERMES_BIN, *args]
+        if title:
+            cmd.append(title)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.returncode == 0, r.stdout.strip()
     except Exception as e:
         return False, str(e)
 
 
-def list_ready(limit: int = 5) -> list[dict]:
-    ok, out = _hermes("kanban", "list", "--json")
-    if not ok or not out:
-        return []
+def _hermes_available() -> bool:
     try:
-        data = json.loads(out)
-        tasks = data if isinstance(data, list) else data.get("tasks", data)
-        return [t for t in (tasks or []) if t.get("status") == "ready"][:limit]
-    except (json.JSONDecodeError, TypeError):
-        return []
+        r = subprocess.run([HERMES_BIN, "--version"], capture_output=True, text=True, timeout=3)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+# ── Fallback local queue ──────────────────────────────────────
+
+
+def _read_fallback() -> list[dict]:
+    if FALLBACK_FILE.exists():
+        try:
+            return json.loads(FALLBACK_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+    return []
+
+
+def _write_fallback(tickets: list[dict]):
+    FALLBACK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    FALLBACK_FILE.write_text(json.dumps(tickets, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def list_ready(limit: int = 5) -> list[dict]:
+    if _hermes_available():
+        ok, out = _hermes("kanban", "list", "--json")
+        if ok and out:
+            try:
+                data = json.loads(out)
+                tasks = data if isinstance(data, list) else data.get("tasks", data)
+                return [t for t in (tasks or []) if t.get("status") == "ready"][:limit]
+            except (json.JSONDecodeError, TypeError):
+                pass
+    tickets = _read_fallback()
+    return [t for t in tickets if t.get("status") == "ready"][:limit]
 
 
 def claim(ticket_id: str) -> bool:
-    ok, _ = _hermes("kanban", "claim", ticket_id)
-    return ok
+    if _hermes_available():
+        ok, _ = _hermes("kanban", "claim", ticket_id)
+        if ok:
+            return True
+    tickets = _read_fallback()
+    for t in tickets:
+        if t.get("id") == ticket_id:
+            t["status"] = "running"
+            _write_fallback(tickets)
+            return True
+    return False
 
 
 def comment(ticket_id: str, message: str) -> bool:
-    ok, _ = _hermes("kanban", "comment", ticket_id, message)
-    return ok
+    if _hermes_available():
+        ok, _ = _hermes("kanban", "comment", ticket_id, message)
+        return ok
+    tickets = _read_fallback()
+    for t in tickets:
+        if t.get("id") == ticket_id:
+            t.setdefault("comments", []).append({"msg": message, "ts": datetime.now().isoformat()})
+            _write_fallback(tickets)
+            return True
+    return False
 
 
 def complete(ticket_id: str) -> bool:
-    ok, _ = _hermes("kanban", "complete", ticket_id)
-    return ok
+    if _hermes_available():
+        ok, _ = _hermes("kanban", "complete", ticket_id)
+        if ok:
+            return True
+    tickets = _read_fallback()
+    tickets = [t for t in tickets if t.get("id") != ticket_id]
+    _write_fallback(tickets)
+    return True
 
 
 def create(title: str, body: str = "", tag: str = "") -> Optional[str]:
-    args = ["kanban", "create", "--json"]
-    if body:
-        args.extend(["--body", body])
-    ok, out = _hermes(*args, title=title)
-    if ok and out:
-        try:
-            return json.loads(out).get("id")
-        except json.JSONDecodeError:
-            pass
-    return None
+    ticket_id = f"local_{int(time.time())}_{len(title) % 1000}"
+    if _hermes_available():
+        args = ["kanban", "create", "--json"]
+        if body:
+            args.extend(["--body", body])
+        ok, out = _hermes(*args, title=title)
+        if ok and out:
+            try:
+                return json.loads(out).get("id")
+            except json.JSONDecodeError:
+                pass
+    tickets = _read_fallback()
+    new_ticket = {
+        "id": ticket_id,
+        "title": title,
+        "body": body,
+        "tag": tag,
+        "status": "ready",
+        "created_at": datetime.now().isoformat(),
+        "comments": [],
+    }
+    tickets.append(new_ticket)
+    _write_fallback(tickets)
+    return ticket_id
 
 
 def dispatch_ticket(ticket: dict) -> bool:
@@ -87,7 +160,7 @@ def dispatch_ticket(ticket: dict) -> bool:
         state = {
             "topic": body or title,
             "ticket_id": tid,
-            "profile": "desarrollo",
+            "profile": "standard",
         }
 
         graph = build_graph()

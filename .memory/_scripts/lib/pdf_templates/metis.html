@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        .strategy-box {
+            background: {{ brand_colors.secondary }};
+            border-left: 4px solid {{ agent_color }};
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .strategy-box h3 { color: {{ agent_color }}; margin-bottom: 10px; font-family: {{ fonts.heading }}; }
+
+        .okr-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            margin: 6px 0;
+            background: {{ brand_colors.background }};
+            border-radius: 4px;
+        }
+        .okr-bar {
+            height: 6px;
+            background: {{ brand_colors.primary }};
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .okr-bar-fill {
+            height: 100%;
+            background: {{ agent_color }};
+            border-radius: 3px;
+        }
+
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            margin: 6px 0;
+            background: {{ brand_colors.background }};
+            border-radius: 4px;
+        }
+        .risk-high { border-left: 4px solid {{ brand_colors.danger }}; }
+        .risk-medium { border-left: 4px solid {{ brand_colors.warning }}; }
+        .risk-low { border-left: 4px solid {{ brand_colors.success }}; }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section">
+        <h2>{{ section.title }}</h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if okrs %}
+    <div class="strategy-box">
+        <h3>OKR Progress</h3>
+        {% for okr in okrs %}
+        <div class="okr-item">
+            <span>{{ okr.name }}</span>
+            <span>{{ okr.progress }}%</span>
+        </div>
+        <div class="okr-bar"><div class="okr-bar-fill" style="width: {{ okr.progress }}%"></div></div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if risks %}
+    <div class="strategy-box">
+        <h3>Risk Assessment</h3>
+        {% for risk in risks %}
+        <div class="risk-item risk-{{ risk.level | lower }}">
+            <span>{{ risk.name }}</span>
+            <span>{{ risk.impact }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

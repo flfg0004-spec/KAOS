@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Automatizar testing CI/CD",
+    "description": "Implementar pipeline de testing automatizado con verificacion de calidad",
+    "effort_days": 25,
+    "dependencies": [],
+    "rice_reach": 8,
+    "rice_impact": 4,
+    "rice_confidence": 0.9,
+    "category": "infra"
+  },
+  {
+    "name": "Dashboard de metricas en tiempo real",
+    "description": "Construir dashboard con graficos de rendimiento del sistema en vivo",
+    "effort_days": 60,
+    "dependencies": ["Automatizar testing CI/CD"],
+    "rice_reach": 6,
+    "rice_impact": 3,
+    "rice_confidence": 0.7,
+    "category": "producto"
+  },
+  {
+    "name": "Plataforma de IA adaptativa",
+    "description": "Desarrollar modulo de IA para optimizacion automatica de recursos del sistema",
+    "effort_days": 120,
+    "dependencies": ["Dashboard de metricas en tiempo real"],
+    "rice_reach": 5,
+    "rice_impact": 5,
+    "rice_confidence": 0.5,
+    "category": "estrategia"
+  }
+]

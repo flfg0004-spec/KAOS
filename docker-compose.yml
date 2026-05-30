@@ -1,0 +1,132 @@
+# ──────────────────────────────────────────────
+# KAOS Docker — Unified Compose
+# Profiles: core | full | langfuse | agno-db | sandbox
+# ──────────────────────────────────────────────
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &tcp-healthcheck
+  interval: 15s
+  timeout: 5s
+  retries: 3
+  start_period: 30s
+
+services:
+  # ── Core ────────────────────────────────────
+  searxng:
+    image: searxng/searxng:2025.12.15-0e8c1e639
+    container_name: kaos-searxng
+    profiles: ["core"]
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - searxng-data:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8888"]
+      <<: *tcp-healthcheck
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *default-logging
+
+  crawl4ai:
+    image: unclecode/crawl4ai:0.5.1
+    container_name: kaos-crawl4ai
+    profiles: ["core"]
+    ports:
+      - "127.0.0.1:11235:11235"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:11235/health"]
+      <<: *tcp-healthcheck
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *default-logging
+
+  # ── Langfuse ────────────────────────────────
+  langfuse:
+    image: langfuse/langfuse:3.8.0
+    container_name: kaos-langfuse
+    profiles: ["langfuse"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DATABASE_URL=${LANGFUSE_DATABASE_URL:-postgresql://langfuse:${LANGFUSE_PASSWORD:-langfuse}@langfuse-db:5432/langfuse}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-kaos-langfuse-secret-2026}
+      - SALT=${LANGFUSE_SALT:-kaos-salt}
+      - LANGFUSE_ENABLE_EXPERIMENTAL=${LANGFUSE_ENABLE_EXPERIMENTAL:-false}
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *default-logging
+
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: kaos-langfuse-db
+    profiles: ["langfuse"]
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=${LANGFUSE_PASSWORD:-langfuse}
+      - POSTGRES_DB=langfuse
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      <<: *tcp-healthcheck
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *default-logging
+
+  # ── Agno Postgres ──────────────────────────
+  agno-postgres:
+    image: postgres:16-alpine
+    container_name: kaos-agno-postgres
+    profiles: ["agno-db"]
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      - POSTGRES_DB=agno
+      - POSTGRES_USER=agno
+      - POSTGRES_PASSWORD=${AGNO_PG_PASSWORD:-agno}
+    volumes:
+      - agno-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agno"]
+      <<: *tcp-healthcheck
+    mem_limit: 192m
+    restart: unless-stopped
+    logging: *default-logging
+
+  # ── Sandbox ─────────────────────────────────
+  sandbox:
+    build:
+      context: .tools/sandbox
+      dockerfile: Dockerfile
+    image: kaos-sandbox
+    container_name: kaos-sandbox
+    profiles: ["sandbox"]
+    stdin_open: true
+    tty: false
+    read_only: true
+    tmpfs:
+      - /tmp
+    network_mode: "none"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  searxng-data:
+  langfuse-db-data:
+  agno-pg-data:

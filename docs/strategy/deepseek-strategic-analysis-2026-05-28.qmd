@@ -1,0 +1,430 @@
+---
+title: "DeepSeek — Análisis Estratégico Integral"
+subtitle: "Ecosistema, Modelos, Posicionamiento Competitivo e Implicaciones para la Industria"
+date: 2026-05-28
+author:
+  - name: "Aletheia + Metis · KAOS Agents"
+    affililation: "KAOS — Knowledge Architecture Optimization System"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    theme: darkly
+    code-fold: false
+  pdf:
+    toc: true
+    toc-depth: 3
+    documentclass: report
+    papersize: letter
+    fontsize: 10pt
+    geometry:
+      - margin=1in
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{xcolor}
+        \definecolor{kaosblue}{HTML}{1a5276}
+        \definecolor{kaosgreen}{HTML}{1e8449}
+        \definecolor{kaosred}{HTML}{c0392b}
+execute:
+  echo: false
+  warning: false
+---
+
+
+
+## Resumen Ejecutivo
+
+DeepSeek, fundada el **17 de julio de 2023** como spin-off del hedge fund cuantitativo High-Flyer (Liang Wenfeng), ha redefinido el panorama global de la IA en menos de 3 años. Con solo **~160 empleados** y financiación 100% interna hasta 2026, ha producido modelos que compiten cabeza a cabeza con OpenAI, Anthropic y Google a costos **10--200× menores**.
+
+**Señal central:** La eficiencia es la nueva frontera competitiva, y DeepSeek lidera esa frontera por 12--24 meses de ventaja. Quien no esté reestructurando su estrategia de IA alrededor de este hecho está sobrepagando por inferencia y subestimando el ritmo al que el costo marginal de la inteligencia artificial tiende a cero.
+
+### Tabla Maestra de Modelos
+
+| Modelo | Fecha | Params Totales | Params Activos | Innovación Clave | Contexto | Licencia |
+|-------|:----:|:--------------:|:--------------:|:----------------:|:--------:|:--------:|
+| **DeepSeek-LLM 67B** | Nov 2023 | 67B | 67B | -- | 4K | Custom |
+| **DeepSeek-Coder** | Nov 2023 | 33B | 33B | Fill-in-the-Middle | 16K | Custom |
+| **DeepSeek-MoE** | Ene 2024 | 16.4B | **2.8B** | Fine-grained MoE + Shared Experts | 4K | Custom |
+| **DeepSeek-V2** | May 2024 | **236B** | **21B** | **MLA** (Multi-head Latent Attention) | **128K** | Custom |
+| **DeepSeek-V3** | Dic 2024 | **671B** | **37B** | FP8 training, MTP, load balancing | 128K | Custom $\to$ MIT |
+| **DeepSeek-R1** | Ene 2025 | **671B** | **37B** | GRPO + RL puro para razonamiento | 128K | **MIT** |
+| **R1-0528** | May 2025 | ~685B | 37B | Post-training scaling, tool calling | 64K-164K | **MIT** |
+| **V3.1** | Ago 2025 | ~685B | 37B | Hybrid Think/Non-Think | **1M** | MIT |
+| **V3.2** | Dic 2025 | ~685B | 37B | Sparse Attention, oro IMO/IOI 2025 | 1M | MIT |
+| **V4-Pro** | Abr 2026 | **1.6T** | **49B** | Compressed Sparse Attention, FP4 | **1M nativo** | **MIT** |
+| **V4-Flash** | Abr 2026 | **284B** | **13B** | Variante ligera de V4 | **1M nativo** | **MIT** |
+
+
+
+## 1. Historia y Origen
+
+### 1.1 Fundación y Fundador
+
+| Atributo | Detalle |
+|---------|---------|
+| **Fundación** | **17 de julio de 2023** |
+| **Fundador** | **Liang Wenfeng** (梁文锋), 1985, Guangdong |
+| **Educación** | BS/MS Ingeniería, Universidad de Zhejiang (2007/2010) |
+| **Trayectoria** | Co-fundó High-Flyer (2015), hedge fund cuantitativo más grande de China ($15B AUM) |
+| **Nombre legal** | Hangzhou DeepSeek Artificial Intelligence Basic Technology Research Co., Ltd. |
+| **Sede** | Hangzhou, Zhejiang, China |
+| **Equipo** | ~160 empleados (139 I+D), reclutados de Tsinghua, PKU, Zhejiang |
+
+### 1.2 Financiación
+
+| Período | Detalle |
+|---------|---------|
+| **2023--2025** | **\$0 externo** --- 100% financiado por High-Flyer |
+| **Abril-Mayo 2026** | Primera ronda externa: **¥70B (~\$10.3B) a ~\$45B valuation** |
+| **Inversores** | National AI Industry Investment Fund, Tencent, IDG Capital, Monolith Capital |
+
+### 1.3 Estructura Legal
+
+**Liang Wenfeng (~76%) $\to$ High-Flyer Group $\to$ 100% $\to$ DeepSeek (subsidiaria wholly-owned)**
+
+High-Flyer invirtió ~¥1.2B ($168M) en infraestructura de GPUs (Fire-Flyer I y II), acumulando **+10,000 GPUs A100** antes de las restricciones de EE.UU. en 2022.
+
+
+
+## 2. Innovaciones Técnicas Clave
+
+### 2.1 DeepSeekMoE + Multi-head Latent Attention (MLA)
+
+**DeepSeekMoE** introduce dos innovaciones sobre MoE tradicional:
+- **Fine-grained experts**: 256 routed + 1 shared expert en V3 (~8.26M combinaciones vs 28 en MoE tradicional)
+- **Shared experts aislados**: Expertos siempre activos para conocimiento común
+
+**MLA**:
+- Comprime keys/values a vector latente de **dimensión 512** (vs 32,768 elementos/token en MHA)
+- **Reducción de KV cache: ~57$\times$ en capacidad, ~28$\times$ en bandwidth**
+- Decoupled RoPE para compatibilidad posicional
+- Superior a GQA y MQA sin sacrificar calidad
+
+### 2.2 GRPO (Group Relative Policy Optimization)
+
+Elimina el **critic model** de PPO:
+
+- **PPO tradicional**: Policy + Reference + Critic + Reward = ~4 modelos $\to$ ~84 GB para 7B
+- **GRPO**: Policy + Reference + Reward = ~3 modelos $\to$ **~56 GB (-33%)**
+
+Para V3 671B, GRPO hace factible RL que sería prohibitivo con PPO.
+
+### 2.3 FP8 Mixed Precision Training
+
+DeepSeek-V3 fue **el primer modelo masivo entrenado en FP8**:
+- Cuantización por bloques **128$\times$128** con factores de escala dinámicos
+- Acumulación en BF16/FP32 para evitar drift
+- Cero spikes de pérdida irrecuperables durante 2.788M H800 hours
+
+### 2.4 Multi-Token Prediction (MTP)
+
+Predice tokens t+1 y t+2 simultáneamente con módulos Transformer auxiliares:
+- Señal de gradiente más densa $\to$ **mejora rendimiento**
+- Módulos MTP usables como **drafter en speculative decoding** $\to$ **2--3$\times$ más rápido**
+
+### 2.5 Eficiencia Computacional
+
+| Modelo | Costo Entrenamiento | Cómputo | vs DeepSeek |
+|--------|:------------------:|:-------:|:-----------:|
+| **DeepSeek-V3** | **~\$5.6M** | 2.788M H800 hrs | **1$\times$** |
+| GPT-4 (estimado) | \$100--200M | ~25K GPUs $\times$ meses | **18--36$\times$** |
+| Llama 3.1 405B | \$60--100M | 30.8M H100 hrs | **10--18$\times$** |
+
+Factores acumulados de eficiencia (~**10--20$\times$** total):
+- MoE (37B activos vs 671B totales): ~5$\times$
+- FP8: ~2$\times$ más throughput
+- MLA: ~5.8$\times$ más throughput en inferencia
+- DualPipe: ~30--50% menos idle time
+- PTX-level optimizations: ~10--20%
+
+### 2.6 Stack de Infraestructura Propietario
+
+| Componente | Función |
+|------------|---------|
+| **HAI-LLM / HaiScale** | Framework interno de entrenamiento distribuido |
+| **DualPipe** | Pipeline bidireccional, solapa forward/backward |
+| **DeepEP** | Comunicación para expert parallelism (~77ms latency) |
+| **FlashMLA** | Kernels MLA optimizados para Hopper (3,000 GB/s) |
+| **DeepGEMM** | FP8 GEMM con 1,350+ TFLOPS, ~300 líneas de kernel |
+| **3FS** | Fire-Flyer File System (almacenamiento integrado) |
+
+
+
+## 3. Benchmarks y Rendimiento
+
+### 3.1 DeepSeek-R1 (enero 2025) vs OpenAI o1
+
+| Benchmark | **DeepSeek-R1** | **OpenAI o1-1217** | Resultado |
+|-----------|:--------------:|:------------------:|:---------:|
+| **AIME 2024** | **79.8%** | 79.2% | $\checkmark$ R1 |
+| **MATH-500** | **97.3%** | 96.4% | $\checkmark$ R1 |
+| **GPQA Diamond** | 71.5% | **75.7%** | $\times$ |
+| **Codeforces** | **2,029 (96.3%)** | 2,061 (96.6%) | $\approx$ Empate |
+| **SWE-bench** | **49.2%** | 48.9% | $\checkmark$ R1 |
+| **LiveCodeBench** | **65.9%** | 63.4% | $\checkmark$ R1 |
+| **Costo output/M tok** | **\$2.19** | \$60.00 | **R1: 27$\times$ más barato** |
+
+### 3.2 DeepSeek-R1-0528: La Gran Actualización
+
+| Benchmark | **R1 (Ene 2025)** | **R1-0528 (May 2025)** | $\Delta$ |
+|-----------|:-----------------:|:----------------------:|:--------:|
+| **AIME 2025** | 70.0% | **87.5%** | **+17.5** |
+| **AIME 2024** | 79.8% | **91.4%** | +11.6 |
+| **GPQA Diamond** | 71.5% | **81.0%** | **+9.5** |
+| **Codeforces Div1** | 1,530 | **1,930** | **+400** |
+| **LiveCodeBench** | 63.5% | **73.3%** | +9.8 |
+| **SWE-bench** | 49.2% | **57.6%** | +8.4 |
+| **Aider-Polyglot** | 53.3% | **71.6%** | **+18.3** |
+| **HLE** | 8.5% | **17.7%** | **+9.2** |
+
+**Artificial Analysis Intelligence Index:** 60 $\to$ **68** (empatado con Gemini 2.5 Pro como \#2 global).
+
+### 3.3 R1-0528 vs Competidores Directos (Mayo 2026)
+
+| Benchmark | **R1-0528** | **o3** | **o4-mini** | **Claude Sonnet 4** | **Gemini 2.5 Pro** |
+|-----------|:---------:|:-----:|:----------:|:------------------:|:-----------------:|
+| **AIME 2025** | **87.5%** | 86.4% | **92.7%** | 70.5% | 83.0% |
+| **AIME 2024** | 91.4% | **91.6%** | **93.4%** | 80.0% | 92.0% |
+| **GPQA Diamond** | 81.0% | 83.3% | 81.4% | 75.4% | **86.4%** |
+| **LiveCodeBench** | 73.3% | 75.8% | **80.2%** | 65.5% | 69.0% |
+| **SWE-bench** | 57.6% | 69.1% | 68.1% | **72.7%** | 59.6% |
+| **Codeforces** | 1,930 | ~2,706 | **2,719** | N/F | N/F |
+| **Aider-Polyglot** | 71.6% | **81.3%** | 68.9% | N/F | 76.5% |
+| **HLE** | **17.7%** | 14.7% | 14.7% | N/F | **21.6%** |
+| **Costo output/M tok** | **\$2.15** | \$40.00 | \$4.40 | \$15.00 | \$10.00 |
+| **Costo vs R1-0528** | **1$\times$** | 18.6$\times$ | 2.0$\times$ | 6.7$\times$ | 4.2$\times$ |
+
+
+
+## 4. Estrategia de Mercado y Pricing
+
+### 4.1 API Pricing --- Guerra de Precios
+
+| Modelo | Input/M tok | Output/M tok | Factor vs V4-Flash |
+|--------|:----------:|:-----------:|:------------------:|
+| **DeepSeek V4-Flash** | **\$0.14** | **\$0.28** | **1$\times$** |
+| DeepSeek V4-Pro | \$0.44 | \$0.87 | 3.1$\times$ |
+| GPT-4o | \$2.50 | \$10.00 | **35.7$\times$** |
+| Claude Sonnet 4.6 | \$3.00 | \$15.00 | **53.6$\times$** |
+| o1 | \$15.00 | \$60.00 | **214$\times$** |
+| Claude Opus 4.7 | \$5.00 | \$25.00 | **89.3$\times$** |
+
+Con cache hit, V4-Flash cuesta **\$0.0028/M input** -- efectivamente gratis.
+
+### 4.2 Open-Weight: Estrategia MIT
+
+DeepSeek libera bajo **MIT completo** desde R1 (enero 2025), permitiendo:
+- Uso comercial sin restricciones
+- Fine-tuning y redistribución
+- Destilación para otros LLMs
+- Auto-hosting (elimina costos de API)
+
+**Adopción en Hugging Face:**
+- DeepSeek-R1: **13,342** --- el modelo más liked de la historia
+- **63% de los fine-tunes nuevos** basados en arquitecturas chinas
+- DeepSeek captura **56% de descargas** en tier 250B+ parámetros
+
+### 4.3 Impacto Geopolítico --- "Sputnik Moment"
+
+**27 de enero de 2025:**
+- NVIDIA pierde **\$589B** en capitalización (mayor pérdida diaria en la historia de EE.UU.)
+- \$1T+ perdido en tech stocks
+- Marc Andreessen acuña: **"AI's Sputnik moment"**
+
+**Controles de exportación:**
+- DeepSeek entrenó V3 con **2,048 H800** (chip con ancho de banda reducido a la mitad por restricciones)
+- Demostró que los controles actuales **no impidieron** un modelo de frontera
+- Debate abierto: ¿controles más estrictos o más inteligentes?
+
+
+
+## 5. Matriz de Posicionamiento Estratégico
+
+| Dimensión | DeepSeek | OpenAI | Anthropic | Google | Meta |
+|-----------|:--------:|:------:|:---------:|:------:|:----:|
+| **Eficiencia (FLOP/\$)** | **10** | 3 | 3 | 4 | 5 |
+| **Apertura (open-weight)** | **9** | 1 | 1 | 1 | **9** |
+| **Razonamiento profundo** | **8** | **9** | 7 | **8** | 5 |
+| **Código/SWE** | 5 | 7 | **9** | 6 | 4 |
+| **Multimodal** | 1 | **9** | 7 | **9** | 6 |
+| **Ecosistema** | 3 | **8** | 5 | **8** | 6 |
+| **Precio** | **10** | 4 | 3 | 5 | 8 |
+| **Velocidad innovación** | **10** | 7 | 6 | 6 | 5 |
+| **Score compuesto** | **7.0** | 6.0 | 5.1 | 5.9 | 6.0 |
+
+
+
+## 6. Ventaja Competitiva
+
+### 6.1 Las Tres Capas de la Ventaja
+
+1.  **Eficiencia arquitectónica (1er orden):** MLA (57$\times$ KV cache), DeepSeekMoE, FP8 training, stack propietario (DualPipe, DeepEP, FlashMLA, DeepGEMM, 3FS). No son optimizaciones marginales -- son rediseños fundamentales del transformer.
+
+2.  **Costo de capital asimétrico (2º orden):** High-Flyer no es un VC -- es un hedge fund cuantitativo. Mientras OpenAI necesita demostrar \$10B+ en ingresos, DeepSeek puede operar con pérdidas indefinidamente.
+
+3.  **Velocidad de iteración (3er orden):** ~160 personas sin burocracia. Desde V3 (dic 2024) hasta V4-Pro (abr 2026): 16 meses, 4 generaciones de modelos.
+
+### 6.2 ¿Qué es Copyable vs Defendible?
+
+| Componente | Copyable en | Defendibilidad |
+|-----------|:----------:|:--------------:|
+| FP8 training | ~12 meses | Stack propietario, conocimiento tácito |
+| Multi-head Latent Attention | ~6 meses | Bajo (público en paper) |
+| DeepSeekMoE | ~6 meses | Bajo (público, ya replicado) |
+| GRPO | ~3 meses | Bajo (público) |
+| Stack de infra (DualPipe, 3FS) | Muy difícil | **Alto** (ingeniería tácita) |
+| **Costo de capital** | **Imposible** | **Altísimo** (estructural) |
+
+
+
+## 7. Análisis FODA
+
+### 7.1 Fortalezas
+
+| Dimensión | Detalle |
+|-----------|---------|
+| **Eficiencia radical** | 10--20$\times$ más barato en entrenamiento; 10--200$\times$ en inferencia |
+| **Innovación arquitectónica** | MLA, MoE fine-grained, GRPO, FP8 --- stack propio y coherente |
+| **Open-weight (MIT)** | Único competidor de frontera con pesos abiertos |
+| **Adopción masiva** | 13K+ HF likes, 92K GitHub stars, 63% de fine-tunes nuevos |
+| **Cash reserve** | \$10.3B ronda 2026 --- sin presión de monetización |
+| **Velocidad de iteración** | 20+ modelos en 2.5 años |
+
+### 7.2 Debilidades
+
+| Dimensión | Detalle |
+|-----------|---------|
+| **Sin multimodal (R1)** | Solo texto; competidores ofrecen visión nativa |
+| **Contexto limitado** | 64K oficial R1 vs 1M Gemini/Claude |
+| **SWE-bench bajo** | 57.6% vs 72.7% Claude Sonnet 4 |
+| **Despliegue complejo** | 671B MoE requiere infraestructura pesada |
+| **Censura china** | Bloqueos de contenido sensible. Prohibido por US Navy |
+| **Ecosistema limitado** | Sin tooling propio (vs Vertex AI, Azure OpenAI, Bedrock) |
+
+### 7.3 Oportunidades
+
+| Dimensión | Detalle |
+|-----------|---------|
+| **Multimodal R2** | Sucesor de R1 probablemente integre visión (Janus-Pro) |
+| **DeepSeek Code** | IDE/agente competidor de Claude Code |
+| **Expansión enterprise** | Alianzas cloud (Azure, Vertex, AWS) |
+| **Contexto 1M+** | V4 ya ofrece 1M nativo |
+| **Hardware chino** | Optimización para Huawei Ascend 910B/C |
+
+### 7.4 Amenazas
+
+| Dimensión | Detalle |
+|-----------|---------|
+| **Controles de exportación** | Nuevas restricciones podrían cortar acceso a GPUs |
+| **Respuesta competidores** | OpenAI o3/o4, Claude Sonnet 4, Gemini 2.5 Pro mejorando rápido |
+| **Fuga de talento** | Competidores ofrecen 3--5$\times$ compensación |
+| **Riesgo geopolítico** | Guerra tecnológica EE.UU.-China podría escalar |
+| **Destilación** | Posibles acciones legales de OpenAI/Anthropic |
+
+
+
+## 8. Escenarios Futuros
+
+### 8.1 Horizonte 6 Meses --- Q4 2026
+
+**Escenario base (70%): R2 multimodal + DeepSeek Code**
+- R2 (Q3-Q4 2026): Primer multimodal nativo de DeepSeek
+- DeepSeek Code: Competidor de Claude Code a ~\$5-10/mes vs \$20/mes
+- Contexto 1M+ para aplicaciones enterprise
+
+**Escenario disruptivo (20%): Prohibición de modelos chinos**
+- EE.UU. prohíbe DeepSeek en infraestructura gubernamental y crítica
+- DeepSeek se consolida como estándar en China + Sur Global
+
+### 8.2 Horizonte 12 Meses --- Q2 2027
+
+**Escenario base (60%): DeepSeek como infraestructura**
+- Se consolida como "AWS de la IA eficiente"
+- APIs fuerzan a toda la industria a bajar márgenes 50-70%
+- DeepSeek Cloud crece como plataforma
+
+### 8.3 Horizonte 24 Meses --- 2028
+
+| Escenario | Prob. | Implicaciones |
+|-----------|:-----:|--------------|
+| **Gana la eficiencia** | **40%** | IA se vuelve commodity. Márgenes colapsan. DeepSeek fuerza reestructuración |
+| **Gana el ecosistema** | **35%** | DeepSeek es "Linux de la IA": dominante en backend, invisible en frontend |
+| **Gana la geopolítica** | **25%** | Fragmentación total Este vs Oeste. Dos estándares incompatibles |
+
+
+
+## 9. Recomendaciones Estratégicas
+
+### Para un Startup Tecnológico
+
+1. **Arquitectura agnóstica**: Capa de abstracción multi-modelo (DSOL-style). Usa DeepSeek para alto volumen, Claude/OpenAI para código y creatividad.
+2. **Construye sobre la eficiencia**: Tu competidor usa GPT-4.1; tú usas V4-Flash. Tu estructura de costos es ~50$\times$ menor.
+3. **Prepárate para DeepSeek Code**: Costo del código asistido caerá a ~\$5/mes por usuario en 2027.
+4. **Plan B geopolítico**: Si DeepSeek es bloqueado, migrar a Llama 4 o modelos locales.
+
+### Para una Empresa Enterprise
+
+**Estrategia de tres anillos:**
+- **Anillo interno** (no crítico): DeepSeek para prototipado, R&D, análisis interno
+- **Anillo medio** (herramientas internas): DeepSeek + proveedor occidental de respaldo. SLA dual.
+- **Anillo externo** (customer-facing): Solo modelos occidentales (Claude, GPT-4.1). DeepSeek solo con autorización explícita.
+
+### Para un Inversor
+
+**Tesis indirecta:** DeepSeek no es directamente invertible para capital occidental, pero:
+- **Ganan** hyperscalers de inferencia (AWS, GCP, Azure) con márgenes bajos
+- **Ganan** consumidores de IA barata (todo sector que automatice)
+- **Pierden** startups que markupean APIs de OpenAI
+- **NVIDIA no muere** --- demanda de inferencia explota por Jevons paradox
+
+### Para un Competidor
+
+| Quién | Respuesta recomendada |
+|-------|----------------------|
+| **OpenAI** | Competir en eficiencia (GPT-5 con MoE) o en valor (10$\times$ mejor en algo que importe) |
+| **Anthropic** | Mejor posicionado: fortaleza en código y safety. Justificar premium con productividad |
+| **Google** | Capitalizar ventaja en TPUs. Si no lo logra en 12 meses, DeepSeek les gana en su juego |
+| **Meta** | Más alineado: compartir best practices de eficiencia, competir en ecosistema |
+
+
+
+## 10. Señales Débiles y Riesgos Ocultos
+
+1.  **Dependencia hardware NVIDIA**: DeepSeek acumula inventario H100 en Singapur/Malasia --- señal de que anticipan restricciones.
+2.  **Trampa del open-weight**: Al liberar MIT, DeepSeek crea competidores (Qwen, startups chinas) que fine-tunean sobre sus modelos.
+3.  **Censura china como barrera**: Empresas de compliance en EE.UU. evalúan sesgos políticos en outputs DeepSeek.
+4.  **Fuga de talento**: Si investigadores clave empiezan a migrar a Occidente, la velocidad de innovación se resiente.
+5.  **Techo de eficiencia**: Retornos marginales decrecientes. DeepSeek necesita su próximo salto arquitectónico (V5 o post-transformer).
+
+
+
+## 11. Conclusiones
+
+### Si solo recuerdas 3 cosas:
+
+> **1. DeepSeek está ganando la guerra de costos, y esa guerra determina quién escala.** La inferencia de IA va a caer 10--50$\times$ en los próximos 2 años. DeepSeek es la razón. Toda estrategia de IA que no asuma costos marginales cercanos a cero está desactualizada.
+
+> **2. La ventaja de DeepSeek no es solo técnica --- es estructural.** Eficiencia + open-weight + costo de capital paciente + velocidad de startup = combinación que Occidente no puede replicar fácilmente.
+
+> **3. No es binario (DeepSeek sí / DeepSeek no). Es estratégico.** Arquitectura multi-modelo donde DeepSeek hace inferencia barata y alto volumen, y modelos occidentales cubren código, multimodal y customer-facing. Quien construya esa arquitectura hoy tendrá ventaja en 2027.
+
+---
+
+*Informe generado por **Aletheia** + **Metis** (KAOS Agents), 28 de mayo de 2026. Basado en 50+ fuentes trianguladas. Las recomendaciones son de carácter estratégico general y no constituyen asesoría financiera o legal.*
+
+### Fuentes Clave
+
+| Fuente | URL |
+|--------|-----|
+| DeepSeek-V3 Technical Report | [arxiv.org/abs/2412.19437](https://arxiv.org/abs/2412.19437) |
+| DeepSeek-R1 (Nature) | [arxiv.org/abs/2501.12948](https://arxiv.org/abs/2501.12948) |
+| GitHub DeepSeek | [github.com/deepseek-ai](https://github.com/deepseek-ai) |
+| API Pricing | [api-docs.deepseek.com/quick_start/pricing](https://api-docs.deepseek.com/quick_start/pricing) |
+| Artificial Analysis | [artificialanalysis.ai](https://artificialanalysis.ai) |
+| SWE-bench | [swebench.com](https://www.swebench.com/) |
+| SemiAnalysis | [newsletter.semianalysis.com](https://newsletter.semianalysis.com/p/deepseek-debates) |
+| Wikipedia --- DeepSeek | [en.wikipedia.org/wiki/DeepSeek](https://en.wikipedia.org/wiki/DeepSeek) |
+| Brookings --- Export Controls | [brookings.edu](https://www.brookings.edu/articles/deepseek-shows-the-limits-of-us-export-controls-on-ai-chips/) |
+| MIT Tech Review | [technologyreview.com](https://www.technologyreview.com/2025/01/31/1110740/) |

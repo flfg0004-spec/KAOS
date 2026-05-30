@@ -87,7 +87,7 @@ Arquitectura del pipeline de conocimiento de KAOS, desde la ingesta masiva hasta
 | `txtai` | Knowledge base semántico | ⬜ Pendiente Docker |
 | `sequential-thinking` | Razonamiento estructurado | ✅ Activo |
 | `vault` | Escritura en filesystem | ✅ Activo |
-| `obsidian` | Lectura con metadatos | ✅ Activo |
+| `obsidian` | ~~Lectura con metadatos~~ | ❌ Deprecado (REST MCP deshabilitado 2026-05-26) |
 
 ## Flujo de Datos
 

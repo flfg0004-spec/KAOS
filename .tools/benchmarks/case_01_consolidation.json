@@ -1,0 +1,26 @@
+{
+  "problem": "metis.md (140 líneas) y SKILL.md (337 líneas) tenían ~40% de contenido duplicado — metodología de 7 fases, herramientas, formatos de entrega. ¿Debían fusionarse o mantenerse separados como entry point y skill respectivamente?",
+  "context": {
+    "industry": "agent-development",
+    "team_size": 3,
+    "constraints": "reducir carga cognitiva del LLM, prompts extensos pierden adherencia, mantener compatibilidad con opencode.json schema",
+    "timeline": "1 semana",
+    "metrics": {
+      "sync_score": "4/5 a 5/5",
+      "prompt_lines": "140 a 12",
+      "redundancy_percent": 40
+    }
+  },
+  "human_decision": {
+    "dimensions": {
+      "clarity": 9,
+      "measurability": 8,
+      "realism": 9,
+      "risk_awareness": 7,
+      "creativity": 6,
+      "actionability": 9
+    },
+    "composite_score": 8.0
+  },
+  "human_outcome": "Fusion exitosa: SKILL.md absorbió el contenido duplicado, metis.md se redujo a 12 líneas como entry point con redirect al skill. Sync score subió de 4/5 a 5/5. Prompt reducido 91% (140 → 12 líneas). Carga cognitiva del LLM disminuyó significativamente."
+}

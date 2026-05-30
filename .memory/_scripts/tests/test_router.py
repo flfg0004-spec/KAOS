@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_resolve_model_comprehensive():
-    from lib.dsol import resolve_model
+    from lib.aether import resolve_model
 
     cases = [
         ("task_type=research",   {"task_type": "research"},         "go-pro",   "high"),
@@ -26,7 +26,7 @@ def test_resolve_model_comprehensive():
 
 
 def test_circuit_breaker_integration():
-    from lib.dsol import CircuitBreaker
+    from lib.aether import CircuitBreaker
 
     cb = CircuitBreaker(failure_threshold=3, reset_timeout=600, half_open_max=1)
 
@@ -45,26 +45,26 @@ def test_circuit_breaker_integration():
 
 
 def test_resolve_model_circuit_breaker_fallback():
-    from lib.dsol import resolve_model, _CIRCUIT_BREAKER
+    from lib.aether import resolve_model, _ETHER_CIRCUIT_BREAKER
 
-    _CIRCUIT_BREAKER.record_success("go-pro")
-    _CIRCUIT_BREAKER.record_success("go-flash")
+    _ETHER_CIRCUIT_BREAKER.record_success("go-pro")
+    _ETHER_CIRCUIT_BREAKER.record_success("go-flash")
 
     result = resolve_model(task_type="research")
     assert result["model"] == "go-pro"
 
     for _ in range(3):
-        _CIRCUIT_BREAKER.record_failure("go-pro")
+        _ETHER_CIRCUIT_BREAKER.record_failure("go-pro")
 
     result2 = resolve_model(task_type="research")
     assert result2["model"] == "go-flash"
     assert "fallback" in result2["resolved_by"]
 
-    _CIRCUIT_BREAKER.record_success("go-pro")
+    _ETHER_CIRCUIT_BREAKER.record_success("go-pro")
 
 
 def test_routing_report():
-    from lib.dsol import TokenTracker
+    from lib.aether import EtherTracker as TokenTracker
     tracker = TokenTracker()
     report = tracker.get_routing_report()
     assert isinstance(report, str)
@@ -72,7 +72,7 @@ def test_routing_report():
 
 
 def test_resolve_model_all_task_types():
-    from lib.dsol import resolve_model, TASK_MODEL_MAP
+    from lib.aether import resolve_model, TASK_MODEL_MAP
     for task in TASK_MODEL_MAP:
         result = resolve_model(task_type=task)
         assert isinstance(result["model"], str)

@@ -1,26 +1,26 @@
 ---
 type: adr
-title: 'ADR-010: Integracion DSOL ↔ LangGraph Orchestrator'
+title: 'ADR-010: Integracion Ether ↔ LangGraph Orchestrator'
 aliases:
-- adr-010-integracion-dsol-langgraph
+- adr-010-integracion-ether-langgraph
 tags:
 - adr
 created: '2026-05-21'
-modified: '2026-05-21'
-confidence: media
-status: draft
+modified: '2026-05-26'
+confidence: alta
+status: accepted
 ---
 
-# ADR-010: Integracion DSOL ↔ LangGraph Orchestrator
+# ADR-010: Integracion Ether ↔ LangGraph Orchestrator
 
 ## Estado
-Aceptado
+Aceptado — Implementado. DSOL fue renombrado a Ether en v2. `lib/dsol.py` es fachada deprecated que re-exporta de `lib/ether/`.
 
 ## Contexto
-ADR-004 define DSOL (DeepSeek Optimization Layer) como capa de routing que decide que modelo usar (Flash vs Pro) segun complejidad. LangGraph (implementado en ADR-009) define routing condicional entre agentes (Metis → Kratos si hay codigo, → Mnemosyne si no). Ambas capas deciden "routing" pero en niveles distintos. Sin integracion explicita, pueden contradecirse.
+ADR-004 define Ether (originalmente DSOL — DeepSeek Optimization Layer, renombrado v2) como capa de routing que decide que modelo usar (Flash vs Pro vs Kimi) segun complejidad. LangGraph (implementado en ADR-009) define routing condicional entre agentes (Metis → Kratos si hay codigo, → Mnemosyne si no). Ambas capas deciden "routing" pero en niveles distintos. Sin integracion explicita, pueden contradecirse.
 
 ## Decision
-**LangGraph decide QUE agente ejecuta. DSOL decide COMO ejecuta.**
+**LangGraph decide QUE agente ejecuta. Ether decide COMO ejecuta.**
 
 ### Arquitectura de Integracion
 ```
@@ -29,7 +29,7 @@ LangGraph routing (QUE)
   ├── condicional: basado en topic keywords
   └── stateful: checkpointing SQLite
 
-DSOL routing (COMO)
+Ether routing (COMO)  ← antes DSOL
   ├── recibe: (agent, task, complexity_estimate)
   ├── determina: (model, thinking_mode, token_budget, temperature)
   └── configura: hydrate.py → build_optimized_context()
@@ -37,28 +37,30 @@ DSOL routing (COMO)
 
 ### Pipeline de Decision
 1. LangGraph selecciona el nodo (agente) a ejecutar
-2. Antes de ejecutar el nodo, llama a DSOL con el contexto actual
-3. DSOL retorna la configuracion optima (flash para tareas simples, pro para complejas)
-4. El nodo se ejecuta con la configuracion de DSOL
+2. Antes de ejecutar el nodo, llama a Ether con el contexto actual
+3. Ether retorna la configuracion optima (flash para tareas simples, pro para complejas, kimi para estrategia)
+4. El nodo se ejecuta con la configuracion de Ether
 5. Al completar, LangGraph persiste el estado via checkpoint
 
 ### Beneficios
 - Responsabilidades separadas y claras
-- Sin conflicto: LangGraph no decide modelos, DSOL no decide agentes
-- Token budget controlado por DSOL segun agente (Kratos usa mas tokens que Metis)
+- Sin conflicto: LangGraph no decide modelos, Ether no decide agentes
+- Token budget controlado por Ether segun agente (Kratos usa mas tokens que Metis)
 
 ## Consecuencias
 ### Positivas
 + Resuelve el conflicto C3 identificado por Kosmos en la auditoria
-+ Permite que cada agente tenga su perfil DSOL optimo
++ Permite que cada agente tenga su perfil Ether optimo
 + LangGraph se mantiene como orquestador puro, sin logica de modelos
 
 ### Negativas
-- Se necesita modificar `lib/dsol.py` para exponer `select_config(agent, task)`
-- LangGraph nodes deben invocar DSOL antes de ejecutar (token overhead adicional ~2%)
+- Se necesita modificar `lib/ether/router.py` para exponer `select_config(agent, task)`
+- LangGraph nodes deben invocar Ether antes de ejecutar (token overhead adicional ~2%)
 
 ## Referencias
-- ADR-004: DeepSeek Optimization Layer
+- ADR-004: DeepSeek Optimization Layer → Ether (renombrado v2)
 - ADR-009: Arquitectura Kratos
 - Kosmos Audit: auditoria-estrategia-orquesta-kosmos.md (Issue C3)
+- `lib/ether/` — Paquete Ether actual
+- `lib/dsol.py` — Fachada backward-compatible [DEPRECATED]
 

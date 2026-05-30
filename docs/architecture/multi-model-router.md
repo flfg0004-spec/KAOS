@@ -1,5 +1,7 @@
 # Multi-Model Router — Arquitectura del Sistema de Ruteo Inteligente
 
+> **Nota:** Este sistema fue renombrado de **DSOL** a **Ether** (Environment for Token Harmonization & Execution Regulation) en mayo 2026. Ver ADR-004 para historial completo.
+
 ## Diagrama de Arquitectura
 
 ```
@@ -16,7 +18,18 @@
 └────────────────────┼────────────────────────────────────────┘
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   DSOL ROUTER (lib/dsol.py)                  │
+│               ETHER ROUTER (lib/ether/)                      │
+│                                                             │
+│  Paquete: lib/ether/                                        │
+│  ├── router.py    → resolve_model(), _resolve_fallback()    │
+│  ├── circuit.py   → CircuitBreaker (unificado, persistente) │
+│  ├── tracker.py   → EtherTracker (thread-safe, atomic I/O)  │
+│  ├── limiter.py   → RateLimiter                             │
+│  ├── client.py    → chat(), call_api(), build_*             │
+│  └── config.py    → TASK_MODEL_MAP, BUDGETS, env vars      │
+│                                                             │
+│  La fachada legacy lib/dsol.py re-exporta de lib/ether/     │
+│  para backward compatibility (eliminar en v3.0).            │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  chat(task_type, messages, agent)                     │  │
@@ -49,7 +62,7 @@
 
 ## Componentes
 
-### 1. Router — Motor de decisión
+### 1. Router (`lib/ether/router.py`) — Motor de decisión
 
 ```
 resolve_model(task_type, agent, model_override):
@@ -61,7 +74,7 @@ resolve_model(task_type, agent, model_override):
   Output: {"model": str, "thinking": str|None, "resolved_by": str}
 ```
 
-### 2. Circuit Breaker — Protección por modelo
+### 2. Circuit Breaker (`lib/ether/circuit.py`) — Protección por modelo
 
 | Estado | Transición | Acción |
 |--------|-----------|--------|
@@ -70,7 +83,17 @@ resolve_model(task_type, agent, model_override):
 | half-open | 1 éxito → closed | Restaurar modelo |
 | half-open | 1 fallo → open | Reiniciar temporizador |
 
-### 3. chat() — Entry point principal
+Persistencia: escribe a `.memory/cache/circuit_breaker.json` con atomic writes y threading lock.
+
+### 3. EtherTracker (`lib/ether/tracker.py`) — Tracking de tokens
+
+Tracking persistente de tokens con:
+- **Thread safety**: threading.Lock en todas las operaciones de escritura
+- **Atomic writes**: escribe a `.tmp` y renombra (os.replace)
+- **Batch flush**: cada 10 llamadas
+- **Misma ruta**: `.memory/cache/token-usage.json` (compatible con DSOL legacy)
+
+### 4. chat() — Entry point principal
 
 ```python
 def chat(task_type, messages, agent="", model=None, thinking=None, ...):
@@ -78,7 +101,7 @@ def chat(task_type, messages, agent="", model=None, thinking=None, ...):
     resolved = resolve_model(task_type, agent, model)
     
     # 2. Verificar circuit breaker
-    if not CIRCUIT_BREAKER.is_available(resolved["model"]):
+    if not _ETHER_CIRCUIT_BREAKER.is_available(resolved["model"]):
         resolved = _resolve_fallback(task_type, agent)
     
     # 3. Llamar a través de llm.py
@@ -91,9 +114,9 @@ def chat(task_type, messages, agent="", model=None, thinking=None, ...):
     
     # 4. Actualizar circuit breaker
     if result.startswith("# LLM Error"):
-        CIRCUIT_BREAKER.record_failure(resolved["model"])
+        _ETHER_CIRCUIT_BREAKER.record_failure(resolved["model"])
     else:
-        CIRCUIT_BREAKER.record_success(resolved["model"])
+        _ETHER_CIRCUIT_BREAKER.record_success(resolved["model"])
     
     return result
 ```
@@ -108,7 +131,7 @@ def chat(task_type, messages, agent="", model=None, thinking=None, ...):
 
 ## Monitoreo
 
-### TokenTracker — Nuevos métodos
+### EtherTracker — Métricas
 - `get_model_breakdown()`: Desglose de uso y costo por modelo
 - `get_routing_report()`: Reporte completo con estado del circuit breaker
 

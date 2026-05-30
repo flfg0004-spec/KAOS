@@ -1,0 +1,59 @@
+name: PDF Report Tests
+
+on:
+  push:
+    paths:
+      - '.memory/_scripts/lib/pdf_*.py'
+      - '.memory/_scripts/lib/pdf_templates/**'
+      - '.memory/_scripts/tests/pdf/**'
+      - '.memory/_scripts/requirements.txt'
+  pull_request:
+    paths:
+      - '.memory/_scripts/lib/pdf_*.py'
+      - '.memory/_scripts/lib/pdf_templates/**'
+      - '.memory/_scripts/tests/pdf/**'
+      - '.memory/_scripts/requirements.txt'
+      - '.memory/_scripts/requirements-lock.txt'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .memory/_scripts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .memory/_scripts/requirements-lock.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-lock.txt
+          pip install pytest pytest-cov
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run PDF report tests
+        run: |
+          pytest tests/pdf/ -v \
+            --cov=lib.pdf_report_generator \
+            --cov=lib.pdf_chart_engine \
+            --cov=lib.pdf_templates \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+            file: .memory/_scripts/coverage.xml
+            flags: pdf-tests
+            name: pdf-report-tests
+            fail_ci_if_error: false

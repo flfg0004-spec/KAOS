@@ -8,7 +8,7 @@ from pathlib import Path
 from lib import quality, dashboard as dash, speed, viz, wikilinks, docker_health, cross_validator
 from lib import gap_query, crossref, report_engine
 from lib.agy_client import gpt55_status, call_gpt55
-from lib.telegram import send as telegram_send
+from lib.hermes_router import send as telegram_send
 
 
 def register(sub, kaos_root):

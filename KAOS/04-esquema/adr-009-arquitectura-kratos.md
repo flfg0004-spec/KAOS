@@ -34,8 +34,7 @@ Crear Kratos como 5º agente de KAOS con arquitectura APEX-EM PRGII:
 - sequential-thinking_* — Descomposición de problemas
 - git_* — Commits, branches, PRs
 - exa-search_* — Búsqueda de soluciones
-- obsidian_* — Lectura vault enriquecido
-- mcp-obsidian-cli_* — Lectura alternativa
+- mcp-obsidian-cli_* — Lectura alternativa (obsidian REST deshabilitado 2026-05-26)
 
 ### Stack de Memoria
 - code_experiences.db — SQLite con FTS5 + WAL + triggers de sync

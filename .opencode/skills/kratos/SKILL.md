@@ -36,7 +36,7 @@ Exito -> confidence++. Fracaso -> confidence-- (via LinUCB bandit).
 ```
 
 ## Tools
-- vault_*, sequential-thinking_*, git_*, exa-search_*, obsidian_*
+- vault_*, sequential-thinking_*, git_*, exa-search_*
 
 ## Captura de Errores
 Hook automatico: `kratos_hook.run_and_capture()` captura errores bash -> CodeExperience.

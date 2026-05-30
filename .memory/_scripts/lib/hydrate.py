@@ -206,7 +206,7 @@ def load(agent: str = "", task: str = "") -> str:
     # Usar DSOL optimizado si está disponible y hay contexto compartido
     if agent and pipeline_ctx and pipeline_ctx.get("pipeline_id"):
         try:
-            from lib.dsol import build_optimized_context
+            from lib.aether.client import build_optimized_context
             optimized = build_optimized_context(agent, task, pipeline_ctx)
             if optimized.strip():
                 context.append(optimized)

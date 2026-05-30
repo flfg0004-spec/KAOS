@@ -12,7 +12,7 @@ from lib.agent_executor import (
 from lib.orchestrator import critic_node, _evaluator_node, route_after_strategy, route_after_critic
 
 TOPIC = "implementar API REST con JWT y autenticacion en Python"
-PROFILE = "desarrollo"
+PROFILE = "standard"
 
 print("=" * 72)
 print("  KAOS PIPELINE DEMO — 8 NODOS LANGGRAPH DAG")

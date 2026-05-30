@@ -10,7 +10,7 @@ from lib.file_lock import acquire_lock
 from lib.llm import agent_llm_call, SYSTEM_PROMPTS
 from lib.agent_executor import planner_node, aletheia_node, kosmos_node, metis_node, kratos_node, reflexion_node, mnemosyne_node, bcg_evaluator_node
 from lib.agent_nodes.critic import critic_node
-from lib.verification_hook import record as verify_record
+from lib.quality.agent import record as verify_record
 
 
 
@@ -550,7 +550,7 @@ def reflexion_node(state: KAOSState) -> dict:
         if improved and len(improved) > 100:
             kratos_out = improved
     except Exception:
-        pass
+        _LOG.warning("reflexion LLM call failed, using original output")
     
     _notify("Kratos Reflexion", "completed", state)
     return {

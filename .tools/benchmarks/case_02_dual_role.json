@@ -1,0 +1,26 @@
+{
+  "problem": "Metis tenía dos roles documentados (Strategy a temp 0.7 y Quality Orchestrator a temp 0.2) que operaban con temperaturas diferentes. Se descubrió que la temperatura real del agente era fija en 0.4 y los modos documentados eran ficticios. ¿Separar en dos agentes distintos o corregir la documentación para reflejar la realidad?",
+  "context": {
+    "industry": "agent-architecture",
+    "team_size": 2,
+    "constraints": "sin cambios en schema de opencode.json, sin crear nuevos agentes, mantener compatibilidad retrospectiva",
+    "timeline": "2 días",
+    "metrics": {
+      "contradictions_resolved": 4,
+      "temp_modes_eliminated": 4,
+      "files_corrected": 4
+    }
+  },
+  "human_decision": {
+    "dimensions": {
+      "clarity": 8,
+      "measurability": 7,
+      "realism": 8,
+      "risk_awareness": 9,
+      "creativity": 7,
+      "actionability": 8
+    },
+    "composite_score": 7.8
+  },
+  "human_outcome": "Se adoptó ADR-016 manteniendo dual-role pero corrigiendo toda la documentación para reflejar temperatura 0.4 fija. Se implementó switching semántico vía eval-profile.yaml. 4 archivos corregidos (metis.md, SKILL.md, kratos.md, kronos.md), sync check 10/10, cero contradicciones de temperatura. Decisión pragmática que evitó reescribir el schema de opencode.json."
+}

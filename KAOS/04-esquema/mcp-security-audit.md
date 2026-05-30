@@ -6,27 +6,21 @@ aliases:
 tags:
 - adr
 created: '2026-05-20'
-modified: '2026-05-20'
+modified: '2026-05-25'
 confidence: media
 status: draft
 ---
 
 # Security Audit: KAOS MCPs
-*Updated: 2026-05-20*
+*Updated: 2026-05-25*
 
 ## Summary
-- **MCPs audited**: 18 (17 enabled, 1 disabled)
+- **MCPs audited**: 16 (all enabled)
 - **HIGH risk**: 0 (GitHub removed)
-- **MEDIUM risk**: 4 (EXA_API_KEY ×2, remote MCPs ×2)
+- **MEDIUM risk**: 2 (remote MCPs ×2)
 - **LOW risk**: 14
 
 ## Findings
-
-### MEDIUM: EXA_API_KEY in opencode.json
-- **MCPs**: `exa-search`, `gptr-deep-research`
-- **Issue**: API key stored in plaintext in MCP `env` section (standard MCP practice)
-- **Risk**: Read-only search key — can search Exa but not modify. Key also set as system env var.
-- **Mitigation**: Ensure `.opencode/.gitignore` prevents committing secrets
 
 ### MEDIUM: Remote MCPs — Data exfiltration vector
 - **MCPs**: `context7` (https://mcp.context7.com/mcp), `supermemory` (https://mcp.supermemory.ai/mcp)
@@ -41,17 +35,18 @@ status: draft
 - **Status**: Acceptable
 
 ### LOW: Remaining MCPs
-All other MCPs (sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, searxng, crawl4ai, txtai, structurizr, knowledge-graph, mcp-obsidian-cli) operate locally with no external network access or have minimal risk profile.
+All other MCPs (sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, searxng, crawl4ai, txtai, scryer, knowledge-graph, mcp-obsidian-cli) operate locally with no external network access or have minimal risk profile.
 
 ## Resolved Issues
 - **GitHub MCP** ❌ Removed — GitHub PAT no longer stored in config
-- **Lucidity MCP** ❌ Removed — package `lucidity-mcp` does not exist on npm
+- **Lucidity MCP** ❌ Removed — package `lucidity-mcp` does not exist on npm; officially archived
+- **EXA_API_KEY** ✅ Resolved — removed from mcp-servers.json; no longer stored in configuration
+- **Strategy MCP** ❌ Removed — orphaned server; Metis uses strategy-extras directly
 
 ## Recommendations
 
 | Priority | Action | Risk Reduced |
 |:--------:|--------|:------------:|
-| 1 | Ensure `.opencode/.gitignore` prevents committing MCP secrets | MEDIUM→LOW |
+| 1 | Ensure `.opencode/.gitignore` prevents committing MCP secrets | — |
 | 2 | Audit context7 data handling before sensitive use | MEDIUM→LOW |
 | 3 | Review supermemory privacy policy for vault data | MEDIUM→LOW |
-

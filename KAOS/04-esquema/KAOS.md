@@ -57,7 +57,7 @@ status: draft
 ## MCP Configuration (Per-Agent)
 Los MCP servers están restringidos por agente para optimizar tokens:
 - **Aletheia**: crawl4ai, searxng, exa-search, brave-search, scholar-search, rss-reader, context7, sequential-thinking, vault, obsidian
-- **Kosmos**: depwire, structurizr, excalidraw, git, database, postgres, github, lucidity, sequential-thinking, vault
+- **Kosmos**: depwire, scryer, ridge, likec4, excalidraw, git, database, postgres, github, sequential-thinking, vault, obsidian
 - **Metis**: brave-search, paperjsx, excalidraw, sequential-thinking, vault, obsidian
 - **Todos**: brave-search, sequential-thinking, vault
 
@@ -69,7 +69,7 @@ Los MCP servers están restringidos por agente para optimizar tokens:
 
 ## Agents
 - **Aletheia**: Writes raw/. Reads wiki/. Permission: edit deny. Color: #4A90D9. Steps: 15. Temp: 0.3.
-- **Kosmos**: Reads raw/ + wiki/. Writes schema/ADRs. Permission: edit ask. Color: #7B68EE. Steps: 10. Temp: 0.1.
+- **Kosmos**: Reads raw/ + wiki/. Writes schema/ADRs. Permission: edit ask. Color: #7B68EE. Steps: 12. Temp: 0.1.
 - **Metis**: Reads all. Writes reports to wiki/ or PaperJSX. Permission: edit ask. Color: #E8A87C. Steps: 8. Temp: 0.4.
 
 ## Commands

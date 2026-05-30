@@ -48,12 +48,6 @@ def create_research_workflow(model_id: str = "deepseek-v4-flash", with_mcp: bool
     kosmos = create_kosmos(with_mcp=with_mcp)
     metis = create_metis(with_mcp=with_mcp)
 
-    workflow = Workflow(
-        name="ResearchWorkflow",
-        description="Pipeline completo de investigación: Aletheia busca → Kosmos analiza → Metis estratégia",
-    )
-
-    @workflow.step
     async def run_workflow(ctx, topic: str) -> dict:
         paso1 = await _safe_step(
             aletheia.arun(f"Investiga a fondo: {topic}"),
@@ -77,4 +71,8 @@ def create_research_workflow(model_id: str = "deepseek-v4-flash", with_mcp: bool
             "strategy": paso3.content if hasattr(paso3, "content") else str(paso3),
         }
 
-    return workflow
+    return Workflow(
+        name="ResearchWorkflow",
+        description="Pipeline completo de investigación: Aletheia busca → Kosmos analiza → Metis estratégia",
+        steps=[run_workflow],
+    )

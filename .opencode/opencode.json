@@ -2,7 +2,7 @@
   "$schema": "https://opencode.ai/config.json",
   "agent": {
     "aletheia": {
-      "description": "Agente de investigación — búsqueda web, papers, noticias, investigación profunda",
+      "description": "Agente de investigaci\u00c3\u00b3n \u00e2\u20ac\u201d b\u00c3\u00basqueda web, papers, noticias, investigaci\u00c3\u00b3n profunda",
       "mode": "subagent",
       "color": "#4A90D9",
       "steps": 15,
@@ -28,24 +28,24 @@
         "scholar-search_*": true,
         "rss-reader_*": true,
         "context7_*": true,
-        "gptr-deep-research_*": true,
         "searxng_*": true,
         "crawl4ai_*": true,
         "exa-search_*": true,
-        "depwire_*": true,
-        "mcp-obsidian-cli_*": true,
         "sequential-thinking_*": true,
         "vault_*": true,
         "txtai_*": true,
-        "obsidian_*": true,
+        "knowledge-graph_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true,
-        "agy-bridge_agy_ask_gpt55": true
+        "agy-bridge_agy_ask_gpt55": true,
+        "agy-bridge_agy_ask_gpt55_thinking": true,
+        "hermes-gateway_*": true,
+        "firecrawl_*": true
       }
     },
     "mnemosyne": {
-      "description": "Guardiana de la memoria — curación de conocimiento, wikilinks, calidad del vault",
+      "description": "Guardiana de la memoria \u00e2\u20ac\u201d curaci\u00c3\u00b3n de conocimiento, wikilinks, calidad del vault",
       "mode": "subagent",
       "color": "#C0C0C0",
       "steps": 14,
@@ -54,7 +54,7 @@
         "read": "allow",
         "glob": "allow",
         "grep": "allow",
-        "edit": "ask",
+        "edit": "allow",
         "bash": {
           "py *": "allow",
           ".memory/_scripts/*": "allow",
@@ -68,20 +68,60 @@
         "vault_*": true,
         "txtai_*": true,
         "knowledge-graph_*": true,
-        "obsidian_*": true,
         "mcp-embed_*": true,
-        "dsol_*": true,
         "gaps_*": true,
         "contradictions_*": true,
         "lifecycle_*": true,
         "quality_*": true,
         "crossref_*": true,
         "agy-bridge_agy_status": true,
+        "mcp-dsol_*": true,
+        "agy-bridge_agy_ask_flash": true
+      }
+    },
+    "mnemosyne-curator": {
+      "description": "Curadora de conocimiento con scoring multidimensional, s\u00c3\u00adntesis autom\u00c3\u00a1tica, y permisos elevados de escritura/eliminaci\u00c3\u00b3n",
+      "mode": "subagent",
+      "color": "#C0C0C0",
+      "steps": 14,
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "edit": "allow",
+        "delete": {
+          ".memory/wiki/concepts/*": "allow",
+          ".memory/raw/*": "allow",
+          ".vault/quality/*": "allow",
+          "*": "deny"
+        },
+        "bash": {
+          "py *": "allow",
+          ".memory/_scripts/*": "allow",
+          "*": "deny"
+        },
+        "skill": "allow",
+        "task": "allow"
+      },
+      "tools": {
+        "sequential-thinking_*": true,
+        "vault_*": true,
+        "txtai_*": true,
+        "knowledge-graph_*": true,
+        "mcp-embed_*": true,
+        "gaps_*": true,
+        "quality_*": true,
+        "crossref_*": true,
+        "lifecycle_*": true,
+        "knowledge-scorer_*": true,
+        "knowledge-synthesis_*": true,
+        "mcp-dsol_*": true,
         "agy-bridge_agy_ask_flash": true
       }
     },
     "kosmos": {
-      "description": "Agente de arquitectura — análisis de código, diagramas C4, documentación técnica",
+      "description": "Agente de arquitectura \u00e2\u20ac\u201d an\u00c3\u00a1lisis de c\u00c3\u00b3digo, diagramas C4, documentaci\u00c3\u00b3n t\u00c3\u00a9cnica",
       "mode": "subagent",
       "color": "#7B68EE",
       "steps": 10,
@@ -119,8 +159,6 @@
         "excalidraw_*": true,
         "git_*": true,
         "lucidity_*": true,
-        "mcp-obsidian-cli_*": true,
-        "obsidian_*": true,
         "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true,
         "agy-bridge_agy_ask_gpt55": true,
@@ -128,7 +166,7 @@
       }
     },
     "metis": {
-      "description": "Agente de estrategia — planeación, OKRs, roadmaps, análisis competitivo, reportes - orquestador del sistema DUAL",
+      "description": "Agente de estrategia \u00e2\u20ac\u201d planeaci\u00c3\u00b3n, OKRs, roadmaps, an\u00c3\u00a1lisis competitivo, reportes - orquestador del sistema DUAL",
       "mode": "subagent",
       "color": "#E8A87C",
       "steps": 12,
@@ -153,21 +191,41 @@
         "paperjsx_*": true,
         "exa-search_*": true,
         "sequential-thinking_*": true,
-        "dsol_*": true,
-        "speed_*": true,
         "mcp-obsidian-cli_*": true,
-        "obsidian_*": true,
         "vault_*": true,
         "strategy-mcp_*": true,
         "strategy-extras_*": true,
+        "mcp-speed_*": true,
+        "mcp-dsol_*": true,
+        "mcp-pandas_*": true,
+        "mcp-simulate_*": true,
+        "mcp-causal-graph_*": true,
+        "mcp-strategy-feedback_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true,
         "agy-bridge_agy_ask_opus": true,
-        "agy-bridge_agy_ask_gpt55": true
+        "agy-bridge_agy_ask_gpt55": true,
+        "mcp-post-output-hook_*": true,
+        "mcp-creative-spark_*": true,
+        "mcp-roadmap-3h_*": true
+      },
+      "eval_profile": {
+        "strategy_exploration": {
+          "description": "Para brainstorming de alternativas y pensamiento divergente"
+        },
+        "analysis": {
+          "description": "Para analisis causal riguroso y evaluacion precisa"
+        },
+        "creative_synthesis": {
+          "description": "Para recombinacion creativa y generacion de opciones novedosas"
+        },
+        "execution": {
+          "description": "Para planes concretos y accionables"
+        }
       }
     },
     "kronos": {
-      "description": "Orquestador — análisis de pipelines, routing adaptativo, recuperación de errores",
+      "description": "Orquestador \u00e2\u20ac\u201d an\u00c3\u00a1lisis de pipelines, routing adaptativo, recuperaci\u00c3\u00b3n de errores",
       "mode": "subagent",
       "color": "#FFD700",
       "steps": 14,
@@ -192,17 +250,16 @@
         "sequential-thinking_*": true,
         "knowledge-graph_*": true,
         "strategy-mcp_*": true,
-        "mcp-obsidian-cli_*": true,
-        "obsidian_*": true,
         "txtai_*": true,
         "quality_*": true,
-        "dsol_*": true,
         "gaps_*": true,
-        "lifecycle_*": true
+        "lifecycle_*": true,
+        "mcp-speed_*": true,
+        "mcp-dsol_*": true
       }
     },
     "kratos": {
-      "description": "Agente de código — memoria experiencial, generación, depuración, revisión de código",
+      "description": "Agente de c\u00c3\u00b3digo \u00e2\u20ac\u201d memoria experiencial, generaci\u00c3\u00b3n, depuraci\u00c3\u00b3n, revisi\u00c3\u00b3n de c\u00c3\u00b3digo",
       "mode": "subagent",
       "color": "#DC143C",
       "steps": 12,
@@ -231,8 +288,6 @@
         "sequential-thinking_*": true,
         "git_*": true,
         "exa-search_*": true,
-        "mcp-obsidian-cli_*": true,
-        "obsidian_*": true,
         "agy-bridge_agy_ask_flash": true,
         "agy-bridge_agy_ask_sonnet": true
       }
@@ -266,42 +321,88 @@
   "mcp": {
     "mcp-obsidian-cli": {
       "type": "local",
-      "command": ["npx", "-y", "mcp-obsidian-cli"],
+      "command": [
+        "npx",
+        "-y",
+        "mcp-obsidian-cli"
+      ],
       "enabled": true
     },
     "sequential-thinking": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_proxy.py",
+        "--",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
       "enabled": true
     },
     "depwire": {
       "type": "local",
-      "command": ["npx", "-y", "@iflow-mcp/depwire-depwire"],
+      "command": [
+        "npx",
+        "-y",
+        "@iflow-mcp/depwire-depwire"
+      ],
       "enabled": true
     },
     "excalidraw": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "excalidraw-mcp"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_proxy.py",
+        "--",
+        "npx",
+        "-y",
+        "excalidraw-mcp"
+      ],
       "enabled": true
     },
     "paperjsx": {
       "type": "local",
-      "command": ["npx", "-y", "@paperjsx/mcp-server"],
+      "command": [
+        "npx",
+        "-y",
+        "@paperjsx/mcp-server"
+      ],
       "enabled": true
     },
     "scholar-search": {
       "type": "local",
-      "command": ["npx", "-y", "scholar-search-mcp"],
+      "command": [
+        "npx",
+        "-y",
+        "scholar-search-mcp"
+      ],
       "enabled": true
     },
     "git": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-git", "--repository", "."],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "."
+      ],
       "enabled": true
     },
     "rss-reader": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "rss-reader-mcp"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_proxy.py",
+        "--",
+        "npx",
+        "-y",
+        "rss-reader-mcp"
+      ],
       "enabled": true
     },
     "context7": {
@@ -311,7 +412,14 @@
     },
     "vault": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_proxy.py", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_proxy.py",
+        "--",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
         ".memory",
         ".memory/ingest",
         ".memory/cache",
@@ -324,77 +432,215 @@
     },
     "exa-search": {
       "type": "local",
-      "command": ["npx", "-y", "exa-mcp-server"],
-      "enabled": true,
-      "env": {
-        "EXA_API_KEY": "TO-ROTATE-EXA-API-KEY"
-      }
+      "command": [
+        "npx",
+        "-y",
+        "exa-mcp-server"
+      ],
+      "enabled": true
     },
     "searxng": {
       "type": "local",
-      "command": ["npx", "-y", "searxng-mcp", "--url", "http://127.0.0.1:8888"],
+      "command": [
+        "npx",
+        "-y",
+        "searxng-mcp",
+        "--url",
+        "http://127.0.0.1:8888"
+      ],
       "enabled": true
     },
     "crawl4ai": {
       "type": "local",
-      "command": ["npx", "-y", "crawl4ai-mcp-sse-stdio", "--url", "http://127.0.0.1:11235"],
+      "command": [
+        "npx",
+        "-y",
+        "crawl4ai-mcp-sse-stdio",
+        "--url",
+        "http://127.0.0.1:11235"
+      ],
       "enabled": true
     },
     "txtai": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_txtai.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_txtai.py"
+      ],
       "enabled": true
     },
     "structurizr": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_structurizr.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_structurizr.py"
+      ],
       "enabled": true
     },
     "lucidity": {
       "type": "local",
-      "command": ["py", "-3", ".tools/run_lucidity.py"],
+      "command": [
+        "py",
+        "-3",
+        ".tools/run_lucidity.py"
+      ],
       "enabled": true
     },
     "obsidian": {
       "type": "local",
-      "command": ["npx", "-y", "@swarogan/obsidian-mcp-rest"],
-      "enabled": true,
+      "command": [
+        "npx",
+        "-y",
+        "@swarogan/obsidian-mcp-rest"
+      ],
+      "enabled": false,
       "env": {
-        "OBSIDIAN_API_KEY": "",
+        "OBSIDIAN_API_KEY": "ROTATED-20260526",
         "OBSIDIAN_REST_URL": "https://127.0.0.1:27124"
       }
     },
     "mcp-embed": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_embed.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_embed.py"
+      ],
+      "enabled": true
+    },
+    "mcp-speed": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_speed.py"
+      ],
+      "enabled": true
+    },
+    "mcp-dsol": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_dsol.py"
+      ],
       "enabled": true
     },
     "knowledge-graph": {
       "type": "local",
-      "command": ["npx", "-y", "mcp-knowledge-graph", "--memory-path", ".memory/cache/knowledge-graph"],
+      "command": [
+        "npx",
+        "-y",
+        "mcp-knowledge-graph",
+        "--memory-path",
+        ".memory/cache/knowledge-graph"
+      ],
       "enabled": true
     },
     "agy-bridge": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_agy_bridge.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_agy_bridge.py"
+      ],
       "enabled": true,
       "timeout": 300
     },
     "strategy-mcp": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_strategy.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_strategy.py"
+      ],
       "enabled": true
     },
     "strategy-extras": {
       "type": "local",
-      "command": ["py", "-3", ".memory/_scripts/mcp_strategy_extras.py"],
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_strategy_extras.py"
+      ],
+      "enabled": true
+    },
+    "mcp-pandas": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_pandas.py",
+        "interactive"
+      ],
+      "enabled": true
+    },
+    "mcp-simulate": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_simulate.py"
+      ],
+      "enabled": true
+    },
+    "mcp-causal-graph": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_causal_graph.py"
+      ],
+      "enabled": true
+    },
+    "mcp-strategy-feedback": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_strategy_feedback.py"
+      ],
       "enabled": true
     },
     "hermes-gateway": {
       "type": "local",
-      "command": ["hermes", "mcp", "serve", "--accept-hooks"],
+      "command": [
+        "hermes",
+        "mcp",
+        "serve",
+        "--accept-hooks"
+      ],
       "enabled": true,
-      "timeout": 300
+      "timeout": 600
+    },
+    "mcp-creative-spark": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_creative_spark.py"
+      ],
+      "enabled": true
+    },
+    "mcp-roadmap-3h": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_roadmap_3h.py"
+      ],
+      "enabled": true
+    },
+    "mcp-post-output-hook": {
+      "type": "local",
+      "command": [
+        "py",
+        "-3",
+        ".memory/_scripts/mcp_post_output_hook.py"
+      ],
+      "enabled": true
     }
   },
   "compaction": {
@@ -404,10 +650,6 @@
     "reserved": 4000
   },
   "command": {
-    "open-webui": {
-      "description": "Abre Open WebUI en el navegador",
-      "template": "Abre http://localhost:3000 en el navegador. Open WebUI es el control center web de KAOS con chat multi-modelo, RAG, y dashboard de métricas."
-    },
     "quality": {
       "description": "Ejecuta smoke check de calidad del sistema KAOS",
       "template": "Ejecuta py -3 .memory/_scripts/vault.py health --auto y py -3 .memory/_scripts/vault.py lint run, luego muestra los resultados"
@@ -419,23 +661,28 @@
       "subtask": true
     },
     "architect": {
-      "description": "Invoca a Kosmos para análisis arquitectónico",
+      "description": "Invoca a Kosmos para an\u00c3\u00a1lisis arquitect\u00c3\u00b3nico",
       "template": "@kosmos analiza la arquitectura de: {{input}}",
       "agent": "kosmos",
       "subtask": true
     },
     "strategy": {
-      "description": "Invoca a Metis para análisis estratégico con perfil",
+      "description": "Invoca a Metis para an\u00c3\u00a1lisis estrat\u00c3\u00a9gico con perfil",
       "template": "@metis desarrolla una estrategia para: {{input}} usando perfil {{profile}}",
       "agent": "metis",
       "subtask": true
     },
     "curate": {
-      "description": "Ejecuta ciclo completo de curaduría Mnemosyne (14 fases)",
-      "template": "Ejecuta py -3 .memory/_scripts/run_curation.py y luego py -3 .memory/_scripts/vault.py curation report, reporta el resumen de curaduría",
+      "description": "Ejecuta ciclo completo de curadur\u00c3\u00ada Mnemosyne (14 fases)",
+      "template": "Ejecuta py -3 .memory/_scripts/run_curation.py y luego py -3 .memory/_scripts/vault.py curation report, reporta el resumen de curadur\u00c3\u00ada",
       "agent": "mnemosyne",
+      "subtask": true
+    },
+    "metis_mode": {
+      "description": "Detecta modo de operacion de Metis basado en perfil activo de eval-profile.yaml",
+      "template": "Ejecuta py -3 .memory/_scripts/metis_mode.py {{flags}} y muestra el modo actual, temperatura sugerida y herramientas recomendadas",
+      "agent": "metis",
       "subtask": true
     }
   }
 }
-

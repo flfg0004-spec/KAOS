@@ -62,6 +62,6 @@
     "textColorCss": "var(--text-muted)",
     "ignoreWhitespace": false
   },
-  "autoCommitInterval": 60,
+  "autoCommitInterval": 300,
   "showNotification": false
 }

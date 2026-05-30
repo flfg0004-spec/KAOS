@@ -119,24 +119,35 @@ def scan_pipeline() -> dict:
         return {"langgraph_active": False, "error": str(e)}
 
 def scan_hermes() -> dict:
-    """Scan Hermes status (via WSL)."""
+    """Scan Hermes status (nativo Windows)."""
+    import json
+    import urllib.request
+
     try:
-        r = subprocess.run(
-            ["wsl", "-d", "Ubuntu", "-e", "bash", "-c",
-             "systemctl --user is-active hermes-gateway 2>/dev/null || "
-             "systemctl is-active hermes-gateway 2>/dev/null || echo 'inactive'"],
-            capture_output=True, text=True, timeout=15
-        )
-        status = r.stdout.strip()
-        r2 = subprocess.run(
-            ["wsl", "-d", "Ubuntu", "-e", "bash", "-c",
-             "hermes --version 2>/dev/null | head -1 || echo 'no hermes'"],
-            capture_output=True, text=True, timeout=15
-        )
-        version = r2.stdout.strip()
-        return {"status": status, "version": version}
+        r = subprocess.run(["hermes", "--version"], capture_output=True, text=True, timeout=5)
+        version = r.stdout.strip() if r.returncode == 0 else "no hermes"
+    except FileNotFoundError:
+        return {"status": "inactive", "version": "not installed", "error": "hermes binary not found"}
     except Exception as e:
-        return {"status": "unknown", "error": str(e)}
+        return {"status": "unknown", "version": "?", "error": str(e)}
+
+    gateway_status = "inactive"
+    try:
+        req = urllib.request.Request("http://127.0.0.1:8642/health", method="GET")
+        resp = urllib.request.urlopen(req, timeout=3)
+        if resp.status == 200:
+            body = json.loads(resp.read().decode())
+            gateway_status = body.get("status", "ok")
+        else:
+            gateway_status = f"http_{resp.status}"
+    except Exception:
+        gateway_status = "inactive"
+
+    return {
+        "status": "active" if gateway_status in ("ok", "healthy", None) else gateway_status,
+        "version": version,
+        "gateway": gateway_status,
+    }
 
 def scan_scheduler() -> dict:
     """Scan Windows scheduled tasks."""

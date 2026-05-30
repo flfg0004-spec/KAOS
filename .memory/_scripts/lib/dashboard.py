@@ -245,7 +245,7 @@ def collect_data() -> dict:
                      "total_prompt_tokens": 0, "total_completion_tokens": 0, "per_agent": {}}
     if token_usage_path.exists():
         try:
-            from lib.dsol import TokenTracker
+            from lib.aether.tracker import EtherTracker as TokenTracker
             tt = TokenTracker()
             dsol_metrics = tt.get_stats()
             dsol_metrics["cache_hit_rate"] = round(

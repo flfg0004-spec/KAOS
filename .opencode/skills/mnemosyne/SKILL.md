@@ -58,7 +58,7 @@ query_gaps(topic: str) -> {
 
 ## Tools
 - sequential-thinking_*, vault_*, txtai_*, knowledge-graph_*
-- obsidian_*, mcp-obsidian-cli_*, mcp-embed_*
+- mcp-obsidian-cli_*, mcp-embed_*
 - agy-bridge_* (Gemini Flash via DSOL)
 - pipeline_* (context cross-agent)
 

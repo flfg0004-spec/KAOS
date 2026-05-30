@@ -23,8 +23,7 @@ Kratos v2.0 con arquitectura APEX-EM PRGII mejorada:
 - sequential-thinking_* — Descomposición de problemas
 - git_* — Commits, branches, PRs
 - exa-search_* — Búsqueda de soluciones
-- obsidian_* — Lectura vault enriquecido
-- mcp-obsidian-cli_* — Lectura alternativa
+- mcp-obsidian-cli_* — Lectura alternativa (obsidian REST deshabilitado 2026-05-26)
 - server-git_* — MCP Git nativo
 - server-github_* — MCP GitHub (100+ tools)
 

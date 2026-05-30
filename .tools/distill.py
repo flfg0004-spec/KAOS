@@ -10,7 +10,6 @@ from datetime import datetime, date
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(BASE / ".memory" / "_scripts" / "lib"))
 
 RAW_DIR = BASE / ".memory" / "raw"
 CONCEPTS_DIR = BASE / ".memory" / "wiki" / "concepts"
@@ -21,19 +20,17 @@ LOG_PATH = BASE / ".memory" / "wiki" / "log.md"
 
 import hashlib
 
-DSOL_CACHE_FILE = BASE / ".memory" / "cache" / "dsol-cache.json"
+CACHE_FILE = BASE / ".memory" / "cache" / "aether-cache.json"
 
-# Try to import DSOL
+# Try to import Aether
 try:
-    from dsol import build_prompt, configure_thinking, get_output_config, allocate
-    try:
-        from dsol import call_structured as dsol_call_structured
-    except ImportError:
-        dsol_call_structured = None
-    HAS_DSOL = True
+    sys.path.insert(0, str(BASE / ".memory" / "_scripts"))
+    from lib.aether.client import build_prompt, configure_thinking, get_output_config, allocate
+    from lib.aether.client import call_structured as aether_call_structured
+    HAS_AETHER = True
 except ImportError:
-    HAS_DSOL = False
-    dsol_call_structured = None
+    HAS_AETHER = False
+    aether_call_structured = None
 
 # Try to import synapse (optional)
 try:
@@ -43,50 +40,50 @@ except ImportError:
     HAS_SYNAPSE = False
 
 
-def _dsol_cache_key(content: str) -> str:
+def _aether_cache_key(content: str) -> str:
     return hashlib.sha256(content[:1000].encode("utf-8")).hexdigest()[:16]
 
 
-def _dsol_cache_get(key: str) -> dict | None:
-    if DSOL_CACHE_FILE.exists():
+def _aether_cache_get(key: str) -> dict | None:
+    if CACHE_FILE.exists():
         try:
-            cache = json.loads(DSOL_CACHE_FILE.read_text(encoding="utf-8"))
+            cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
             return cache.get(key)
         except Exception:
             pass
     return None
 
 
-def _dsol_cache_set(key: str, result: dict):
-    DSOL_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+def _aether_cache_set(key: str, result: dict):
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
     cache = {}
-    if DSOL_CACHE_FILE.exists():
+    if CACHE_FILE.exists():
         try:
-            cache = json.loads(DSOL_CACHE_FILE.read_text(encoding="utf-8"))
+            cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     cache[key] = result
-    DSOL_CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _call_dsol(task: str, content: str, use_json: bool = True) -> dict | str:
     """Call DeepSeek via DSOL for structured extraction. Uses cache."""
-    if not HAS_DSOL or dsol_call_structured is None:
+    if not HAS_AETHER or aether_call_structured is None:
         return {"error": "DSOL not available", "fallback": True}
 
     # Check cache
-    cache_key = _dsol_cache_key(content)
-    cached = _dsol_cache_get(cache_key)
+    cache_key = _aether_cache_key(content)
+    cached = _aether_cache_get(cache_key)
     if cached and cached.get("task") == task:
         return cached["result"]
 
-    result = dsol_call_structured(task, content, model="flash", use_json=use_json)
+    result = aether_call_structured(task, content, model="flash", use_json=use_json)
 
     if isinstance(result, dict) and "error" in result:
         return result
 
     # Cache successful results
-    _dsol_cache_set(cache_key, {"task": task, "result": result})
+    _aether_cache_set(cache_key, {"task": task, "result": result})
 
     if use_json and isinstance(result, dict):
         return result
@@ -96,7 +93,7 @@ def _call_dsol(task: str, content: str, use_json: bool = True) -> dict | str:
 
 def extract_entities_llm(content: str) -> list[dict]:
     """NER con DSOL — extrae entidades. Valida resultado, fallback a regex si es necesario."""
-    if HAS_DSOL:
+    if HAS_AETHER:
         result = _call_dsol("extract_entities", content, use_json=True)
         if isinstance(result, dict) and "entities" in result:
             entities = result["entities"]
@@ -109,7 +106,7 @@ def extract_entities_llm(content: str) -> list[dict]:
 
 def extract_concepts_llm(content: str) -> list[dict]:
     """Extracción semántica de conceptos con DSOL. Valida resultado."""
-    if HAS_DSOL:
+    if HAS_AETHER:
         result = _call_dsol("extract_concepts", content, use_json=True)
         if isinstance(result, dict) and "concepts" in result:
             concepts = result["concepts"]
@@ -387,3 +384,4 @@ if __name__ == "__main__":
             print(f"Classified as: {profile}")
     else:
         print(f"Usage: py distill.py [all|file <name.md>|classify <name.md>]")
+

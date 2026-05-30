@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        /* ── ADR Status Block ── */
+        .adr-box {
+            background: {{ brand_colors.secondary }};
+            border-left: 4px solid {{ agent_color }};
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .adr-box h3 {
+            color: {{ agent_color }};
+            margin-bottom: 10px;
+            font-family: {{ fonts.heading }};
+        }
+        .adr-box .adr-body {
+            font-family: {{ fonts.mono }};
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        /* ── Quality Metrics Sidebar ── */
+        .quality-sidebar {
+            background: {{ brand_colors.secondary }};
+            border: 1px solid {{ brand_colors.primary }};
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .quality-sidebar h3 {
+            color: {{ agent_color }};
+            font-size: 14px;
+            margin-bottom: 12px;
+            font-family: {{ fonts.heading }};
+            text-align: center;
+        }
+        .quality-sidebar .chart-ref {
+            text-align: center;
+            color: {{ brand_colors.muted }};
+            font-size: 12px;
+            font-style: italic;
+            margin: 8px 0;
+        }
+
+        /* ── Architecture Badge ── */
+        .arch-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: {{ agent_color }};
+            color: {{ brand_colors.background }};
+            margin-bottom: 8px;
+        }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section">
+        <h2>{{ section.title }}</h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>{% for col in section.table.headers %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if adr_content %}
+    <div class="adr-box">
+        <span class="arch-badge">ADR</span>
+        <h3>Architecture Decision Record</h3>
+        <div class="adr-body">{{ adr_content | e | nl2br }}</div>
+    </div>
+
+    <div class="quality-sidebar">
+        <h3>Quality Metrics</h3>
+        <div class="chart-ref">Architecture quality dimensions are visualized in the radar chart below.</div>
+    </div>
+    {% endif %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

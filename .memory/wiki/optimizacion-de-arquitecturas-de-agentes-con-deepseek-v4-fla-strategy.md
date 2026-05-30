@@ -1,10 +1,15 @@
 ---
+
 type: strategy
 agent: metis
 date: 2026-05-20
 confidence: alta
 status: complete
 tags: [deepseek-v4, estrategia, optimizacion, roadmap, dsol]
+title: Estrategia: Optimización DeepSeek v4 para el Ecosistema KAOS
+created: 2026-05-29
+modified: 2026-05-29
+synthesized_at: 2026-05-29
 ---
 
 # Estrategia: Optimización DeepSeek v4 para el Ecosistema KAOS
@@ -100,3 +105,11 @@ KAOS tiene una base sólida para optimización DeepSeek v4. DSOL está implement
 4. Expandir embeddings coverage a todo el vault.
 
 El sistema ha pasado de ser un prototipo conceptual (Fase 0-4) a una plataforma operativa con 21 commits, 15 módulos Python, y capacidad de ejecución multi-agente coordinada.
+
+## Véase también
+
+- [[cache|Cache]]
+- [[embeddings|Embeddings]]
+- Semana
+- [[DSOL]]
+- [[vault]]

@@ -140,28 +140,29 @@ def register(sub, kaos_root):
             print(embeddings.status())
 
     def cmd_dsol(args):
-        from lib import dsol
+        from lib.aether import status, reset_tracker
+        from lib.aether.tracker import EtherTracker
         actions = {
-            "status": lambda: print(dsol.status()),
-            "estimate": lambda: _dsol_estimate(dsol, args),
-            "call": lambda: _dsol_call(dsol, args),
-            "tokens": lambda: print(dsol.TokenTracker().get_daily_report()),
-            "reset": lambda: print(dsol.reset_tracker()),
+            "status": lambda: print(status()),
+            "estimate": lambda: _dsol_estimate(args),
+            "call": lambda: _dsol_call(args),
+            "tokens": lambda: print(EtherTracker().get_daily_report()),
+            "reset": lambda: print(reset_tracker()),
         }
         actions.get(args.action, lambda: print("Unknown dsol action"))()
 
-    def _dsol_estimate(dsol, args):
-        from lib.dsol import build_prompt, estimate_cache_ratio
+    def _dsol_estimate(args):
+        from lib.aether.client import build_prompt, estimate_cache_ratio
         prompt = build_prompt(task="test", vault_data="...", task_input="...", agent=args.agent)
         ratio = estimate_cache_ratio(prompt)
         print(f"Total chars: {ratio['total_chars']}")
         print(f"Cacheable: {ratio['cacheable_ratio']}% ({ratio['estimated_cache_hit_tokens']} tokens)")
 
-    def _dsol_call(dsol, args):
+    def _dsol_call(args):
         if not args.text:
             print("Usage: vault.py dsol call --text 'prompt text' [--model flash|pro]")
             return
-        from lib.dsol import call_api, build_prompt
+        from lib.aether.client import call_api, build_prompt
         prompt = build_prompt(args.task or "custom", "", args.text)
         result = call_api(prompt, model=args.model or "flash", thinking=args.thinking, use_json=args.json_mode)
         if isinstance(result, dict) and "text" in result:
@@ -182,7 +183,7 @@ def register(sub, kaos_root):
             print("\nReporte guardado en:", result.get('report_path', '?'))
             if args.pipeline:
                 print("\nConsolidando con DeepSeek pipeline...")
-                print(pipeline.init(topic=args.topic, profile="desarrollo"))
+                print(pipeline.init(topic=args.topic, profile="standard"))
             else:
                 print("\nEjecuta con --pipeline para consolidar con DeepSeek")
         else:

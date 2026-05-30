@@ -21,6 +21,7 @@ from pathlib import Path
 from functools import lru_cache
 
 CHUNK_SIZE = 512
+CHUNK_OVERLAP = 128
 EMBED_DIM = 384
 
 BASE = (Path(__file__).resolve().parent.parent.parent)
@@ -61,6 +62,26 @@ def _get_embeddings(create: bool = True):
 def warmup_model():
     """Pre-load txtai model (call at pipeline init)."""
     return _get_embeddings()
+
+
+def _serialize(vec: list) -> bytes:
+    import struct
+    return struct.pack(f"{len(vec)}f", *vec)
+
+
+_STUB_MODEL = None
+
+
+def _import_model():
+    """Return model with .encode() for backward compat (sqlite-vec era).
+    Lazy-loaded once; returns None if txtai unavailable."""
+    global _STUB_MODEL
+    if _STUB_MODEL is not None:
+        return _STUB_MODEL
+    emb = _get_embeddings(create=False)
+    if emb is not None:
+        _STUB_MODEL = getattr(emb, "model", None) or emb
+    return _STUB_MODEL
 
 
 def chunk_text(text: str) -> list[str]:

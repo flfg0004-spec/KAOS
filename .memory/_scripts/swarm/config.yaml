@@ -1,0 +1,32 @@
+backend:
+  default: native
+  native:
+    max_workers: 2
+    python: python
+    pipe_timeout: 30
+  tmux:
+    wsl_distro: Ubuntu
+    tmux_version: "3.6"
+    session_prefix: "kaos-worker-"
+
+roles:
+  researcher:
+    backend: native
+    max_workers: 2
+    entrypoint: "swarm.roles.researcher:run"
+  architect:
+    backend: native
+    max_workers: 1
+    entrypoint: "swarm.roles.architect:run"
+  strategist:
+    backend: native
+    max_workers: 1
+    entrypoint: "swarm.roles.strategist:run"
+  curator:
+    backend: native
+    max_workers: 1
+    entrypoint: "swarm.roles.curator:run"
+
+logging:
+  level: INFO
+  file: .memory/_pipeline/swarm.log

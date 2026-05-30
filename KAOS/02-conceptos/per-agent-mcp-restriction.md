@@ -40,14 +40,16 @@ Reducción de ~40% de tokens de tool descriptions al eliminar MCPs irrelevantes 
 
 | Agente | MCPs Habilitados |
 |--------|-----------------|
-| **Aletheia** | scholar-search, rss-reader, context7, gptr-deep-research, searxng, crawl4ai, exa-search, depwire, mcp-obsidian-cli, obsidian, sequential-thinking, vault, txtai |
-| **Kosmos** | depwire, structurizr, excalidraw, git, lucidity, mcp-obsidian-cli, obsidian |
-| **Metis** | excalidraw, paperjsx, exa-search, mcp-obsidian-cli, obsidian |
-| **Mnemosyne** | sequential-thinking, mcp-obsidian-cli, obsidian, vault, txtai, knowledge-graph |
-| **Kratos** | vault, sequential-thinking, git, exa-search, mcp-obsidian-cli, obsidian |
+| **Aletheia** | scholar-search, rss-reader, context7, gptr-deep-research, searxng, crawl4ai, exa-search, depwire, sequential-thinking, vault, txtai |
+| **Kosmos** | depwire, structurizr, excalidraw, git, lucidity |
+| **Metis** | excalidraw, paperjsx, exa-search, mcp-obsidian-cli, vault, strategy-mcp, strategy-extras |
+| **Mnemosyne** | sequential-thinking, mcp-obsidian-cli, vault, txtai, knowledge-graph, mcp-embed, gaps, contradictions, lifecycle, quality, crossref |
+| **Kratos** | vault, sequential-thinking, git, exa-search |
 
-### MCPs Activos (19)
-mcp-obsidian-cli, sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, context7, vault, exa-search, gptr-deep-research, searxng, crawl4ai, txtai, structurizr, lucidity, obsidian, knowledge-graph
+### MCPs Activos (17)
+mcp-obsidian-cli, sequential-thinking, depwire, excalidraw, paperjsx, scholar-search, git, rss-reader, context7, vault, exa-search, gptr-deep-research, searxng, crawl4ai, txtai, structurizr, lucidity, knowledge-graph
+
+Nota: `obsidian` (REST) fue deshabilitado en limpieza 2026-05-26. Solo `mcp-obsidian-cli` está activo para Mnemosyne y Metis.
 
 ### MCPs Planificados (4, disabled)
 github, lucidity, postgres, structurizr

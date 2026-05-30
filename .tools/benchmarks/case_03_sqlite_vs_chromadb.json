@@ -1,0 +1,28 @@
+{
+  "problem": "Metis necesitaba memoria persistente entre sesiones para aprender de estrategias previas. Dos opciones: ChromaDB (embeddings semánticos, dependencia externa pesada, requiere GPU para rendimiento) o SQLite (hash exacto, cero dependencias, funciona offline). ¿Cuál elegir como mecanismo de memoria estratégica?",
+  "context": {
+    "industry": "agent-memory",
+    "team_size": 1,
+    "constraints": "cero dependencias pip nuevas, debe funcionar offline, sin GPU, sin servicios cloud, must be auditable",
+    "timeline": "1 semana",
+    "metrics": {
+      "storage_method": "SQLite",
+      "dependencies": 0,
+      "recall_method": "hash exacto + Jaccard shingle",
+      "strategies_stored": 21,
+      "predict_accuracy": "70%"
+    }
+  },
+  "human_decision": {
+    "dimensions": {
+      "clarity": 9,
+      "measurability": 8,
+      "realism": 10,
+      "risk_awareness": 9,
+      "creativity": 8,
+      "actionability": 9
+    },
+    "composite_score": 8.8
+  },
+  "human_outcome": "SQLite con hash exacto como implementación primaria, complementado con semantic hashing (Jaccard shingle) para matching semántico sin dependencias externas. 21 estrategias almacenadas, predict() al 70% de precisión, 17 tests unitarios pasando, sync check 10/10. Sin dependencias pip externas, funciona completamente offline. Decisión que priorizó robustez sobre sofisticación."
+}

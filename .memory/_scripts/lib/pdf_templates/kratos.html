@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+        /* ── Code Metric Card Section ── */
+        .code-metrics-section {
+            background: linear-gradient(135deg, {{ brand_colors.background }}, {{ brand_colors.secondary }});
+            border: 1px solid {{ brand_colors.secondary }};
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code-metrics-section h2 {
+            border-left-color: {{ agent_color }} !important;
+            color: {{ agent_color }} !important;
+        }
+        .code-metrics-section p {
+            font-size: 14px;
+            line-height: 3;
+            padding: 10px 5px;
+        }
+        .code-metrics-section strong {
+            color: {{ agent_color }};
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 170px;
+        }
+
+        /* ── Code Badge ── */
+        .code-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: {{ agent_color }};
+            color: {{ brand_colors.background }};
+        }
+{% endblock %}
+
+{% block content %}
+    {% for section in sections %}
+    <div class="section {% if loop.first %}code-metrics-section{% endif %}">
+        <h2>
+            {% if loop.first %}<span class="code-badge">metrics</span> {% endif %}
+            {{ section.title }}
+        </h2>
+        {% if section.content %}
+        <p>{{ section.content | e | nl2br }}</p>
+        {% endif %}
+        {% if section.table %}
+        <table>
+            <thead>
+                <tr>{% for col in section.table.headers %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in section.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% for chart_id, chart_data in charts.items() %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ chart_data }}" alt="Chart">
+    </div>
+    {% endfor %}
+{% endblock %}

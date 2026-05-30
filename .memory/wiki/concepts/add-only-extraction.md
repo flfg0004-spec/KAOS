@@ -1,7 +1,14 @@
 ---
+
 type: concept
 source: Mem0 — arXiv:2504.19413
 related: [memory-blocks, compile-then-query]
+title: ADD-only Extraction
+tags: [relacionado, only, pipeline, entity, search]
+created: 2026-05-29
+modified: 2026-05-29
+confidence: media
+synthesized_at: 2026-05-29
 ---
 
 # ADD-only Extraction

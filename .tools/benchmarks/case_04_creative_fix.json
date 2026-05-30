@@ -1,0 +1,26 @@
+{
+  "problem": "Kosmos identificó que dos herramientas clave, creative_spark.py y benchmark_strategist.py, usaban `hash() % N` como placeholder para generar scores en lugar de implementaciones reales. creative_spark.py usaba hash para sintetizar opciones estratégicas, benchmark_strategist.py lo usaba para puntuar dimensiones. ¿Arreglar con agy-bridge o mantener template estático?",
+  "context": {
+    "industry": "agent-creativity",
+    "team_size": 1,
+    "constraints": "agy-bridge puede no estar siempre disponible, debe tener fallback, sin dependencias externas nuevas",
+    "timeline": "2 días",
+    "metrics": {
+      "tests_passed": 17,
+      "scoring_method": "hash a heuristica real",
+      "fallback_levels": 3
+    }
+  },
+  "human_decision": {
+    "dimensions": {
+      "clarity": 8,
+      "measurability": 7,
+      "realism": 8,
+      "risk_awareness": 9,
+      "creativity": 9,
+      "actionability": 8
+    },
+    "composite_score": 8.2
+  },
+  "human_outcome": "creative_spark.py reemplazó hash placeholder con agy-bridge con 3 niveles de fallback (directo → subprocess → template estático) para `_synthesize_option()`. benchmark_strategist.py implementó heurística real basada en keywords, longitud, diversidad léxica y presencia de números para `_score_dimension()`. 17/17 tests pasan. Creative spark ahora tiene 3 niveles de fallback, benchmark puntúa con 6 dimensiones reales en lugar de hash. Sin dependencias externas."
+}

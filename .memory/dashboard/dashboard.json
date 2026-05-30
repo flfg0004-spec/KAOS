@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-05-25 16:27:13",
+  "timestamp": "2026-05-25 17:17:06",
   "session_analytics": {
     "total_sessions": 20,
-    "total_messages": 361,
-    "avg_duration_min": 17.3,
+    "total_messages": 890,
+    "avg_duration_min": 65.3,
     "feedback_avg": 0,
     "feedback_count": 0
   },
   "vault": {
-    "total_md": 267,
+    "total_md": 268,
     "by_directory": {
       "wiki": 132,
-      "schema": 25,
+      "schema": 26,
       "raw": 26,
-      "_scripts": 182,
+      "_scripts": 184,
       "_pipeline": 3
     },
-    "total_scripts": 182
+    "total_scripts": 184
   },
   "health": {
     "git_clean": false,
@@ -34,7 +34,7 @@
   },
   "ingest": {
     "total_ingested": 3,
-    "total_deduped": 476
+    "total_deduped": 482
   },
   "synapse": {
     "concepts": 0,
@@ -42,22 +42,22 @@
   },
   "activity": {
     "recent_commits": [
+      "13a888a session: mnemosyne - curation-cycle",
       "a4a5ed7 session: mnemosyne - curation-cycle",
       "6ebfc5d session: mnemosyne - curation-cycle",
       "7989949 session: mnemosyne - curation-cycle",
-      "138a74f session: mnemosyne - curation-cycle",
-      "a06a6dd session: test_agent - Integration test cycle"
+      "138a74f session: mnemosyne - curation-cycle"
     ],
     "recent_logs": [
       [
         "2026-05-25",
         "session",
-        "test_full_cycle session completed"
+        "test_agent session completed"
       ],
       [
         "2026-05-25",
         "session",
-        "test_agent session completed"
+        "mnemosyne session completed"
       ],
       [
         "2026-05-25",
@@ -78,31 +78,39 @@
   },
   "wikilinks": {
     "valid": 469,
-    "broken": 0
+    "broken": 1
   },
   "deepseek": {
     "total_calls": 0,
-    "total_cost_usd": 0,
-    "cache_hit_rate": null,
     "total_prompt_tokens": 0,
     "total_completion_tokens": 0,
-    "per_agent": {}
+    "total_cache_hit_tokens": 0,
+    "total_cache_miss_tokens": 0,
+    "total_reasoning_tokens": 0,
+    "total_cost_usd": 0,
+    "daily_breakdown": {},
+    "per_agent": {},
+    "cache_hit_rate": 0.0
   },
   "token_usage": {
     "total_calls": 0,
-    "total_cost_usd": 0,
-    "cache_hit_rate": null,
     "total_prompt_tokens": 0,
     "total_completion_tokens": 0,
-    "per_agent": {}
+    "total_cache_hit_tokens": 0,
+    "total_cache_miss_tokens": 0,
+    "total_reasoning_tokens": 0,
+    "total_cost_usd": 0,
+    "daily_breakdown": {},
+    "per_agent": {},
+    "cache_hit_rate": 0.0
   },
   "quality": {
-    "score": 88.6,
+    "score": 168.1,
     "connectivity": 4.3,
     "freshness": 10.0,
-    "embeddings": 13.2,
+    "embeddings": 13.1,
     "confidence_matrix": 23.1,
-    "completeness": 88.6
+    "completeness": 168.1
   },
   "lifecycle": {
     "tiers": {
