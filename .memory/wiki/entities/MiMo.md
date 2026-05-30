@@ -25,7 +25,7 @@ La familia MiMo se distingue por:
 
 - **Arquitectura MoE** (Mixture of Experts) en todos los modelos de lenguaje
 - **Licencia MIT** en la mayoría de modelos (open-weight)
-- Integración profunda con [[HyperOS]] y vehículos [[xiaomi-su7|Xiaomi SU7]]
+- Integración profunda con [[hyperos|HyperOS]] y vehículos [[xiaomi-su7|Xiaomi SU7]]
 - **Rendimiento #1 open-source** en benchmarks de agente (V2.5-Pro)
 - **Multi-Token Prediction (MTP)** como técnica nativa de speculative decoding
 

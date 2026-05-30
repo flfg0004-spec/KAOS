@@ -32,7 +32,7 @@ sources:
 
 ## Integración en el Ecosistema Xiaomi
 
-- **[[HyperOS]]**: Comprensión multimodal para asistentes ([[Miclaw]])
+- **[[hyperos|HyperOS]]**: Comprensión multimodal para asistentes ([[Miclaw]])
 - **[[xiaomi-su7|Xiaomi SU7]]**: Procesamiento visual en tiempo real para [[XLA-Cognitive-Model]]
 - **Dispositivos smart home**: Procesamiento de cámaras y sensores
 - **Teléfonos Xiaomi**: Asistente con comprensión visual y de audio

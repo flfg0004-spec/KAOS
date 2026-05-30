@@ -413,6 +413,49 @@ def learning_loop(okr_id: str, outcome_score: float, factors: dict) -> dict:
     return result
 
 
+def kratos_feedback(okr_id: str, status: str, metrics: dict | None = None, outcome_score: float = None) -> dict:
+    _ensure_dirs()
+    feedback_file = submit_feedback(okr_id, status, metrics)
+    bank = StrategicMemoryBank()
+    transfer = _load_json(_transfer_path(okr_id))
+    context = {
+        "okr_id": okr_id,
+        "source": "kratos_feedback",
+        "status": status,
+        "metrics": metrics or {},
+    }
+    content = {
+        "okr_id": okr_id,
+        "status": status,
+        "metrics": metrics or {},
+        "outcome_score": outcome_score,
+    }
+    sid = bank.store(context, content, "kratos_feedback", outcome_score=outcome_score)
+    print(f"  Stored in strategy memory: id={sid}")
+    temp_calibrate = TRANSFERS_DIR / f"_calibrate_{okr_id}.json"
+    calibrate_data = {
+        "feedback": [
+            {
+                "plan_type": "kratos_feedback",
+                "predicted_score": 5.0,
+                "actual_score": outcome_score or 5.0,
+            }
+        ]
+    }
+    temp_calibrate.write_text(json.dumps(calibrate_data, indent=2), encoding="utf-8")
+    calibration = bank.calibrate(str(temp_calibrate))
+    temp_calibrate.unlink(missing_ok=True)
+    print(f"✓ Kratos feedback loop completo para {okr_id}")
+    print(f"  Outcome score: {outcome_score}/10")
+    print(f"  Calibration adjustments: {calibration.get('entries_processed', 0)} entries")
+    return {
+        "okr_id": okr_id,
+        "outcome_score": outcome_score,
+        "memory_id": sid,
+        "calibration": calibration,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Strategy Feedback Loop — Metis→Kratos communication bridge.",
@@ -463,6 +506,12 @@ def main() -> None:
     learn_parser.add_argument("--outcome", required=True, type=float, help="Outcome score (0-10)")
     learn_parser.add_argument("--factors", default=None, help="JSON con factores clave")
 
+    kratos_feedback_parser = subparsers.add_parser("kratos-feedback", help="Enviar feedback completo desde Kratos con outcome score y calibración")
+    kratos_feedback_parser.add_argument("--okr-id", required=True, help="ID del OKR")
+    kratos_feedback_parser.add_argument("--status", required=True, choices=["completed", "partial", "blocked", "not_started"], help="Estado de completitud")
+    kratos_feedback_parser.add_argument("--metrics", default=None, help="JSON con métricas de implementación")
+    kratos_feedback_parser.add_argument("--outcome-score", required=True, type=float, help="Outcome score (0-10)")
+
     args = parser.parse_args()
 
     if args.command == "dispatch":
@@ -509,6 +558,10 @@ def main() -> None:
     elif args.command == "learn":
         factors = json.loads(args.factors) if args.factors else {}
         learning_loop(args.okr_id, args.outcome, factors)
+
+    elif args.command == "kratos-feedback":
+        metrics = json.loads(args.metrics) if args.metrics else None
+        kratos_feedback(args.okr_id, args.status, metrics, args.outcome_score)
 
 
 if __name__ == "__main__":

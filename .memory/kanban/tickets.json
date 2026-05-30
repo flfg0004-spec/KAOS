@@ -1,0 +1,14 @@
+[
+  {
+    "id": "b08d1f9c",
+    "title": "Untitled",
+    "description": "",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "webhook",
+    "labels": [],
+    "created_at": "2026-05-30T00:57:45.587071+00:00",
+    "updated_at": "2026-05-30T00:57:45.587071+00:00",
+    "assignee": null
+  }
+]

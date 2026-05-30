@@ -1,6 +1,6 @@
 # KAOS Memory Vault - Index
 
-*Auto-generated: 2026-05-29 18:45*
+*Auto-generated: 2026-05-29 19:00*
 
 ## Agentes
 
@@ -17,6 +17,7 @@
 - [hermes-agent](entities/hermes-agent.md) - Hermes Agent v0.15.2 — gateway LLM, sistema de mensajería, kanban, y orquestación de tickets del ecosistema KAOS
 - [hermes-workspace-integration](entities/hermes-workspace-integration.md) - -
 - [Hybrid-Attention](entities/Hybrid-Attention.md) - Arquitectura de atención híbrida SWA+GA (Sliding Window + Global Attention) con attention sink bias — optimizada para contexto largo eficiente en modelos MoE
+- [hyperos](entities/hyperos.md) - -
 - [investigacion](entities/investigacion.md) - -
 - [kimi](entities/kimi.md) - Modelo LLM de Moonshot AI — HLE #1, multimodal nativo, 262K contexto, costo inferior a DeepSeek Pro
 - [knowledge-tour](entities/knowledge-tour.md) - -
@@ -212,6 +213,7 @@
 - [investigacion-sistemas-multiagente](../raw/investigacion-sistemas-multiagente.md) - 2026-05-29
 - [investigacion-software-testing](../raw/investigacion-software-testing.md) - 2026-05-29
 - [investigacion-token-tracking-telegram-sessions](../raw/investigacion-token-tracking-telegram-sessions.md) - 2026-05-29
+- [MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026](../raw/MASTER-CONSOLIDADO-ECOSISTEMA-LLM-MAYO-2026.md) - 2026-05-29
 - [optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla](../raw/optimizacion-de-arquitecturas-de-agentes-con-deepseek-v4-fla.md) - 2026-05-29
 - [test-telegram](../raw/test-telegram.md) - 2026-05-24
 - [wiki-wiki-quantum-computing](../raw/wiki-wiki-quantum-computing.md) - 2026-05-29
@@ -262,4 +264,4 @@
 - [vault-policy](../schema/vault-policy.md)
 
 ---
-*Ultima actualizacion: 2026-05-29 18:45*
+*Ultima actualizacion: 2026-05-29 19:00*

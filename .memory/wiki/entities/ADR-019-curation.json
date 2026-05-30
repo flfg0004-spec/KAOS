@@ -1,15 +1,15 @@
 {
   "id": "ADR-019",
-  "title": "ADR-019: load test seq 8",
-  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\load-test-seq-8-adr.md",
+  "title": "ADR-019: s3 cache test",
+  "source_path": "C:\\Users\\LeonX\\Documents\\KAOS\\.memory\\_pipeline\\raw\\s3-cache-test-adr.md",
   "type": "adr",
   "tags": [
     "adr",
     "architecture",
-    "load-test-seq-8"
+    "s3-cache-test"
   ],
   "existing_wikilinks": [],
   "needs_curation": true,
-  "requested_at": "2026-05-29T18:37:21.308039",
+  "requested_at": "2026-05-29T18:56:29.204196",
   "priority": "medium"
 }

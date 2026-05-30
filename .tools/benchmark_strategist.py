@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".memory" / "_scripts"))
+from strategy_memory import StrategicMemoryBank
 
 DIMENSIONS = ["clarity", "measurability", "realism", "risk_awareness", "creativity", "actionability"]
 
@@ -21,10 +22,31 @@ class StrategistBenchmark:
     def evaluate_metis_decision(self, case: dict) -> dict:
         context = case.get("context", {})
         problem = case.get("problem", "")
+        bank = StrategicMemoryBank()
+        prediction = bank.predict_outcome(context)
+        if prediction.get("probability_success") is not None:
+            n = max(1, prediction.get("based_on_n_strategies", 1))
+            p = prediction.get("probability_success", 0.5)
+            avg = prediction.get("avg_outcome_score", 5.0)
+            composite_score = round(avg, 1)
+            plan = {
+                "context_analyzed": bool(context),
+                "has_okrs": "okrs" in json.dumps(context).lower() if context else False,
+                "prediction_based": True,
+                "dimensions": {},
+                "composite_score": composite_score,
+                "recommendation": (
+                    f"Predictivo: P(éxito)={p:.0%} (basado en {n} estratégias previas). "
+                    f"Score compuesto: {composite_score}/10"
+                ),
+                "_prediction": prediction,
+            }
+            return plan
         plan = {
             "context_analyzed": bool(context),
             "has_okrs": "okrs" in json.dumps(context).lower() if context else False,
             "dimensions": {},
+            "prediction_based": False,
         }
         scores = []
         for dim in DIMENSIONS:

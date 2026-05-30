@@ -52,7 +52,7 @@ sources:
 
 ## Casos de Uso
 
-- Chat y asistentes conversacionales en [[HyperOS]]
+- Chat y asistentes conversacionales en [[hyperos|HyperOS]]
 - Razonamiento general con alta velocidad
 - Tareas de bajo costo donde la calidad no requiere el flagship
 

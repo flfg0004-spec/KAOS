@@ -28,7 +28,7 @@ confidence: high
 
 ## Aplicaciones
 
-- **[[HyperOS]]**: Asistente de voz para teléfonos, tablets y smart home
+- **[[hyperos|HyperOS]]**: Asistente de voz para teléfonos, tablets y smart home
 - **[[Miclaw]]**: Salida de voz para el agente autónomo
 - **[[xiaomi-su7|Xiaomi SU7]]**: Asistente de navegación y comandos de voz en vehículo
 - **Smart speakers**: Altavoces inteligentes Xiaomi

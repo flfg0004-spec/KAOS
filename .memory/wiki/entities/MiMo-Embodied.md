@@ -24,7 +24,7 @@ sources:
 
 | Modelo | Tipo | Aplicación |
 |--------|------|------------|
-| [[XLA Cognitive Model]] | Conducción autónoma | [[xiaomi-su7|Xiaomi SU7]] |
+| [[XLA-Cognitive-Model|XLA Cognitive Model]] | Conducción autónoma | [[xiaomi-su7|Xiaomi SU7]] |
 | *MiMo-CyberDog* | Robótica móvil | CyberDog 2 (robot cuadrúpedo) |
 | *MiMo-Manipulation* | Manipulación | Brazos robóticos, fabricación |
 
@@ -53,7 +53,7 @@ MiMo-Embodied
 ## Relaciones
 
 - [[MiMo]] — Familia principal
-- [[XLA Cognitive Model]] — Modelo de conducción autónoma
+- [[XLA-Cognitive-Model|XLA Cognitive Model]] — Modelo de conducción autónoma
 - [[MiMo-V2-Omni]] — Base de procesamiento multimodal para percepción
 - [[Miclaw]] — Interfaz de usuario para vehículos
 

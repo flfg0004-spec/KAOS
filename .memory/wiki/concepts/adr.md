@@ -27,8 +27,8 @@ Registro formal de decisiones arquitectónicas. Template estándar: Contexto, Op
 
 ## Véase también
 
-- [[Relacionado]]
-- [[arquitectura|Arquitectura]]
-- [[Decisiones]]
-- [[kosmos]]
-- [[Adrs]]
+- [ADR-013](ADR-013.md) — Circuit Breaker Unificado
+- [Arquitectura](arquitectura.md) — Documentación de arquitectura
+- [ADR-012](../schema/adr-012-integracion-deerflow-agno.md) — Integración DeerFlow
+- [kosmos](../entities/kosmos.md) — Agente de arquitectura
+- [ADRs](../schema/) — Directorio de ADRs

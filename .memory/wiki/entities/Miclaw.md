@@ -18,7 +18,7 @@ sources:
 
 ## Descripción
 
-**Miclaw** es el agente autónomo de inteligencia artificial del sistema operativo [[HyperOS]] de Xiaomi. Potenciado por los modelos de la familia [[MiMo]], actúa como asistente inteligente central en todo el ecosistema Xiaomi.
+**Miclaw** es el agente autónomo de inteligencia artificial del sistema operativo [[hyperos|HyperOS]] de Xiaomi. Potenciado por los modelos de la familia [[MiMo]], actúa como asistente inteligente central en todo el ecosistema Xiaomi.
 
 ## Capacidades
 

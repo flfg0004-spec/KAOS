@@ -96,11 +96,11 @@
 
 ## Véase también
 
-- [[Tests]]
-- [[Entities]]
-- [[test|Test]]
-- Pages (sin página)
-- Result (sin página)
+- [Tests](../_scripts/tests/) — Suite de tests
+- [Entities](entities/) — Directorio de entidades
+- [Test](concepts/test.md) — Concepto de testing
+- Pages
+- Result
 
 ## [2026-05-29] session | mnemosyne session completed
 - Result: curation-cycle
@@ -136,4 +136,10 @@
 - Result: Integration test cycle
 - Pages affected: _scripts/tests/test_context_cycle.py
 - Timestamp: 2026-05-29 18:45:25
+
+
+## [2026-05-29] session | test_agent session completed
+- Result: Integration test cycle
+- Pages affected: _scripts/tests/test_context_cycle.py
+- Timestamp: 2026-05-29 19:00:32
 
