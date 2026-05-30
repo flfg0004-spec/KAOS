@@ -543,6 +543,20 @@ def step_done(agent: str) -> str:
             logger.info("Aletheia self-eval score: %.2f", _eval_result["score"])
         except ImportError:
             pass
+    elif agent_cap == "Kosmos":
+        try:
+            from lib.kosmos_self_eval import kosmos_self_eval as _kosmos_self_eval
+            _eval_result = _kosmos_self_eval("kosmos", {"content": ""})
+            logger.info("Kosmos self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
+    elif agent_cap == "Kronos":
+        try:
+            from lib.kronos_self_eval import kronos_self_eval as _kronos_self_eval
+            _eval_result = _kronos_self_eval("kronos", {"content": ""})
+            logger.info("Kronos self-eval score: %.2f", _eval_result["score"])
+        except ImportError:
+            pass
 
     # Send Telegram notification when pipeline completes
     if not next_agent:
