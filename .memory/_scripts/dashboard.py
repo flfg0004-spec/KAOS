@@ -14,39 +14,36 @@ Endpoints:
 
 import asyncio
 import json
+import logging
 import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+
 # ── Path setup ─────────────────────────────────────
 _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-import logging
-
 _LOG = logging.getLogger(__name__)
 
-from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-
-from lib.config import VAULT_ROOT
-from lib.events import EventBus, EVENT_TYPES
-from lib.pipeline_store import (
+from lib.config import VAULT_ROOT  # noqa: E402
+from lib.events import EventBus  # noqa: E402
+from lib.pipeline_store import (  # noqa: E402
     PIPELINE_DIR,
     load_pipeline,
     save_pipeline,
     now_iso,
     VALID_PRIORITIES,
 )
-from mcp_pipeline import (
+from mcp_pipeline import (  # noqa: E402
     pipeline_list,
-    pipeline_status,
     pipeline_run,
     pipeline_cancel,
-    pipeline_execute,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -376,7 +373,7 @@ async def api_health():
     try:
         if ALERTS_LOG.exists():
             lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
-            last_alerts = [json.loads(l) for l in lines[-5:] if l.strip()]
+            last_alerts = [json.loads(line) for line in lines[-5:] if line.strip()]
     except Exception:
         pass
     last_error = None
@@ -407,7 +404,7 @@ async def api_alerts():
     try:
         if ALERTS_LOG.exists():
             lines = ALERTS_LOG.read_text(encoding="utf-8").strip().split("\n")
-            alerts = [json.loads(l) for l in lines[-50:] if l.strip()]
+            alerts = [json.loads(line) for line in lines[-50:] if line.strip()]
     except Exception:
         pass
     return JSONResponse({"alerts": alerts, "total": len(alerts)})

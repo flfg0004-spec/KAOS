@@ -114,7 +114,10 @@ def kratos_self_eval(agent: str, output: dict) -> dict:
             },
             "seguridad": {
                 "score": seguridad,
-                "justificacion": f"{len(security_issues)} security patterns found" if security_issues else "No security issues detected",
+                "justificacion": (
+                    f"{len(security_issues)} security patterns found"
+                    if security_issues else "No security issues detected"
+                ),
             },
             "cobertura_tests": {
                 "score": cobertura_tests,

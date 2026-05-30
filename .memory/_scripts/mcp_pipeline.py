@@ -6,15 +6,16 @@ import random
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+
 
 _LOG = logging.getLogger(__name__)
 
-from lib.kronos import ParallelExecutor, TaskState
-from lib.events import EventBus
+from lib.kronos import ParallelExecutor, TaskState  # noqa: E402
+from lib.events import EventBus  # noqa: E402
 
 # ── Shared executor pool ──────────────────────────
 _EXECUTOR_POOL = None
+
 
 def _get_executor(max_workers: int = 4):
     """Return a shared ThreadPoolExecutor (lazy-init)."""
@@ -24,7 +25,9 @@ def _get_executor(max_workers: int = 4):
         _EXECUTOR_POOL = ThreadPoolExecutor(max_workers=max_workers)
         _LOG.info("Created shared executor pool (max_workers=%d)", max_workers)
     return _EXECUTOR_POOL
-from lib.pipeline_store import (
+
+
+from lib.pipeline_store import (  # noqa: E402
     PIPELINE_DIR,
     PRIORITY_ORDER as _PRIORITY_ORDER,
     VALID_PRIORITIES as _VALID_PRIORITIES,
