@@ -436,6 +436,48 @@ def _build_self_eval_input(agent_cap: str, vault_root: Path, lines: list[str]) -
     return {cfg["field"]: ""}
 
 
+def _run_self_evals(agent_cap: str, vault_root: Path, lines: list[str]) -> dict[str, float]:
+    """Run self-evaluation for the completed agent with real output.
+    Returns dict mapping agent_name -> score.
+    Extracted from step_done() for testability and SRP.
+    """
+    input_data = _build_self_eval_input(agent_cap, vault_root, lines)
+    EVAL_MODULES = {
+        "Kratos":    ("lib.kratos_self_eval",    "kratos_self_eval"),
+        "Aletheia":  ("lib.aletheia_self_eval",  "aletheia_self_eval"),
+        "Kosmos":    ("lib.kosmos_self_eval",    "kosmos_self_eval"),
+        "Kronos":    ("lib.kronos_self_eval",    "kronos_self_eval"),
+        "Metis":     ("lib.metis_self_eval",     "metis_self_eval"),
+        "Mnemosyne": ("lib.mnemosyne_self_eval", "mnemosyne_self_eval"),
+        "BCG":       ("lib.bcg_self_eval",       "bcg_self_eval"),
+    }
+    if agent_cap not in EVAL_MODULES:
+        return {}
+    module_path, func_name = EVAL_MODULES[agent_cap]
+    try:
+        import importlib
+        mod = importlib.import_module(module_path)
+        fn = getattr(mod, func_name)
+        agent_name = func_name.replace("_self_eval", "")
+        _eval_result = fn(agent_name, input_data)
+        field = list(input_data.keys())[0] if input_data else "content"
+        has_data = bool(input_data.get(field))
+        logger.info(
+            "%s self-eval score: %.2f (input: %s)",
+            agent_cap, _eval_result["score"],
+            "real data" if has_data else "EMPTY (no output found)",
+        )
+        if _eval_result["score"] < 0.3:
+            logger.warning(
+                "%s self-eval score: %.2f — below threshold 0.3",
+                agent_cap, _eval_result["score"],
+            )
+        return {agent_name: _eval_result["score"]}
+    except Exception:
+        logger.warning("Self-eval failed for %s (non-blocking)", agent_cap, exc_info=True)
+        return {}
+
+
 def step_done(agent: str) -> str:
     lines = _read_status()
     if not lines:
@@ -560,33 +602,7 @@ def step_done(agent: str) -> str:
             logger.warning("kratos_hook not available — output capture skipped")
 
     # Self-evaluation with REAL agent output (S10 fix: was passing empty dicts)
-    input_data = _build_self_eval_input(agent_cap, VAULT_ROOT, text_lines)
-    EVAL_MODULES = {
-        "Kratos":    ("lib.kratos_self_eval",    "kratos_self_eval"),
-        "Aletheia":  ("lib.aletheia_self_eval",  "aletheia_self_eval"),
-        "Kosmos":    ("lib.kosmos_self_eval",    "kosmos_self_eval"),
-        "Kronos":    ("lib.kronos_self_eval",    "kronos_self_eval"),
-        "Metis":     ("lib.metis_self_eval",     "metis_self_eval"),
-        "Mnemosyne": ("lib.mnemosyne_self_eval", "mnemosyne_self_eval"),
-        "BCG":       ("lib.bcg_self_eval",       "bcg_self_eval"),
-    }
-    if agent_cap in EVAL_MODULES:
-        module_path, func_name = EVAL_MODULES[agent_cap]
-        try:
-            import importlib
-            mod = importlib.import_module(module_path)
-            fn = getattr(mod, func_name)
-            agent_name = func_name.replace("_self_eval", "")
-            _eval_result = fn(agent_name, input_data)
-            field = list(input_data.keys())[0] if input_data else "content"
-            has_data = bool(input_data.get(field))
-            logger.info(
-                "%s self-eval score: %.2f (input: %s)",
-                agent_cap, _eval_result["score"],
-                "real data" if has_data else "EMPTY (no output found)",
-            )
-        except Exception:
-            logger.warning("Self-eval failed for %s (non-blocking)", agent_cap, exc_info=True)
+    _run_self_evals(agent_cap, VAULT_ROOT, text_lines)
 
     # Send Telegram notification when pipeline completes
     if not next_agent:

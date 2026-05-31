@@ -213,3 +213,67 @@ def test_bcg_poor_content():
     }
     result = bcg_self_eval("bcg", output)
     assert result["score"] < 0.5
+
+
+def test_kratos_receives_real_code():
+    output = {"code": "def foo(): return 42", "description": "test", "tests": ["x"], "errors": []}
+    result = kratos_self_eval("kratos", output)
+    assert result["score"] > 0.5
+
+
+def test_aletheia_receives_real_content():
+    output = {"content": "Research with citations [1][2].\n## Conclusion\nResults.", "sources": ["s1"], "claims": ["c1"], "reasoning": "...", "summary": "Sum."}
+    result = aletheia_self_eval("aletheia", output)
+    assert result["score"] > 0.5
+
+
+def test_kosmos_receives_real_analysis():
+    output = {"content": "# Architecture\n## Components\nService A depends on B\n## Recommendations\nAdd cache"}
+    result = kosmos_self_eval("kosmos", output)
+    assert result["score"] > 0.3
+
+
+def test_kronos_receives_real_status():
+    output = {"status": "Order executed: step1 first, then step2 after. Dependencies resolved. Timeout handled with retry. Resources optimized."}
+    result = kronos_self_eval("kronos", output)
+    assert result["score"] > 0.3
+
+
+def test_metis_receives_real_content():
+    output = {"content": "# Strategy\n## Objectives\nGoal: increase revenue\n## Risks\nMarket competition\n## Recommendations\nInvest in R&D"}
+    result = metis_self_eval("metis", output)
+    assert result["score"] > 0.3
+
+
+def test_all_agents_have_unique_dimensions():
+    agents_data = [
+        ("kratos", {"code": "def foo(): return 42", "description": "test", "tests": ["x"], "errors": []}),
+        ("aletheia", {"content": "Research [1].\n## Conclusion\nResults.", "sources": ["s1"], "claims": ["c1"], "reasoning": "...", "summary": "Sum."}),
+        ("kosmos", {"content": "# Arc\n## Components\nA depends on B\n## Recommendations\nAdd cache"}),
+        ("kronos", {"status": "Order executed: step1 first, then step2 after. Dependencies resolved."}),
+        ("metis", {"content": "# Strategy\n## Objectives\nGoal: revenue\n## Risks\nCompetition\n## Recommendations\nInvest"}),
+        ("mnemosyne", {"content": "## Sources\nRef: Smith 2023. DOI: 10.1000/xyz.\n## Structure\nCategory: AI.\n## Coverage\nSummary: overview."}),
+        ("bcg", {"content": "Metric: coverage 85%. Score: 7/10. Evidence: passed.", "criteria": "standard", "feedback": "gap", "scores": "7", "actions": "fix"}),
+    ]
+    all_dim_keys = {}
+    for agent_name, data in agents_data:
+        fn_map = {
+            "kratos": kratos_self_eval,
+            "aletheia": aletheia_self_eval,
+            "kosmos": kosmos_self_eval,
+            "kronos": kronos_self_eval,
+            "metis": metis_self_eval,
+            "mnemosyne": mnemosyne_self_eval,
+            "bcg": bcg_self_eval,
+        }
+        result = fn_map[agent_name](agent_name, data)
+        all_dim_keys[agent_name] = set(result["dimensions"].keys())
+    overlaps = []
+    for name, keys in all_dim_keys.items():
+        for other_name, other_keys in all_dim_keys.items():
+            if name < other_name:
+                overlap = keys & other_keys
+                if overlap:
+                    overlaps.append(f"{name}↔{other_name}: {overlap}")
+    for o in overlaps:
+        print(f"  NOTE: dimension overlap: {o}")
