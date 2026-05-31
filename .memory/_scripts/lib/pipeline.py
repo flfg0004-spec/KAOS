@@ -406,6 +406,36 @@ def check(agent: str = "") -> str:
     return f"PIPELINE: active ({status})\n  Topic: {topic}\n  Profile: {profile}"
 
 
+def _build_self_eval_input(agent_cap: str, vault_root: Path, lines: list[str]) -> dict:
+    AGENT_CONFIG = {
+        "Kratos":    {"field": "code",        "file_pattern": r"\| \d+ \| Kratos \|.+?\| (.+?) \|"},
+        "Aletheia":  {"field": "content",     "file_pattern": r"\| \d+ \| Aletheia \|.+?\| (.+?) \|"},
+        "Kosmos":    {"field": "content",     "file_pattern": r"\| \d+ \| Kosmos \|.+?\| (.+?) \|"},
+        "Kronos":    {"field": "content",     "file_pattern": r"\| \d+ \| Kronos \|.+?\| (.+?) \|"},
+        "Metis":     {"field": "content",     "file_pattern": r"\| \d+ \| Metis \|.+?\| (.+?) \|"},
+        "Mnemosyne": {"field": "content",     "file_pattern": r"\| \d+ \| Mnemosyne \|.+?\| (.+?) \|"},
+        "BCG":       {"field": "content",     "file_pattern": r"\| \d+ \| BCG \|.+?\| (.+?) \|"},
+    }
+    cfg = AGENT_CONFIG.get(agent_cap)
+    if not cfg:
+        return {"content": ""}
+    output_path = None
+    for line in lines:
+        m = re.search(cfg["file_pattern"], line)
+        if m:
+            candidate = (vault_root / m.group(1).strip()).with_suffix(".md")
+            if candidate.exists():
+                output_path = candidate
+                break
+    if output_path:
+        try:
+            content = output_path.read_text(encoding="utf-8", errors="replace")
+            return {cfg["field"]: content}
+        except Exception:
+            logger.warning("Failed to read output for %s from %s", agent_cap, output_path, exc_info=True)
+    return {cfg["field"]: ""}
+
+
 def step_done(agent: str) -> str:
     lines = _read_status()
     if not lines:
@@ -529,55 +559,34 @@ def step_done(agent: str) -> str:
         except ImportError:
             logger.warning("kratos_hook not available — output capture skipped")
 
-    if agent_cap == "Kratos":
+    # Self-evaluation with REAL agent output (S10 fix: was passing empty dicts)
+    input_data = _build_self_eval_input(agent_cap, VAULT_ROOT, text_lines)
+    EVAL_MODULES = {
+        "Kratos":    ("lib.kratos_self_eval",    "kratos_self_eval"),
+        "Aletheia":  ("lib.aletheia_self_eval",  "aletheia_self_eval"),
+        "Kosmos":    ("lib.kosmos_self_eval",    "kosmos_self_eval"),
+        "Kronos":    ("lib.kronos_self_eval",    "kronos_self_eval"),
+        "Metis":     ("lib.metis_self_eval",     "metis_self_eval"),
+        "Mnemosyne": ("lib.mnemosyne_self_eval", "mnemosyne_self_eval"),
+        "BCG":       ("lib.bcg_self_eval",       "bcg_self_eval"),
+    }
+    if agent_cap in EVAL_MODULES:
+        module_path, func_name = EVAL_MODULES[agent_cap]
         try:
-            from lib.kratos_self_eval import kratos_self_eval as _kratos_self_eval
-            _eval_result = _kratos_self_eval("kratos", {"code": ""})
-            logger.info("Kratos self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "Aletheia":
-        try:
-            from lib.aletheia_self_eval import aletheia_self_eval as _aletheia_self_eval
-            _eval_result = _aletheia_self_eval("aletheia", {"content": ""})
-            logger.info("Aletheia self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "Kosmos":
-        try:
-            from lib.kosmos_self_eval import kosmos_self_eval as _kosmos_self_eval
-            _eval_result = _kosmos_self_eval("kosmos", {"content": ""})
-            logger.info("Kosmos self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "Kronos":
-        try:
-            from lib.kronos_self_eval import kronos_self_eval as _kronos_self_eval
-            _eval_result = _kronos_self_eval("kronos", {"content": ""})
-            logger.info("Kronos self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "Metis":
-        try:
-            from lib.metis_self_eval import metis_self_eval as _metis_self_eval
-            _eval_result = _metis_self_eval("metis", {"content": ""})
-            logger.info("Metis self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "Mnemosyne":
-        try:
-            from lib.mnemosyne_self_eval import mnemosyne_self_eval as _mnemosyne_self_eval
-            _eval_result = _mnemosyne_self_eval("mnemosyne", {"content": ""})
-            logger.info("Mnemosyne self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
-    elif agent_cap == "BCG":
-        try:
-            from lib.bcg_self_eval import bcg_self_eval as _bcg_self_eval
-            _eval_result = _bcg_self_eval("bcg", {"content": ""})
-            logger.info("BCG self-eval score: %.2f", _eval_result["score"])
-        except ImportError:
-            pass
+            import importlib
+            mod = importlib.import_module(module_path)
+            fn = getattr(mod, func_name)
+            agent_name = func_name.replace("_self_eval", "")
+            _eval_result = fn(agent_name, input_data)
+            field = list(input_data.keys())[0] if input_data else "content"
+            has_data = bool(input_data.get(field))
+            logger.info(
+                "%s self-eval score: %.2f (input: %s)",
+                agent_cap, _eval_result["score"],
+                "real data" if has_data else "EMPTY (no output found)",
+            )
+        except Exception:
+            logger.warning("Self-eval failed for %s (non-blocking)", agent_cap, exc_info=True)
 
     # Send Telegram notification when pipeline completes
     if not next_agent:
