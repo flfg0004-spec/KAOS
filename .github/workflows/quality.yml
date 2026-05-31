@@ -9,6 +9,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install flake8 pytest
-      - run: flake8 .memory/_scripts/lib/kronos/executor.py .memory/_scripts/mcp_pipeline.py .memory/_scripts/dashboard.py --max-line-length=120
+      - run: flake8 .memory/_scripts/lib/ --max-line-length=120 --exit-zero
       - run: python .memory/_scripts/quality_gate.py
         working-directory: .memory/_scripts

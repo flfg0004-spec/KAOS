@@ -261,7 +261,7 @@ def refresh_constants():
     ETHER_DEEPEVAL_ENABLED = os.environ.get("ETHER_DEEPEVAL_ENABLED", str(FLAGS.get("ether_deepeval_enabled", "true"))).lower() == "true"
     QUALITY_ROUTING_ENABLED = os.environ.get("ETHER_QUALITY_ROUTING", str(FLAGS.get("quality_routing_enabled", "true"))).lower() in ("1", "true")
     ETHER_EVAL_SAMPLE_SIZE = int(os.environ.get("ETHER_EVAL_SAMPLE_SIZE", str(FLAGS.get("ether_eval_sample_size", "10"))))
-    ETHER_ROUTER9_ENABLED = os.environ.get("ETHER_ROUTER9_ENABLED", str(FLAGS.get("ether_router9_enabled", "false"))).lower() == "true"
+    ETHER_ROUTER9_ENABLED = os.environ.get("ETHER_ROUTER9_ENABLED", str(FLAGS.get("ether_router9_enabled", "true"))).lower() == "true"
 
 
 # ── Initialize constants from config ─────────────────────────

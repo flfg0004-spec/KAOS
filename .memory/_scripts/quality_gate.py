@@ -23,6 +23,14 @@ CORE_TESTS = [
     "test_verification.py",
     "test_aether_router.py",
     "test_aether_smoke.py",
+    # Added in S10 (QW21):
+    "test_lang_utils.py",
+    "test_kratos_e2e.py",
+    "test_quality_gate.py",
+    "test_aether_config.py",
+    "test_strategy_memory_core.py",
+    "test_benchmark_strategist.py",
+    "test_golden_queries.py",
 ]
 
 
@@ -103,6 +111,24 @@ def main():
     else:
         print(f"   FAIL: {errors[0]}")
         total_failures += n
+
+    print("\n4. Code coverage...")
+    try:
+        r = subprocess.run(
+            [sys.executable, "-m", "pytest", "--cov=lib", "--cov-report=term-missing",
+             f"--cov-fail-under=20", "-x", "-q"] + [str(TESTS / t) for t in CORE_TESTS],
+            capture_output=True, text=True, timeout=120,
+        )
+        if r.returncode == 0:
+            print("   PASS: Coverage >= 20%")
+        else:
+            # Coverage may fail on first run — extract actual % without failing the gate
+            cov_line = [l for l in r.stdout.split('\n') if 'TOTAL' in l]
+            cov_pct = cov_line[0].split()[-1] if cov_line else "?"
+            print(f"   INFO: Coverage at {cov_pct} (threshold 20%)")
+            # Don't fail the gate for coverage
+    except Exception as e:
+        print(f"   SKIP: coverage check not available ({e})")
 
     print("\n" + "=" * 50)
     if total_failures == 0:

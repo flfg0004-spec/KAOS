@@ -127,4 +127,4 @@ feature_flags:
   ether_deepeval_enabled: true
   quality_routing_enabled: true
   ether_eval_sample_size: 30
-  ether_router9_enabled: false
+  ether_router9_enabled: true
